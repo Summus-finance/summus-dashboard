@@ -71,7 +71,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
 .v-meta{font-size:15px;color:var(--t3);font-weight:600}
 .v-rest{font-size:13px;color:var(--t3)}
 .div{border:none;border-top:1px solid var(--bd3);margin:14px 0}
-.mwrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);align-items:flex-start;justify-content:center;padding:20px;z-index:999;overflow-y:auto}
+.mwrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);align-items:flex-start;justify-content:center;padding:10px;z-index:999;overflow-y:auto}
 .mwrap.open{display:flex}
 .modal{background:var(--cd);border-radius:14px;padding:26px;width:100%;max-width:780px;border:1px solid var(--bd);box-shadow:0 8px 32px rgba(0,0,0,.2);margin:auto}
 .mh2{font-size:18px;font-weight:700;color:var(--t1);margin-bottom:14px}
@@ -90,6 +90,54 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
 .bcanc{background:transparent;color:var(--t2);border:1px solid var(--bd);border-radius:8px;padding:9px 22px;font-size:15px;cursor:pointer;font-family:inherit}
 #rot-bar{position:fixed;bottom:0;left:0;height:3px;background:var(--br);width:0%;z-index:9998}
 #rot-btn{position:fixed;bottom:14px;left:14px;width:36px;height:36px;border-radius:50%;background:var(--br);color:#fff;border:none;font-size:15px;cursor:pointer;box-shadow:0 3px 10px rgba(44,161,216,.4);z-index:9999}
+
+/* ── MOBILE RESPONSIVO ─────────────────────────────── */
+@media (max-width: 768px) {
+  .root{padding:10px}
+  .top{flex-direction:column;align-items:flex-start;gap:10px;padding:12px 14px}
+  .top-r{width:100%;justify-content:flex-start;flex-wrap:wrap;gap:7px}
+  .top h1{font-size:18px}
+  .top-logo{height:36px}
+  .tbtn{font-size:11px;padding:5px 9px}
+  .g4{grid-template-columns:1fr 1fr;gap:8px}
+  .kpis{grid-template-columns:1fr 1fr;gap:8px}
+  .kpi-val{font-size:16px}
+  .row2,.row3{grid-template-columns:1fr;gap:8px}
+  .charts-main,.charts-bottom,.charts-bottom{grid-template-columns:1fr;gap:8px}
+  .g3{grid-template-columns:1fr;gap:8px}
+  .g2{grid-template-columns:1fr;gap:8px}
+  .login-wrap{flex-direction:column}
+  .login-left{width:100%;min-width:unset;padding:28px 20px;box-shadow:none}
+  .login-right{display:none}
+  .login-box{max-width:100%}
+  .login-logo-wrap{padding:14px 18px;margin-bottom:20px}
+  .login-logo-wrap img{height:56px}
+  .sync-bar,.dbar{flex-direction:column;align-items:flex-start;gap:8px}
+  .dbar-r{flex-wrap:wrap;gap:7px;width:100%}
+  .ebtn{font-size:12px;padding:7px 12px}
+  .fil-row{flex-direction:column;gap:12px}
+  .fil-actions{flex-wrap:wrap;gap:8px}
+  .cc h3{font-size:12px}
+  .h220{height:180px}
+  .h190{height:160px}
+  .cw{overflow-x:auto}
+  .msecs{grid-template-columns:1fr}
+  .modal{padding:16px;margin:10px}
+  .macts{flex-direction:column}
+  .bsave,.bcanc{width:100%;text-align:center;justify-content:center}
+  .top-r .u-info{font-size:12px}
+  .fil-panel{margin-bottom:8px}
+  .u-info{display:none}
+}
+@media (max-width: 480px) {
+  .g4{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr}
+  .top h1{font-size:16px}
+  .kpi-val{font-size:15px}
+  .tbl td{font-size:13px;padding:7px 4px}
+  .td-r,.td-m{font-size:16px}
+  .td-l{font-size:13px}
+}
 </style>
 </head>
 <body>
