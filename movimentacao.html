@@ -421,7 +421,7 @@ function renderKPIs(d){
   document.getElementById('kpis').innerHTML=
     kpiSub('#e3f4fd','#2CA1D8','<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>','Faturamento',fRC(fat),'Média/mês: '+fRC(fatMed),[])+
     kpiRes(rb,rc,'<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>','Resultado',fRC(res),fP(resPct)+' do fat.',res>=0,[['Receitas',fRC(rec),''],['Despesas',fRC(desp),'neg']])+
-    kpi('#f3eafe','#7b2fbe','<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>','Contratos',fNC(qOp)+' op / '+fNC(qPr)+' pr',[['Vol. Op',fRC(vOp),''],['Vol. Pr',fRC(vPr),''],['Redesconto',fNC(qRd)+' / '+fRC(vRd),''],['Vol. Total',fRC(vOp+vPr+vRd),''])+
+    kpi('#f3eafe','#7b2fbe','<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>','Contratos',fNC(qOp)+' op / '+fNC(qPr)+' pr',[['Vol. Op',fRC(vOp),''],['Vol. Pr',fRC(vPr),''],['Redesconto',fNC(qRd)+' / '+fRC(vRd),''],['Vol. Total',fRC(vOp+vPr+vRd),'']])+
     kpi('#e8f5e9','#16a085','<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>','Taxa Média',fP((tOp+tPr)/2)+' geral',[['Op',fP(tOp),''],['Prorr',fP(tPr),''],['Prazo Op',fN(pOp)+' dias',''],['Prazo Pr',fN(pPr)+' dias','']])+
     kpi('#fce8e8','#a32d2d','<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>','Inadimplência',fP(inadTotal),'Média do período',[]);
 }
