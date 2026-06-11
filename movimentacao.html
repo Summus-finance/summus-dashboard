@@ -257,7 +257,7 @@ function initLogin(){
     if(!u||!p){err.textContent='Preencha usuário e senha.';err.style.display='block';return;}
     if(SCRIPT_URL.indexOf('COLE_AQUI')>=0){err.textContent='Apps Script não configurado.';err.style.display='block';return;}
     btn.disabled=true;spin.style.display='block';err.style.display='none';
-    fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'login',usuario:u,senha:p})})
+    fetch(SCRIPT_URL+'?action=login&usuario='+encodeURIComponent(u)+'&senha='+encodeURIComponent(p))
     .then(function(r){return r.json();})
     .then(function(res){btn.disabled=false;spin.style.display='none';
       if(!res||!res.ok){err.textContent=res&&res.error||'Usuário ou senha incorretos.';err.style.display='block';return;}
