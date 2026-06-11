@@ -285,6 +285,10 @@ function setSession(u){sessionStorage.setItem(SESSION_KEY,JSON.stringify(u));}
 function clearSession(){sessionStorage.removeItem(SESSION_KEY);}
 function logout(){clearSession();location.reload();}
 
+function apiGet(params,cb){
+  var qs=Object.keys(params).map(function(k){var v=params[k];if(typeof v==='object')v=JSON.stringify(v);return k+'='+encodeURIComponent(v);}).join('&');
+  fetch(SCRIPT_URL+'?'+qs).then(function(r){return r.json();}).then(function(d){cb(null,d);}).catch(function(e){cb(e,null);});
+}
 function apiPost(body,cb){
   var params=Object.keys(body).map(function(k){var v=body[k];if(typeof v==='object')v=JSON.stringify(v);return k+'='+encodeURIComponent(v);}).join('&');
   fetch(SCRIPT_URL+'?'+params).then(function(r){return r.json();}).then(function(d){cb(null,d);}).catch(function(e){cb(e,null);});
