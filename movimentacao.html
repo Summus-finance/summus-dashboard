@@ -379,10 +379,16 @@ function loadData(){
       document.querySelectorAll('#fil-anos .chip').forEach(function(c){if(c.textContent===curYear)c.classList.add('on');});
     }
 
-    document.getElementById('sync-ts').textContent='Sync: '+new Date().toLocaleTimeString('pt-BR');
+    document.getElementById('sync-ts').textContent='Sync: '+new Date().toLocaleTimeString('pt-BR')+' ('+allData.length+' reg)';
     updSum();
     // setTimeout breaks out of Promise chain so render errors don't trigger .catch
-    setTimeout(function(){ applyFil(); }, 0);
+    setTimeout(function(){
+      try {
+        applyFil();
+      } catch(renderErr) {
+        document.getElementById('kpis').innerHTML='<div class="empty" style="grid-column:1/-1;color:#a32d2d">Erro ao renderizar: '+renderErr.message+'</div>';
+      }
+    }, 0);
   })
   .catch(function(e){
     btn.innerHTML=sIco()+' Atualizar dados';btn.style.opacity='1';
@@ -399,8 +405,13 @@ function applyFil(){
     if(mKeys.length&&mKeys.indexOf(String(mes(r.mes)))<0)return false;
     return true;
   }).sort(function(a,b){return(n(a.ano)*100+mes(a.mes))-(n(b.ano)*100+mes(b.mes));});
-  renderKPIs(d);
-  renderCharts(d);
+  try { renderKPIs(d); } catch(e1) {
+    document.getElementById('kpis').innerHTML='<div class="empty" style="grid-column:1/-1;color:#a32d2d">KPI erro: '+e1.message+'</div>';
+    return;
+  }
+  try { renderCharts(d); } catch(e2) {
+    document.getElementById('charts').innerHTML='<div class="empty" style="color:#a32d2d">Charts erro: '+e2.message+'</div>';
+  }
 }
 
 /* ── KPIs ─────────────────────────────────────────── */
