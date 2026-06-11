@@ -381,11 +381,16 @@ function loadData(){
 
     document.getElementById('sync-ts').textContent='Sync: '+new Date().toLocaleTimeString('pt-BR');
     updSum();
-    applyFil();
+    try {
+      applyFil();
+    } catch(applyErr) {
+      document.getElementById('err-area').innerHTML='<div class="err-box"><strong>Erro ao renderizar:</strong> '+applyErr.message+'</div>';
+    }
   })
-  .catch(function(){
+  .catch(function(err){
     btn.innerHTML=sIco()+' Atualizar dados';btn.style.opacity='1';
-    document.getElementById('err-area').innerHTML='<div class="err-box"><strong>Erro de conexão.</strong> Verifique a URL do Apps Script.</div>';
+    var msg = err && err.message ? err.message : String(err);
+    document.getElementById('err-area').innerHTML='<div class="err-box"><strong>Erro:</strong> '+msg+'</div>';
     document.getElementById('kpis').innerHTML='';
   });
 }
