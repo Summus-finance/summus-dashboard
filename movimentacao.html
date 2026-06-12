@@ -68,9 +68,12 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 /* CHARTS */
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
-.cc{background:var(--cd);border-radius:11px;border:1px solid var(--bd);padding:13px 15px}
+.cc{background:var(--cd);border-radius:11px;border:1px solid var(--bd);padding:13px 15px;position:relative}
+.cc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cc-head h3{font-size:13px;font-weight:700;color:var(--t1)}
 .cc h3{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:1px}
-.cc .sub{font-size:11px;color:var(--t3);margin-bottom:10px}
+.cc .sub{font-size:11px;color:var(--t3);margin-bottom:6px}
+.cc .cw canvas + * {margin-top:0}
 .cw{position:relative}.h220{height:220px}.h190{height:190px}
 /* UTIL */
 .empty{text-align:center;padding:40px;color:var(--t3);font-size:14px;grid-column:1/-1}
@@ -359,15 +362,16 @@ function renderKPIs(d){
       '<div class="krows">'+rows([['Receitas',fRC(rec),''],['Despesas',fRC(dep),'neg']])+'</div></div>'+
 
     kbase('#f3eafe','#7b2fbe','<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>','Contratos')+
-      '<div class="kv">'+fN(qOp)+' op / '+fN(qPr)+' pr</div>'+
-      '<div class="krows">'+rows([['Vol.Op',fRC(vOp),''],['Vol.Pr',fRC(vPr),''],['Redesc.',fN(qRd)+' / '+fRC(vRd),''],['Total',fRC(vOp+vPr+vRd),'']])+'</div></div>'+
+      '<div class="kv">'+fN(qOp)+' op / '+fN(qPr)+' pr / '+fN(qRd)+' re</div>'+
+      '<div class="krows">'+rows([['Vol.Op',fRC(vOp),''],['Vol.Pr',fRC(vPr),''],['Redesc.',fRC(vRd),''],['Total',fRC(vOp+vPr+vRd),'']])+'</div></div>'+
 
     kbase('#e8f5e9','#16a085','<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>','Taxa Média')+
       '<div class="kv">'+fP((tOp+tPr)/2)+' geral</div>'+
-      '<div class="krows">'+rows([['Op',fP(tOp),''],['Prorr',fP(tPr),''],['Prazo Op',fN(pOp)+'d',''],['Prazo Pr',fN(pPr)+'d','']])+'</div></div>'+
+      '<div class="krows">'+rows([['Op',fP(tOp),''],['Prorr',fP(tPr),'']])+'</div></div>'+
 
-    kbase('#fce8e8','#a32d2d','<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>','Inadimplência')+
-      '<div class="kv">'+fP(inad)+'</div><div class="ksub">Média do período</div><div class="krows">'+rows([])+'</div></div>';
+    kbase('#fdf3e3','#ba7517','<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>','Prazo Médio')+
+      '<div class="kv">'+fN(Math.round((pOp+pPr)/2))+'d geral</div>'+
+      '<div class="krows">'+rows([['Op',fN(Math.round(pOp))+'d',''],['Prorr',fN(Math.round(pPr))+'d','']])+'</div></div>';
 }
 
 /* CHARTS */
@@ -391,6 +395,24 @@ var labelsPlugin={id:'lp',afterDraw:function(chart){
   });
 }};
 
+function mkHtmlLegend(chart,id){
+  var lid=id+'-leg';
+  var el=document.getElementById(lid);
+  if(!el)return;
+  var ds=chart.data.datasets;
+  var html='';
+  ds.forEach(function(d,i){
+    var meta=chart.getDatasetMeta(i);
+    if(meta.hidden)return;
+    var col=d.borderColor||d.backgroundColor;
+    // col already set
+    html+='<span style="display:inline-flex;align-items:center;gap:4px;margin-left:10px;font-size:11px;color:var(--t2)">'+
+      '<span style="width:10px;height:10px;border-radius:2px;background:'+(d.borderColor&&d.type==='line'?'transparent':d.backgroundColor)+';border:2px solid '+(d.borderColor||d.backgroundColor)+';display:inline-block;flex-shrink:0"></span>'+
+      d.label+'</span>';
+  });
+  el.innerHTML=html;
+}
+
 function mkC(id,type,lbls,ds,fmt){
   var gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
   var tc=dark?'#7a98b8':'#4a607a';
@@ -401,32 +423,38 @@ function mkC(id,type,lbls,ds,fmt){
       responsive:true,maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
       plugins:{
-        legend:{position:'top',align:'center',labels:{color:tc,font:{size:11},boxWidth:12,padding:8}},
+        legend:{display:false},
         tooltip:{callbacks:{label:function(c){return' '+fAuto(c.raw,fmt);}}}
       },
+      layout:{padding:{top:0}},
       scales:{
         x:{ticks:{color:tc,font:{size:10},maxRotation:45,autoSkip:false},grid:{color:gc}},
         y:{ticks:{color:tc,font:{size:10},callback:function(v){return fAuto(v,fmt);}},grid:{color:gc}}
       }
     },
-    plugins:[labelsPlugin]
+    plugins:[labelsPlugin,{id:'hl',afterRender:function(chart){mkHtmlLegend(chart,id);}}]
   });
   ch.__fmt=fmt;
   return ch;
 }
 
-function cc(id,t,s,h){return'<div class="cc"><h3>'+t+'</h3><p class="sub">'+s+'</p><div class="cw '+h+'"><canvas id="'+id+'"></canvas></div></div>';}
+function cc(id,t,s,h){
+  return '<div class="cc">'+
+    '<div class="cc-head"><h3>'+t+'</h3><div id="'+id+'-leg" style="display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end"></div></div>'+
+    '<div class="cw '+h+'"><canvas id="'+id+'"></canvas></div>'+
+  '</div>';
+}
 
 function renderCharts(d){
   killAll();
   if(!d.length){document.getElementById('cdiv').innerHTML='<div class="empty">Sem dados.</div>';return;}
   var L=d.map(lbl);
   document.getElementById('cdiv').innerHTML=
-    '<div class="r2">'+cc('cf','Faturamento Mensal','Evolução do faturamento','h220')+cc('cr','Resultado Líquido','Receitas · Despesas · Resultado','h220')+'</div>'+
-    '<div class="r2">'+cc('cvo','Volume Operado (R$)','Volume financeiro','h190')+cc('cvp','Volume Prorrogado (R$)','Volume financeiro','h190')+'</div>'+
-    '<div class="r3">'+cc('cq','Qtd Op · Prorr · Redesconto','Contratos por período','h190')+cc('ct','Taxa Média Ponderada (%)','Op · Prorr','h190')+cc('cpz','Prazo Médio (dias)','Op · Prorr','h190')+'</div>'+
-    '<div class="r3">'+cc('cvt','Volume Total (Op+Prorr+Redesc)','Soma consolidada','h190')+cc('cvrd','Volume Redesconto (R$)','','h190')+cc('ci','Inadimplência (%)','Evolução mensal','h190')+'</div>'+
-    '<div class="r2">'+cc('crd','Receitas vs Despesas','Proporção do período','h190')+cc('cvc','Volume Op vs Prorr vs Redesc','Comparativo','h190')+'</div>';
+    '<div class="r2">'+cc('cf','Faturamento Mensal','','h220')+cc('cr','Resultado Líquido','','h220')+'</div>'+
+    '<div class="r2">'+cc('cvo','Volume Operado (R$)','','h190')+cc('cvp','Volume Prorrogado (R$)','','h190')+'</div>'+
+    '<div class="r2">'+cc('cvrd','Volume Redesconto (R$)','','h190')+cc('cvt','Volume Total (Op+Prorr+Redesc)','','h190')+'</div>'+
+    '<div class="r2">'+cc('cq','Qtd Op · Prorr · Redesconto','','h190')+cc('ct','Taxa Média Ponderada (%)','','h190')+'</div>'+
+    '<div class="r2">'+cc('cpz','Prazo Médio (dias)','','h190')+cc('ci','Inadimplência (%)','','h190')+'</div>';
 
   CH.f=mkC('cf','bar',L,[{label:'Faturamento',data:d.map(function(r){return n(r.faturamento);}),backgroundColor:'rgba(44,161,216,.78)',borderRadius:4}],'R');
   CH.r=mkC('cr','bar',L,[
@@ -453,18 +481,7 @@ function renderCharts(d){
   CH.vrd=mkC('cvrd','bar',L,[{label:'Vol.Redesconto',data:d.map(function(r){return n(r.volume_redesconto);}),backgroundColor:'rgba(231,76,60,.75)',borderRadius:4}],'R');
   CH.i=mkC('ci','line',L,[{label:'Inadimplência',data:d.map(function(r){return n(r.inadimplencia);}),borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,.10)',pointRadius:4,tension:.3,fill:true,borderWidth:2.5}],'%');
 
-  var tR=sum(d,'total_receitas_recebido'),tD=sum(d,'total_despesas_paga');
-  var tc2=dark?'#7a98b8':'#4a607a';
-  CH.rd=new Chart(document.getElementById('crd'),{type:'doughnut',data:{
-    labels:['Receitas ('+fR(tR)+')','Despesas ('+fR(tD)+')'],
-    datasets:[{data:[tR,tD],backgroundColor:['rgba(29,158,117,.85)','rgba(163,45,45,.8)'],borderWidth:2,borderColor:dark?'#162235':'#fff'}]
-  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'center',labels:{color:tc2,font:{size:12},boxWidth:14,padding:10}},tooltip:{callbacks:{label:function(c){var t=tR+tD;return' '+fR(c.raw)+(t?' ('+Math.round(c.raw/t*100)+'%)':'');}}}}}});
 
-  CH.vc=mkC('cvc','bar',L,[
-    {label:'Vol.Operado',data:d.map(function(r){return n(r.volume_operado);}),backgroundColor:'rgba(44,161,216,.78)',borderRadius:4},
-    {label:'Vol.Prorrogado',data:d.map(function(r){return n(r.volume_prorrogado);}),backgroundColor:'rgba(123,47,190,.65)',borderRadius:4},
-    {label:'Vol.Redesconto',data:d.map(function(r){return n(r.volume_redesconto);}),backgroundColor:'rgba(231,76,60,.70)',borderRadius:4}
-  ],'R');
 }
 
 /* LOGIN */
