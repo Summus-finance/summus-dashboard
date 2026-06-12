@@ -243,7 +243,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
   <div class="dbar">
     <div class="dbar-l">Atualizado em: <span id="data-atual">—</span> &nbsp;|&nbsp; Sync: <span id="ultima-sync">—</span></div>
     <div class="dbar-r">
-      <button class="ebtn del" onclick="zerar()">🗑 Zerar mês</button>
       <button class="ebtn sec" id="sync-btn" onclick="syncProg()">
         <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
         Atualizar dados
@@ -259,7 +258,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
 <div class="mwrap" id="mwrap">
   <div class="modal">
     <div class="mh2">Lançar progresso do dia</div>
-    <div class="mdate"><label>Data:</label><input type="date" id="inp-data"></div>
+    <div class="mdate"><label>Data:</label><input type="text" id="inp-data" placeholder="dd/mm/aaaa hh:mm" maxlength="16" style="width:160px"></div>
     <div class="msecs" id="mfields"></div>
     <div class="macts"><button class="bcanc" onclick="closeModal()">Cancelar</button><button class="bsave" id="save-btn" onclick="saveData()">✓ Salvar no Sheets</button></div>
   </div>
@@ -357,15 +356,7 @@ function syncProg(){
     if(e||!res||!res.ok){alert('Erro: '+(e?e.message:(res&&res.error)||'desconhecido'));return;}
     Object.keys(res.data).forEach(function(k){if(k in PROG)PROG[k]=res.data[k];});
     document.getElementById('ultima-sync').textContent=new Date().toLocaleTimeString('pt-BR');
-    (function(){
-    var d=PROG.data;
-    if(d){
-      // If ISO date (yyyy-mm-dd), convert to dd/mm/yyyy
-      var m=d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if(m) d=m[3]+'/'+m[2]+'/'+m[1];
-    }
-    document.getElementById('data-atual').textContent=d||'—';
-  })();
+    document.getElementById('data-atual').textContent=PROG.data||'—';
     render();
   });
 }
@@ -455,7 +446,15 @@ var FIELDS=[
   {sec:'RH / Investidores',f:[{l:'Entrevistas realizadas',k:'entrevistas',ph:'ex: 1'},{l:'Novos investidores (R$)',k:'novos_inv',ph:'ex: 200000'}]}
 ];
 function openModal(){
-  document.getElementById('inp-data').value=PROG.data||new Date().toISOString().split('T')[0];
+  // Pre-fill date: use PROG.data if set, else current datetime in dd/mm/aaaa hh:mm
+  var nd=new Date();
+  var dd=String(nd.getDate()).padStart(2,'0');
+  var mm=String(nd.getMonth()+1).padStart(2,'0');
+  var yyyy=nd.getFullYear();
+  var hh=String(nd.getHours()).padStart(2,'0');
+  var mi=String(nd.getMinutes()).padStart(2,'0');
+  var nowStr=dd+'/'+mm+'/'+yyyy+' '+hh+':'+mi;
+  document.getElementById('inp-data').value=PROG.data||nowStr;
   var h='';FIELDS.forEach(function(s){h+='<div class="msec"><h3>'+s.sec+'</h3>';s.f.forEach(function(f){h+='<div class="mf"><label>'+f.l+'</label><input type="text" data-key="'+f.k+'" placeholder="'+f.ph+'" value="'+(PROG[f.k]||'')+'"></div>';});h+='</div>';});
   document.getElementById('mfields').innerHTML=h;
   document.getElementById('mwrap').classList.toggle('dk',dark);
@@ -463,15 +462,19 @@ function openModal(){
 }
 function saveData(){
   var btn=document.getElementById('save-btn');btn.textContent='Salvando...';btn.disabled=true;
-  var rawDate=document.getElementById('inp-data').value;
+  var rawDate=document.getElementById('inp-data').value.trim();
   if(rawDate){
+    // Accept dd/mm/aaaa hh:mm or dd/mm/aaaa — store as-is
+    PROG.data=rawDate;
+  } else {
+    // Auto-fill with current datetime
     var now=new Date();
+    var dd=String(now.getDate()).padStart(2,'0');
+    var mm=String(now.getMonth()+1).padStart(2,'0');
+    var yyyy=now.getFullYear();
     var hh=String(now.getHours()).padStart(2,'0');
     var mi=String(now.getMinutes()).padStart(2,'0');
-    var parts=rawDate.split('-');
-    PROG.data=parts[2]+'/'+parts[1]+'/'+parts[0]+' '+hh+':'+mi;
-  } else {
-    PROG.data='';
+    PROG.data=dd+'/'+mm+'/'+yyyy+' '+hh+':'+mi;
   }
   document.querySelectorAll('#mfields input[data-key]').forEach(function(i){var v=i.value.trim();PROG[i.dataset.key]=v?parseFloat(v.replace(',','.'))||v:0;});
   apiPost({action:'saveProg',prog:PROG},function(e,res){

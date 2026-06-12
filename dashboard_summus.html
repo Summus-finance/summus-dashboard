@@ -233,10 +233,16 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
   </div>
   <div class="sync-bar">
     <div class="sync-info">Última atualização: <span id="ultima-sync">—</span></div>
-    <button class="sync-btn" id="sync-btn" onclick="syncDash()">
-      <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
-      Atualizar dados
-    </button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="sync-btn" id="sync-btn" onclick="syncDash()">
+        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
+        Atualizar dados
+      </button>
+      <a href="acompanhamento_metas.html" class="sync-btn" style="text-decoration:none;display:flex;align-items:center;gap:6px;background:#1d9e75">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Lançar valores
+      </a>
+    </div>
   </div>
   <div id="dash"></div>
 </div>
