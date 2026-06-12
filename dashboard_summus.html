@@ -500,6 +500,22 @@ function loadDMData(d){if(!d)return;
   DM_DATA.mkt_qua=gn(d,'mkt.qua');DM_DATA.mkt_sex=gn(d,'mkt.sex');
 }
 function openDM(){
+  // Se dados ainda não carregaram, busca primeiro
+  if(Object.keys(DM_DATA).length===0){
+    var btn=document.getElementById('dm-save');
+    document.getElementById('dm-fields').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#8fa5bb">Carregando valores...</div>';
+    document.getElementById('dm-wrap').style.display='block';
+    apiGet({action:'getDashboard'},function(e,res){
+      if(!e&&res&&res.ok){
+        try{loadDMData(res.data);}catch(err){}
+      }
+      buildDMFields();
+    });
+    return;
+  }
+  buildDMFields();
+}
+function buildDMFields(){
   var h='';
   DM_DEF.forEach(function(sec){
     h+='<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:#2CA1D8;text-transform:uppercase;letter-spacing:.5px;margin-top:12px;padding-top:10px;border-top:1px solid #eef3f8">'+sec.sec+'</div>';
