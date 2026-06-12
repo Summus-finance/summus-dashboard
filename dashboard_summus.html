@@ -500,17 +500,9 @@ function loadDMData(d){if(!d)return;
   DM_DATA.mkt_qua=gn(d,'mkt.qua');DM_DATA.mkt_sex=gn(d,'mkt.sex');
 }
 function openDM(){
-  // Sempre busca dados frescos ao abrir o modal
-  var wrap = document.getElementById('dm-wrap');
-  var fields = document.getElementById('dm-fields');
-  fields.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#8fa5bb;font-size:14px">⏳ Carregando valores da planilha...</div>';
-  wrap.style.display='block';
-  apiGet({action:'getDashboard'},function(e,res){
-    if(!e&&res&&res.ok){
-      try{loadDMData(res.data);}catch(err){console.warn('loadDMData:',err);}
-    }
-    buildDMFields();
-  });
+  try { loadDMData(D); } catch(e) {}
+  buildDMFields();
+  document.getElementById('dm-wrap').style.display='block';
 }
 function buildDMFields(){
   var h='';
@@ -528,7 +520,11 @@ function buildDMFields(){
   document.getElementById('dm-fields').innerHTML=h;
   document.getElementById('dm-wrap').style.display='block';
 }
-function closeDM(){document.getElementById('dm-wrap').style.display='none';}
+function closeDM(){
+  document.getElementById('dm-wrap').style.display='none';
+  document.getElementById('dm-fields').innerHTML='';
+}
+
 function saveDM(){
   var btn=document.getElementById('dm-save');
   btn.textContent='Salvando...';btn.disabled=true;
