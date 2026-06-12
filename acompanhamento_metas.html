@@ -356,7 +356,15 @@ function syncProg(){
     if(e||!res||!res.ok){alert('Erro: '+(e?e.message:(res&&res.error)||'desconhecido'));return;}
     Object.keys(res.data).forEach(function(k){if(k in PROG)PROG[k]=res.data[k];});
     document.getElementById('ultima-sync').textContent=new Date().toLocaleTimeString('pt-BR');
-    document.getElementById('data-atual').textContent=PROG.data||'—';
+    (function(){
+  var raw = PROG.data || '';
+  if(!raw){ document.getElementById('data-atual').textContent='—'; return; }
+  // Convert ISO: 2026-06-12T01:00:00.000Z -> 12/06/2026 01:00
+  var iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if(iso){ document.getElementById('data-atual').textContent=iso[3]+'/'+iso[2]+'/'+iso[1]+' '+iso[4]+':'+iso[5]; return; }
+  // Already in dd/mm/yyyy format - show as-is
+  document.getElementById('data-atual').textContent=raw;
+})();
     render();
   });
 }
@@ -480,7 +488,11 @@ function saveData(){
   apiPost({action:'saveProg',prog:PROG},function(e,res){
     btn.textContent='✓ Salvar no Sheets';btn.disabled=false;
     if(e||!res||!res.ok){alert('Erro ao salvar: '+(e?e.message:(res&&res.error)||'desconhecido'));return;}
-    document.getElementById('data-atual').textContent=PROG.data;
+    (function(){
+    var raw=PROG.data||'';
+    var iso=raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    document.getElementById('data-atual').textContent=iso?iso[3]+'/'+iso[2]+'/'+iso[1]+' '+iso[4]+':'+iso[5]:raw||'—';
+  })();
     closeModal();render();
   });
 }
