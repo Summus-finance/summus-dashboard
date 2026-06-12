@@ -504,9 +504,18 @@ function loadDMData(d){if(!d)return;
   DM_DATA.mkt_qua=gn(d,'mkt.qua');DM_DATA.mkt_sex=gn(d,'mkt.sex');
 }
 function openDM(){
+  // Pausa a rotação automática enquanto o modal está aberto
+  rotPaused = true;
+  clearTimeout(rotTimer);
+  document.getElementById('rot-btn').textContent = '▶';
+  document.getElementById('rot-btn').style.background = '#8fa5bb';
+  // Garante que o modal aparece
+  var wrap = document.getElementById('dm-wrap');
+  if(!wrap){ alert('Erro: modal não encontrado'); return; }
   try { loadDMData(D); } catch(e) {}
   buildDMFields();
-  document.getElementById('dm-wrap').style.display='block';
+  wrap.style.display = 'block';
+  wrap.style.zIndex = '99999';
 }
 function buildDMFields(){
   var h='';
@@ -527,6 +536,12 @@ function buildDMFields(){
 function closeDM(){
   document.getElementById('dm-wrap').style.display='none';
   document.getElementById('dm-fields').innerHTML='';
+  // Retoma a rotação automática
+  rotPaused = false;
+  rotStart = Date.now();
+  document.getElementById('rot-btn').textContent = '⏸';
+  document.getElementById('rot-btn').style.background = '#2CA1D8';
+  startRot();
 }
 
 function saveDM(){
