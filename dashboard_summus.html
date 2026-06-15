@@ -269,22 +269,61 @@ function setSession(u){sessionStorage.setItem(SESSION_KEY,JSON.stringify(u));}
 function clearSession(){sessionStorage.removeItem(SESSION_KEY);}
 function logout(){clearSession();location.reload();}
 
-function apiPost(body,cb){
-  var params=Object.keys(body).map(function(k){var v=body[k];if(typeof v==='object')v=JSON.stringify(v);return k+'='+encodeURIComponent(v);}).join('&');
-  var done=false;
-  fetch(SCRIPT_URL+'?'+params,{redirect:'follow',mode:'cors'})
-  .then(function(r){return r.json();})
-  .then(function(d){if(!done){done=true;cb(null,d);}})
-  .catch(function(e){if(!done){done=true;cb(e,null);}});
+// API: tenta fetch com no-cors + fallback JSONP
+// Apps Script requer no-cors ou JSONP para funcionar de dominios externos
+var _cbIdx = 0;
+
+function jsonpCall(params, cb) {
+  var cbName = '__gscb' + (++_cbIdx);
+  var timer;
+  window[cbName] = function(data) {
+    clearTimeout(timer);
+    try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+    var s = document.getElementById(cbName + '_s');
+    if (s && s.parentNode) s.parentNode.removeChild(s);
+    cb(null, data);
+  };
+  timer = setTimeout(function() {
+    try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+    var s = document.getElementById(cbName + '_s');
+    if (s && s.parentNode) s.parentNode.removeChild(s);
+    cb(new Error('timeout'), null);
+  }, 15000);
+  var qs = Object.keys(params).map(function(k) {
+    var v = params[k];
+    if (typeof v === 'object') v = JSON.stringify(v);
+    return k + '=' + encodeURIComponent(v);
+  }).join('&');
+  var script = document.createElement('script');
+  script.id = cbName + '_s';
+  script.src = SCRIPT_URL + '?callback=' + cbName + '&' + qs;
+  document.head.appendChild(script);
+  script.onerror = function() {
+    clearTimeout(timer);
+    try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+    if (script.parentNode) script.parentNode.removeChild(script);
+    cb(new Error('script_error'), null);
+  };
 }
-function apiGet(params,cb){
-  var url=SCRIPT_URL+'?'+Object.keys(params).map(function(k){return k+'='+encodeURIComponent(params[k]);}).join('&');
-  var done=false;
-  fetch(url,{redirect:'follow',mode:'cors'})
-  .then(function(r){return r.json();})
-  .then(function(d){if(!done){done=true;cb(null,d);}})
-  .catch(function(e){if(!done){done=true;cb(e,null);}});
+
+function fetchCall(params, cb) {
+  var qs = Object.keys(params).map(function(k) {
+    var v = params[k];
+    if (typeof v === 'object') v = JSON.stringify(v);
+    return k + '=' + encodeURIComponent(v);
+  }).join('&');
+  var url = SCRIPT_URL + '?' + qs;
+  fetch(url, {method:'GET', redirect:'follow'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) { cb(null, d); })
+    .catch(function(e) {
+      // fetch falhou (CORS), tenta JSONP
+      jsonpCall(params, cb);
+    });
 }
+
+function apiPost(body, cb) { fetchCall(body, cb); }
+function apiGet(params, cb) { fetchCall(params, cb); }
 
 function initLogin(){
   if(SCRIPT_URL.indexOf('COLE_AQUI')>=0){document.getElementById('cfg-banner').style.display='block';}
@@ -299,7 +338,14 @@ function initLogin(){
     btn.disabled=true;spin.style.display='block';err.style.display='none';
     apiPost({action:'login',usuario:u,senha:p},function(e,res){
       btn.disabled=false;spin.style.display='none';
-      if(e||!res){err.textContent='Erro de conexão. Verifique se o Apps Script está publicado e a URL está correta.';err.style.display='block';return;}
+      if(e){
+        err.textContent='Erro de conexão: '+e.message+'. Verifique se o Apps Script está publicado como "Qualquer pessoa" e sem autenticação.';
+        err.style.display='block';
+        console.error('Login error:',e);
+        return;
+      }
+      if(!res){err.textContent='Sem resposta do servidor. Verifique se o Apps Script está publicado corretamente.';err.style.display='block';return;}
+      console.log('Login response:',JSON.stringify(res));
       if(!res.ok){err.textContent=res.error||'Usuário ou senha incorretos.';err.style.display='block';return;}
       setSession({usuario:res.usuario});showApp();
     });
