@@ -428,146 +428,149 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
 })();
 
 
-/* ── MODAL DASHBOARD ─────────────────────────────── */
-var DM_DEF=[
-  {sec:'Geral',items:[
-    {l:'Mês Realizado (ex: MAIO)',  kr:'mr', km:'',   t:'txt'},
-    {l:'Mês Meta (ex: JUNHO)',      kr:'',   km:'mm', t:'txt'}
-  ]},
-  {sec:'Comercial',items:[
-    {l:'Cedentes cadastrados — Realizado',kr:'comercial_rc',km:'',t:'num'},
-    {l:'Cedentes cadastrados — Meta',kr:'',km:'comercial_mc',t:'num'},
-    {l:'Novos cedentes — Realizado',kr:'comercial_rn',km:'',t:'num'},
-    {l:'Novos cedentes — Meta',kr:'',km:'comercial_mn',t:'num'},
-    {l:'Operaram no mês — Realizado',kr:'comercial_ro',km:'',t:'num'},
-    {l:'Operaram no mês — Meta',kr:'',km:'comercial_mo',t:'num'}
-  ]},
-  {sec:'Operação',items:[
-    {l:'Operações — Realizado',kr:'operacao_ro',km:'',t:'num'},
-    {l:'Operações — Meta',kr:'',km:'operacao_mo',t:'num'},
-    {l:'Prorrogações — Realizado',kr:'operacao_rp',km:'',t:'num'},
-    {l:'Prorrogações — Meta',kr:'',km:'operacao_mp',t:'num'}
-  ]},
-  {sec:'Faturamento',items:[
-    {l:'Faturamento — Realizado',kr:'fat_rf',km:'',t:'moeda'},
-    {l:'Faturamento — Meta',kr:'',km:'fat_mf',t:'moeda'},
-    {l:'Taxa — Realizado',kr:'fat_rt',km:'',t:'pct'},
-    {l:'Taxa — Meta',kr:'',km:'fat_mt',t:'pct'},
-    {l:'Lucro — Realizado',kr:'fat_rl',km:'',t:'moeda'},
-    {l:'Lucro — Meta',kr:'',km:'fat_ml',t:'moeda'},
-    {l:'Despesa — Realizado',kr:'fat_rd',km:'',t:'moeda'},
-    {l:'Despesa — Meta',kr:'',km:'fat_md',t:'moeda'}
-  ]},
-  {sec:'Assets',items:[
-    {l:'AUM',kr:'ast_aum',km:'',t:'moeda'},
-    {l:'Investidores',kr:'ast_inv',km:'',t:'moeda'},
-    {l:'Summus',kr:'ast_sum',km:'',t:'moeda'},
-    {l:'Audax',kr:'ast_aud',km:'',t:'moeda'},
-    {l:'Novos Investidores — Realizado',kr:'ast_rn',km:'',t:'moeda'},
-    {l:'Novos Investidores — Meta',kr:'',km:'ast_mn',t:'moeda'}
-  ]},
-  {sec:'PDD',items:[
-    {l:'PDD Histórico (%)',kr:'pdd_his',km:'',t:'pct'},
-    {l:'PDD Atual (%)',kr:'pdd_atu',km:'',t:'pct'},
-    {l:'PDD Limite (%)',kr:'pdd_lim',km:'',t:'pct'}
-  ]},
-  {sec:'RH',items:[
-    {l:'Entrevistas — Realizado',kr:'rh_re',km:'',t:'num'},
-    {l:'Entrevistas — Meta',kr:'',km:'rh_me',t:'num'}
-  ]},
-  {sec:'Cobrança / MKT',items:[
-    {l:'Faixa 1 (1-30 dias)',kr:'cob_f1',km:'',t:'txt'},
-    {l:'Faixa 2 (31-60 dias)',kr:'cob_f2',km:'',t:'txt'},
-    {l:'Faixa 3 (60+ dias)',kr:'cob_f3',km:'',t:'txt'},
-    {l:'Budget ADS',kr:'mkt_ads',km:'',t:'moeda'},
-    {l:'Conteúdo Segunda',kr:'mkt_seg',km:'',t:'txt'},
-    {l:'Conteúdo Quarta',kr:'mkt_qua',km:'',t:'txt'},
-    {l:'Conteúdo Sexta',kr:'mkt_sex',km:'',t:'txt'}
-  ]}
-];
-var DM_DATA={};
-function gn(o,p){var r=o;(p.split('.')).forEach(function(k){r=r?r[k]:''});return r!==undefined?r:'';}
-function loadDMData(d){if(!d)return;
-  DM_DATA.mr=gn(d,'mr');DM_DATA.mm=gn(d,'mm');
-  DM_DATA.comercial_rc=gn(d,'comercial.rc');DM_DATA.comercial_mc=gn(d,'comercial.mc');
-  DM_DATA.comercial_rn=gn(d,'comercial.rn');DM_DATA.comercial_mn=gn(d,'comercial.mn');
-  DM_DATA.comercial_ro=gn(d,'comercial.ro');DM_DATA.comercial_mo=gn(d,'comercial.mo');
-  DM_DATA.operacao_ro=gn(d,'operacao.ro');DM_DATA.operacao_mo=gn(d,'operacao.mo');
-  DM_DATA.operacao_rp=gn(d,'operacao.rp');DM_DATA.operacao_mp=gn(d,'operacao.mp');
-  DM_DATA.fat_rf=gn(d,'fat.rf');DM_DATA.fat_mf=gn(d,'fat.mf');
-  DM_DATA.fat_rt=gn(d,'fat.rt');DM_DATA.fat_mt=gn(d,'fat.mt');
-  DM_DATA.fat_rl=gn(d,'fat.rl');DM_DATA.fat_ml=gn(d,'fat.ml');
-  DM_DATA.fat_rd=gn(d,'fat.rd');DM_DATA.fat_md=gn(d,'fat.md');
-  DM_DATA.ast_aum=gn(d,'ast.aum');DM_DATA.ast_inv=gn(d,'ast.inv');
-  DM_DATA.ast_sum=gn(d,'ast.sum');DM_DATA.ast_aud=gn(d,'ast.aud');
-  DM_DATA.ast_rn=gn(d,'ast.rn');DM_DATA.ast_mn=gn(d,'ast.mn');
-  DM_DATA.pdd_his=gn(d,'pdd.his');DM_DATA.pdd_atu=gn(d,'pdd.atu');DM_DATA.pdd_lim=gn(d,'pdd.lim');
-  DM_DATA.rh_re=gn(d,'rh.re');DM_DATA.rh_me=gn(d,'rh.me');
-  DM_DATA.cob_f1=gn(d,'cob.f1');DM_DATA.cob_f2=gn(d,'cob.f2');DM_DATA.cob_f3=gn(d,'cob.f3');
-  DM_DATA.mkt_ads=gn(d,'mkt.ads');DM_DATA.mkt_seg=gn(d,'mkt.seg');
-  DM_DATA.mkt_qua=gn(d,'mkt.qua');DM_DATA.mkt_sex=gn(d,'mkt.sex');
-}
-function openDM(){
-  // Pausa rotação
-  rotPaused=true; clearTimeout(rotTimer);
-  document.getElementById('rot-btn').textContent='▶';
-  document.getElementById('rot-btn').style.background='#8fa5bb';
-  // Carrega dados do D
-  try{loadDMData(D);}catch(e){}
-  // Cria modal dinamicamente no body
-  var existing = document.getElementById('dm-wrap');
-  if(existing) existing.parentNode.removeChild(existing);
-  var wrap = document.createElement('div');
-  wrap.id = 'dm-wrap';
-  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;overflow-y:auto;padding:20px;display:flex;align-items:flex-start;justify-content:center';
-  // Constrói campos
-  var fields = '';
-  DM_DEF.forEach(function(sec){
-    fields += '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:#2CA1D8;text-transform:uppercase;letter-spacing:.5px;margin-top:12px;padding-top:10px;border-top:1px solid #eef3f8">'+sec.sec+'</div>';
-    sec.items.forEach(function(item){
-      var key=item.kr||item.km;
-      var val=(DM_DATA[key]!==undefined&&DM_DATA[key]!==null&&DM_DATA[key]!=='')?String(DM_DATA[key]):'';
-      var ph=item.t==='moeda'?'ex: 50000':item.t==='pct'?'ex: 3.71':item.t==='num'?'ex: 40':'texto';
-      fields+='<div><label style="font-size:11px;color:#4a607a;font-weight:600;display:block;margin-bottom:4px">'+item.l+'</label>'+
-        '<input type="text" data-key="'+key+'" data-kr="'+item.kr+'" data-km="'+item.km+'" value="'+val+'" placeholder="'+ph+'" '+
-        'style="width:100%;border:1.5px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;background:#f4f7fb;color:#16263a"></div>';
-    });
-  });
-  wrap.innerHTML = '<div style="background:#fff;border-radius:14px;padding:28px 32px;max-width:700px;width:100%;margin:auto;box-shadow:0 8px 40px rgba(0,0,0,.25)">'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">'
-    +'<h2 style="font-size:18px;font-weight:700;color:#16263a">Lançar / Atualizar valores</h2>'
-    +'<button onclick="closeDM()" style="background:transparent;border:none;font-size:26px;cursor:pointer;color:#8fa5bb;line-height:1">×</button>'
-    +'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px" id="dm-fields">'+fields+'</div>'
-    +'<div style="display:flex;gap:10px;margin-top:24px;justify-content:flex-end">'
-    +'<button onclick="closeDM()" style="background:transparent;border:1.5px solid #cdd8e5;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;color:#4a607a;font-family:inherit">Cancelar</button>'
-    +'<button id="dm-save" onclick="saveDM()" style="background:#2CA1D8;color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">✓ Salvar no Sheets</button>'
-    +'</div></div>';
-  document.body.appendChild(wrap);
+/* ── MODAL LANÇAR VALORES ── */
+var DM_DATA = {};
+
+function loadDMData(d) {
+  if (!d) return;
+  var map = {
+    mr:'mr', mm:'mm',
+    comercial_rc:'comercial.rc', comercial_mc:'comercial.mc',
+    comercial_rn:'comercial.rn', comercial_mn:'comercial.mn',
+    comercial_ro:'comercial.ro', comercial_mo:'comercial.mo',
+    operacao_ro:'operacao.ro',   operacao_mo:'operacao.mo',
+    operacao_rp:'operacao.rp',   operacao_mp:'operacao.mp',
+    fat_rf:'fat.rf', fat_mf:'fat.mf', fat_rt:'fat.rt', fat_mt:'fat.mt',
+    fat_rl:'fat.rl', fat_ml:'fat.ml', fat_rd:'fat.rd', fat_md:'fat.md',
+    ast_aum:'ast.aum', ast_inv:'ast.inv', ast_sum:'ast.sum', ast_aud:'ast.aud',
+    ast_rn:'ast.rn', ast_mn:'ast.mn',
+    pdd_his:'pdd.his', pdd_atu:'pdd.atu', pdd_lim:'pdd.lim',
+    rh_re:'rh.re', rh_me:'rh.me',
+    cob_f1:'cob.f1', cob_f2:'cob.f2', cob_f3:'cob.f3',
+    mkt_ads:'mkt.ads', mkt_seg:'mkt.seg', mkt_qua:'mkt.qua', mkt_sex:'mkt.sex'
+  };
+  for (var k in map) {
+    var path = map[k].split('.');
+    var val = d;
+    for (var i = 0; i < path.length; i++) { val = val ? val[path[i]] : ''; }
+    DM_DATA[k] = (val !== undefined && val !== null) ? val : '';
+  }
 }
 
-function closeDM(){
-  var wrap = document.getElementById('dm-wrap');
-  if(wrap) wrap.parentNode.removeChild(wrap);
-  // Retoma rotação
-  rotPaused=false; rotStart=Date.now();
-  document.getElementById('rot-btn').textContent='⏸';
-  document.getElementById('rot-btn').style.background='#2CA1D8';
+var DM_FIELDS = [
+  {s:'Geral', f:[
+    {l:'Mes Realizado', k:'mr'}, {l:'Mes Meta', k:'mm'}
+  ]},
+  {s:'Comercial', f:[
+    {l:'Cedentes cadastrados - Realizado', k:'comercial_rc'},
+    {l:'Cedentes cadastrados - Meta', k:'comercial_mc'},
+    {l:'Novos cedentes - Realizado', k:'comercial_rn'},
+    {l:'Novos cedentes - Meta', k:'comercial_mn'},
+    {l:'Operaram no mes - Realizado', k:'comercial_ro'},
+    {l:'Operaram no mes - Meta', k:'comercial_mo'}
+  ]},
+  {s:'Operacao', f:[
+    {l:'Operacoes - Realizado', k:'operacao_ro'}, {l:'Operacoes - Meta', k:'operacao_mo'},
+    {l:'Prorrogacoes - Realizado', k:'operacao_rp'}, {l:'Prorrogacoes - Meta', k:'operacao_mp'}
+  ]},
+  {s:'Faturamento', f:[
+    {l:'Faturamento - Realizado', k:'fat_rf'}, {l:'Faturamento - Meta', k:'fat_mf'},
+    {l:'Taxa - Realizado', k:'fat_rt'}, {l:'Taxa - Meta', k:'fat_mt'},
+    {l:'Lucro - Realizado', k:'fat_rl'}, {l:'Lucro - Meta', k:'fat_ml'},
+    {l:'Despesa - Realizado', k:'fat_rd'}, {l:'Despesa - Meta', k:'fat_md'}
+  ]},
+  {s:'Assets', f:[
+    {l:'AUM', k:'ast_aum'}, {l:'Investidores', k:'ast_inv'},
+    {l:'Summus', k:'ast_sum'}, {l:'Audax', k:'ast_aud'},
+    {l:'Novos Investidores - Realizado', k:'ast_rn'},
+    {l:'Novos Investidores - Meta', k:'ast_mn'}
+  ]},
+  {s:'PDD', f:[
+    {l:'PDD Historico (%)', k:'pdd_his'},
+    {l:'PDD Atual (%)', k:'pdd_atu'},
+    {l:'PDD Limite (%)', k:'pdd_lim'}
+  ]},
+  {s:'RH', f:[
+    {l:'Entrevistas - Realizado', k:'rh_re'}, {l:'Entrevistas - Meta', k:'rh_me'}
+  ]},
+  {s:'MKT', f:[
+    {l:'Budget ADS', k:'mkt_ads'}, {l:'Conteudo Segunda', k:'mkt_seg'},
+    {l:'Conteudo Quarta', k:'mkt_qua'}, {l:'Conteudo Sexta', k:'mkt_sex'}
+  ]}
+];
+
+function openDM() {
+  rotPaused = true;
+  clearTimeout(rotTimer);
+
+  try { loadDMData(D); } catch(e) {}
+
+  var overlay = document.createElement('div');
+  overlay.id = 'dm-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:30px;overflow-y:auto';
+
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:12px;padding:28px;width:100%;max-width:680px;box-shadow:0 10px 40px rgba(0,0,0,.3)';
+
+  var html2 = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">';
+  html2 += '<h2 style="font-size:17px;font-weight:700;color:#16263a;margin:0">Lancar / Atualizar valores</h2>';
+  html2 += '<button onclick="closeDM()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#8fa5bb;padding:0;line-height:1">&times;</button>';
+  html2 += '</div>';
+  html2 += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px">';
+
+  DM_FIELDS.forEach(function(sec) {
+    html2 += '<div style="grid-column:1/-1;font-size:10px;font-weight:700;color:#2CA1D8;text-transform:uppercase;letter-spacing:.6px;margin-top:10px;padding-top:8px;border-top:1px solid #eef3f8">' + sec.s + '</div>';
+    sec.f.forEach(function(field) {
+      var val = DM_DATA[field.k] !== undefined ? String(DM_DATA[field.k]) : '';
+      html2 += '<div>';
+      html2 += '<label style="font-size:11px;color:#4a607a;font-weight:600;display:block;margin-bottom:3px">' + field.l + '</label>';
+      html2 += '<input type="text" data-key="' + field.k + '" value="' + val + '" ';
+      html2 += 'style="width:100%;border:1.5px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;box-sizing:border-box">';
+      html2 += '</div>';
+    });
+  });
+
+  html2 += '</div>';
+  html2 += '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">';
+  html2 += '<button onclick="closeDM()" style="background:none;border:1.5px solid #cdd8e5;border-radius:8px;padding:8px 18px;font-size:13px;cursor:pointer;font-family:inherit;color:#4a607a">Cancelar</button>';
+  html2 += '<button id="dm-save-btn" onclick="saveDM()" style="background:#2CA1D8;color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Salvar no Sheets</button>';
+  html2 += '</div>';
+
+  box.innerHTML = html2;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function closeDM() {
+  var el = document.getElementById('dm-overlay');
+  if (el) el.parentNode.removeChild(el);
+  rotPaused = false;
+  rotStart = Date.now();
   startRot();
 }
 
-function saveDM(){
-  var btn=document.getElementById('dm-save');
-  btn.textContent='Salvando...'; btn.disabled=true;
-  var payload={};
-  document.querySelectorAll('#dm-fields input[data-key]').forEach(function(i){
-    var v=i.value.trim(); if(v!=='') payload[i.dataset.key]=v;
+function saveDM() {
+  var btn = document.getElementById('dm-save-btn');
+  if (!btn) return;
+  btn.textContent = 'Salvando...';
+  btn.disabled = true;
+
+  var payload = {};
+  var inputs = document.querySelectorAll('#dm-overlay input[data-key]');
+  inputs.forEach(function(inp) {
+    var v = inp.value.trim();
+    if (v !== '') payload[inp.dataset.key] = v;
   });
-  apiPost({action:'saveDashboard',data:JSON.stringify(payload)},function(e,res){
-    btn.textContent='✓ Salvar no Sheets'; btn.disabled=false;
-    if(e||!res||!res.ok){alert('Erro: '+(e?e.message:(res&&res.error)||'desconhecido'));return;}
-    closeDM(); syncDash();
+
+  apiPost({action:'saveDashboard', data:JSON.stringify(payload)}, function(e, res) {
+    btn.textContent = 'Salvar no Sheets';
+    btn.disabled = false;
+    if (e || !res || !res.ok) {
+      alert('Erro ao salvar: ' + (e ? e.message : (res && res.error) || 'desconhecido'));
+      return;
+    }
+    closeDM();
+    syncDash();
   });
 }
-
 >
