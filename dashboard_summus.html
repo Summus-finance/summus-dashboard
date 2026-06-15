@@ -192,7 +192,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
 <body>
 
 <!-- LOGIN -->
-<div id="login-page" style="display:none">
+<div id="login-page" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9000;background:#fff">
   <div class="login-wrap">
     <div class="login-left">
       <div class="login-box">
@@ -222,7 +222,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
 </div>
 
 <!-- APP -->
-<div class="root" id="root" style="display:none">
+<div class="root" id="root">
   <div class="top">
     <div><h1>Dashboard Gerencial – Summus</h1><p>Visão executiva do desempenho do negócio</p></div>
     <div class="top-r">
@@ -413,11 +413,6 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
 
 // Init
 (function(){
-  // Se aberto localmente (file://), mostra o app direto sem login
-  if(window.location.protocol === 'file:'){
-    showApp();
-    return;
-  }
   var s=getSession();
   if(s){
     showApp();
