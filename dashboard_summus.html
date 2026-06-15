@@ -192,7 +192,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
 <body>
 
 <!-- LOGIN -->
-<div id="login-page" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9000;background:#fff">
+<div id="login-page" style="display:flex;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9000;background:#fff">
   <div class="login-wrap">
     <div class="login-left">
       <div class="login-box">
@@ -250,7 +250,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
   <div id="dash"></div>
 </div>
 <button id="rot-btn" onclick="toggleRot()" style="display:none">⏸</button>
-<div style="display:none;position:fixed;bottom:52px;left:14px;font-size:9px;color:#8fa5bb;z-index:9997;background:var(--cd,#fff);padding:2px 6px;border-radius:4px;border:1px solid var(--bd,#cdd8e5)" id="version-badge">v2.1</div>
+<div id="version-lbl" style="display:none;position:fixed;bottom:52px;left:14px;font-size:9px;color:#8fa5bb;z-index:9997;background:var(--cd,#fff);padding:2px 6px;border-radius:4px;border:1px solid var(--bd,#cdd8e5)">v2.1</div>
 <div id="rot-bar"></div>
 
 <script>
@@ -334,8 +334,7 @@ function showApp(){
   document.getElementById('login-page').style.display='none';
   document.getElementById('root').style.display='block';
   document.getElementById('rot-btn').style.display='';
-  var badge=document.getElementById('version-badge');
-  if(badge)badge.style.display='';
+  var vl=document.getElementById('version-lbl'); if(vl)vl.style.display='';
   document.getElementById('u-nome').textContent=s?s.usuario:'';
   try{if(localStorage.getItem('summus_dark')==='1'){dark=true;document.getElementById('root').classList.add('dk');document.getElementById('ti').innerHTML=IC.sun;document.getElementById('tlbl').textContent='Tema claro';}}catch(e){}
   syncDash();
@@ -420,9 +419,7 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
   if(s){
     showApp();
   } else {
-    // Garante que o login apareça e o app fique oculto
-    document.getElementById('login-page').style.display='flex';
-    document.getElementById('root').style.display='none';
+    // login-page já está display:flex por padrão no HTML
     initLogin();
   }
 })();

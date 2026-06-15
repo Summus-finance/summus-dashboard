@@ -3,21 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Summus – Redirecionando...</title>
+<title>Summus</title>
 </head>
 <body>
 <script>
-var SESSION_KEY = "summus_v2";
-try {
-  var s = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
-  if (s && s.usuario) {
-    window.location.replace('dashboard_summus.html');
-  } else {
-    window.location.replace('dashboard_summus.html#login');
-  }
-} catch(e) {
-  window.location.replace('dashboard_summus.html#login');
-}
+// Sempre vai para o dashboard — ele mesmo decide mostrar login ou app
+window.location.replace('dashboard_summus.html');
 </script>
 </body>
 </html>
