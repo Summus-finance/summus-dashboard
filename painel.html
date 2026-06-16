@@ -56,6 +56,15 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100
   .header-title p{display:none}
 }
 </style>
+<script>
+// Verificação IMEDIATA — antes de qualquer renderização
+(function(){
+  try{
+    var s = JSON.parse(localStorage.getItem("summus_auth")||"null");
+    if(!s||!s.usuario) window.location.replace("login.html");
+  }catch(e){ window.location.replace("login.html"); }
+})();
+</script>
 </head>
 <body>
 <div class="header">

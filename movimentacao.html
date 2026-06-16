@@ -131,6 +131,14 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
   .ll{width:360px}.lr{display:flex}
 }
 </style>
+<script>
+(function(){
+  try{
+    var s=JSON.parse(localStorage.getItem("summus_auth")||"null");
+    if(!s||!s.usuario)window.location.replace("login.html");
+  }catch(e){window.location.replace("login.html");}
+})();
+</script>
 </head>
 <body>
 

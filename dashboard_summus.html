@@ -188,6 +188,14 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
   #rot-btn{width:30px;height:30px;font-size:13px;bottom:10px;left:10px}
 }
 </style>
+<script>
+(function(){
+  try{
+    var s=JSON.parse(localStorage.getItem("summus_auth")||"null");
+    if(!s||!s.usuario)window.location.replace("login.html");
+  }catch(e){window.location.replace("login.html");}
+})();
+</script>
 </head>
 <body>
 
