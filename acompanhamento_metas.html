@@ -338,7 +338,7 @@ function fmtMeta(v){
   return s;
 }
 
-var PROG={data:"",faturamento:0,despesa:0,novos_inv:0,cedentes:0,cedentes_op:0,novos:0,operaram:0,operacoes:0,prorrogacoes:0,entrevistas:0};
+var PROG={data:"",faturamento:0,despesa:0,receitas:0,novos_inv:0,cedentes:0,cedentes_op:0,novos:0,operaram:0,operacoes:0,prorrogacoes:0,entrevistas:0};
 var METAS={faturamento_n:350000,faturamento:'R$ 350.000',despesa_n:270000,despesa:'R$ 270.000',novos_inv_n:500000,novos_inv:'R$ 500.000',cedentes_n:170,cedentes:'170',cedentes_op_n:130,cedentes_op:'130',novos_n:6,novos:'6',operaram_n:130,operaram:'130',operacoes_n:60,operacoes:'60',prorrogacoes_n:10,prorrogacoes:'10',entrevistas_n:3,entrevistas:'3'};
 
 function showApp(){
@@ -382,7 +382,24 @@ function syncProg(){
 }
 
 function item(lbl,real,mn,ms){var rn=parseN(real),pct=mn>0?Math.min(Math.round(rn/mn*100),100):0,cls,pcls,plbl;if(pct>=100){cls='b-g';pcls='p-g';plbl=pct+'% ✓';}else if(pct>=60){cls='b-y';pcls='p-y';plbl=pct+'%';}else{cls='b-r';pcls='p-r';plbl=pct+'%';}var falta=mn-rn,fstr=falta>0?'Falta: '+fmtN(falta):'✓ Meta atingida!';return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">de</span><span class="v-meta">'+fmtMeta(ms)+'</span></div><span class="v-rest">'+fstr+'</span></div></div>';}
-function itemD(lbl,real,lim_n,ls){var rn=parseN(real),pct=lim_n>0?Math.min(Math.round(rn/lim_n*100),100):0,cls,pcls,plbl;if(pct<=40){cls='b-g';pcls='p-g';plbl=pct+'% usado';}else if(pct<=79){cls='b-y';pcls='p-y';plbl=pct+'% usado';}else{cls='b-r';pcls='p-r';plbl=pct+'% ⚠';}var rest=lim_n-rn,rstr=rest>0?'Disponível: '+fmtN(rest):'⚠ Limite ultrapassado!';return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">limite</span><span class="v-meta">'+fmtMeta(ls)+'</span></div><span class="v-rest">'+rstr+'</span></div></div>';}
+function itemD(lbl,real,lim_n,ls){var rn=parseN(real),rawPct=lim_n>0?Math.round(rn/lim_n*100):0,pct=Math.min(rawPct,100),cls,pcls,plbl;if(rawPct<=100){cls='b-g';pcls='p-g';plbl=rawPct+'% usado';}else{cls='b-r';pcls='p-r';plbl=rawPct+'% ⚠';}var rest=lim_n-rn,rstr=rest>0?'Disponível: '+fmtN(rest):'⚠ Limite ultrapassado! '+fmtN(Math.abs(rest));return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">limite</span><span class="v-meta">'+fmtMeta(ls)+'</span></div><span class="v-rest">'+rstr+'</span></div></div>';}
+// Barra de receitas (sem meta definida — só mostra o valor)
+function itemReceita(lbl,real){
+  var rn=parseN(real);
+  return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span></div>'+
+    '<div class="mi-v"><div><span class="v-real">'+fmtN(rn)+'</span></div></div></div>';
+}
+// Barra de resultado (receitas - despesas)
+function itemResultado(lbl,receitas,despesas){
+  var rec=parseN(receitas),desp=parseN(despesas),res=rec-desp;
+  var cls=res>=0?'b-g':'b-r';
+  var pcls=res>=0?'p-g':'p-r';
+  var plbl=res>=0?'Positivo ✓':'Negativo ⚠';
+  return '<div class="mi">'+
+    '<div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div>'+
+    '<div class="mi-v"><div><span class="v-real" style="color:'+(res>=0?'var(--gn)':'var(--rd)')+'">'+fmtN(res)+'</span></div></div></div>';
+}
+
 // Item com barra mas SEM percentual no badge (total cedentes cadastrados)
 function itemBarra(lbl,real,meta_n,meta_str){
   var rn=parseN(real);
@@ -450,7 +467,7 @@ function render(){
   };
   document.getElementById('dash').innerHTML=
   '<div class="g3">'+
-    card(I.rec,'Faturamento',item('Faturamento',PROG.faturamento,METAS.faturamento_n,METAS.faturamento)+'<hr class="div">'+itemD('Despesa do mês',PROG.despesa,METAS.despesa_n,METAS.despesa))+
+    card(I.rec,'Faturamento',item('Faturamento',PROG.faturamento,METAS.faturamento_n,METAS.faturamento)+'<hr class="div">'+itemReceita('Receitas do mês',PROG.receitas)+'<hr class="div">'+itemD('Despesa do mês',PROG.despesa,METAS.despesa_n,METAS.despesa)+'<hr class="div">'+itemResultado('Resultado do mês',PROG.receitas,PROG.despesa))+
     card(I.usr,'Comercial',itemBarra('Total cedentes cadastrados',PROG.cedentes,METAS.cedentes_n,METAS.cedentes)+'<hr class="div">'+itemOperado('Total cedentes operado',PROG.cedentes_op,PROG.cedentes)+'<hr class="div">'+item('Novos cedentes',PROG.novos,METAS.novos_n,METAS.novos)+'<hr class="div">'+item('Operaram no mês',PROG.operaram,METAS.operaram_n,METAS.operaram))+
     card(I.ref,'Operação',item('Operações',PROG.operacoes,METAS.operacoes_n,METAS.operacoes)+'<hr class="div">'+item('Prorrogações',PROG.prorrogacoes,METAS.prorrogacoes_n,METAS.prorrogacoes)+'<hr class="div">'+item('Total',tOp,tM,String(tM)))+
   '</div><div class="g2">'+
@@ -460,7 +477,7 @@ function render(){
 }
 
 var FIELDS=[
-  {sec:'Faturamento',f:[{l:'Faturamento realizado (R$)',k:'faturamento',ph:'ex: 50000'},{l:'Despesa realizada (R$)',k:'despesa',ph:'ex: 80000'}]},
+  {sec:'Faturamento',f:[{l:'Faturamento realizado (R$)',k:'faturamento',ph:'ex: 50000'},{l:'Receitas do mês (R$)',k:'receitas',ph:'ex: 30000'},{l:'Despesa realizada (R$)',k:'despesa',ph:'ex: 80000'}]},
   {sec:'Comercial',f:[{l:'Total cedentes cadastrados',k:'cedentes',ph:'ex: 90'},{l:'Total cedentes operado',k:'cedentes_op',ph:'ex: 50'},{l:'Novos cedentes',k:'novos',ph:'ex: 3'},{l:'Operaram no mês',k:'operaram',ph:'ex: 60'}]},
   {sec:'Operação',f:[{l:'Operações realizadas',k:'operacoes',ph:'ex: 30'},{l:'Prorrogações',k:'prorrogacoes',ph:'ex: 5'}]},
   {sec:'RH / Investidores',f:[{l:'Entrevistas realizadas',k:'entrevistas',ph:'ex: 1'},{l:'Novos investidores (R$)',k:'novos_inv',ph:'ex: 200000'}]}
