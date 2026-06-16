@@ -339,7 +339,7 @@ function fmtMeta(v){
 }
 
 var PROG={data:"",faturamento:0,despesa:0,receitas:0,novos_inv:0,cedentes:0,cedentes_op:0,novos:0,operaram:0,operacoes:0,prorrogacoes:0,entrevistas:0};
-var METAS={faturamento_n:350000,faturamento:'R$ 350.000',despesa_n:270000,despesa:'R$ 270.000',novos_inv_n:500000,novos_inv:'R$ 500.000',cedentes_n:170,cedentes:'170',cedentes_op_n:130,cedentes_op:'130',novos_n:6,novos:'6',operaram_n:130,operaram:'130',operacoes_n:60,operacoes:'60',prorrogacoes_n:10,prorrogacoes:'10',entrevistas_n:3,entrevistas:'3'};
+var METAS={faturamento_n:350000,faturamento:'R$ 350.000',lucro_n:110000,lucro:'R$ 110.000',despesa_n:270000,despesa:'R$ 270.000',novos_inv_n:500000,novos_inv:'R$ 500.000',cedentes_n:170,cedentes:'170',cedentes_op_n:130,cedentes_op:'130',novos_n:6,novos:'6',operaram_n:130,operaram:'130',operacoes_n:60,operacoes:'60',prorrogacoes_n:10,prorrogacoes:'10',entrevistas_n:3,entrevistas:'3'};
 
 function showApp(){
   var s=getSession();
@@ -350,7 +350,7 @@ function showApp(){
   apiGet({action:'getDashboard'},function(e,res){
     if(res&&res.ok&&res.data){
       var d=res.data;
-      if(d.fat){if(d.fat.mf){METAS.faturamento=String(d.fat.mf);METAS.faturamento_n=parseN(d.fat.mf);}if(d.fat.md){METAS.despesa=String(d.fat.md);METAS.despesa_n=parseN(d.fat.md);}}
+      if(d.fat){if(d.fat.mf){METAS.faturamento=String(d.fat.mf);METAS.faturamento_n=parseN(d.fat.mf);}if(d.fat.md){METAS.despesa=String(d.fat.md);METAS.despesa_n=parseN(d.fat.md);}if(d.fat.ml){METAS.lucro=String(d.fat.ml);METAS.lucro_n=parseN(d.fat.ml);}}
       if(d.comercial){if(d.comercial.mc){METAS.cedentes=String(d.comercial.mc);METAS.cedentes_n=parseInt(d.comercial.mc)||METAS.cedentes_n;}if(d.comercial.mn){METAS.novos=String(d.comercial.mn);METAS.novos_n=parseInt(d.comercial.mn)||METAS.novos_n;}if(d.comercial.mo){METAS.operaram=String(d.comercial.mo);METAS.operaram_n=parseInt(d.comercial.mo)||METAS.operaram_n;}if(d.comercial.mc){METAS.cedentes_op=String(d.comercial.mc);METAS.cedentes_op_n=parseInt(d.comercial.mc)||METAS.cedentes_op_n;}}
       if(d.operacao){if(d.operacao.mo){METAS.operacoes=String(d.operacao.mo);METAS.operacoes_n=parseInt(d.operacao.mo)||METAS.operacoes_n;}if(d.operacao.mp){METAS.prorrogacoes=String(d.operacao.mp);METAS.prorrogacoes_n=parseInt(d.operacao.mp)||METAS.prorrogacoes_n;}}
       if(d.rh&&d.rh.me){METAS.entrevistas=String(d.rh.me);METAS.entrevistas_n=parseInt(d.rh.me)||METAS.entrevistas_n;}
@@ -389,15 +389,27 @@ function itemReceita(lbl,real){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span></div>'+
     '<div class="mi-v"><div><span class="v-real">'+fmtN(rn)+'</span></div></div></div>';
 }
-// Barra de resultado (receitas - despesas)
-function itemResultado(lbl,receitas,despesas){
+// Barra de resultado (receitas - despesas) com meta de lucro
+function itemResultado(lbl,receitas,despesas,meta_n,meta_str){
   var rec=parseN(receitas),desp=parseN(despesas),res=rec-desp;
-  var cls=res>=0?'b-g':'b-r';
-  var pcls=res>=0?'p-g':'p-r';
-  var plbl=res>=0?'Positivo ✓':'Negativo ⚠';
+  var pct=meta_n>0?Math.round(res/meta_n*100):0;
+  var barPct=meta_n>0?Math.min(Math.max(Math.round(res/meta_n*100),0),100):0;
+  var cls,pcls,plbl;
+  if(pct>=100){cls='b-g';pcls='p-g';plbl=pct+'% ✓';}
+  else if(pct>=60){cls='b-y';pcls='p-y';plbl=pct+'%';}
+  else if(res<0){cls='b-r';pcls='p-r';plbl='Negativo ⚠';}
+  else{cls='b-r';pcls='p-r';plbl=pct+'%';}
+  // Formatar resultado como moeda brasileira
+  var resFormatado=res.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  var rest=meta_n-res;
+  var rstr=rest>0?'Falta: '+rest.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'Meta atingida ✓';
   return '<div class="mi">'+
     '<div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div>'+
-    '<div class="mi-v"><div><span class="v-real" style="color:'+(res>=0?'var(--gn)':'var(--rd)')+'">'+fmtN(res)+'</span></div></div></div>';
+    '<div class="bar-w"><div class="bar '+cls+'" style="width:'+barPct+'%"></div></div>'+
+    '<div class="mi-v"><div>'+
+      '<span class="v-real">'+resFormatado+'</span>'+
+      (meta_str?'<span class="v-sep">meta:</span><span class="v-meta">'+fmtMeta(meta_str)+'</span>':'')+
+    '</div><span class="v-rest">'+rstr+'</span></div></div>';
 }
 
 // Item com barra mas SEM percentual no badge (total cedentes cadastrados)
@@ -467,7 +479,7 @@ function render(){
   };
   document.getElementById('dash').innerHTML=
   '<div class="g3">'+
-    card(I.rec,'Faturamento',item('Faturamento',PROG.faturamento,METAS.faturamento_n,METAS.faturamento)+'<hr class="div">'+itemReceita('Receitas do mês',PROG.receitas)+'<hr class="div">'+itemD('Despesa do mês',PROG.despesa,METAS.despesa_n,METAS.despesa)+'<hr class="div">'+itemResultado('Resultado do mês',PROG.receitas,PROG.despesa))+
+    card(I.rec,'Faturamento',item('Faturamento',PROG.faturamento,METAS.faturamento_n,METAS.faturamento)+'<hr class="div">'+itemReceita('Receitas do mês',PROG.receitas)+'<hr class="div">'+itemD('Despesa do mês',PROG.despesa,METAS.despesa_n,METAS.despesa)+'<hr class="div">'+itemResultado('Resultado do mês',PROG.receitas,PROG.despesa,METAS.lucro_n,METAS.lucro))+
     card(I.usr,'Comercial',itemBarra('Total cedentes cadastrados',PROG.cedentes,METAS.cedentes_n,METAS.cedentes)+'<hr class="div">'+itemOperado('Total cedentes operado',PROG.cedentes_op,PROG.cedentes)+'<hr class="div">'+item('Novos cedentes',PROG.novos,METAS.novos_n,METAS.novos)+'<hr class="div">'+item('Operaram no mês',PROG.operaram,METAS.operaram_n,METAS.operaram))+
     card(I.ref,'Operação',item('Operações',PROG.operacoes,METAS.operacoes_n,METAS.operacoes)+'<hr class="div">'+item('Prorrogações',PROG.prorrogacoes,METAS.prorrogacoes_n,METAS.prorrogacoes)+'<hr class="div">'+item('Total',tOp,tM,String(tM)))+
   '</div><div class="g2">'+
