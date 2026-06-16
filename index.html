@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Summus</title>
-</head>
+<head><meta charset="UTF-8"><title>Summus</title></head>
 <body>
 <script>
-// Sempre vai para o dashboard — ele mesmo decide mostrar login ou app
-window.location.replace('dashboard_summus.html');
+try{
+  var s=JSON.parse(localStorage.getItem("summus_auth")||"null");
+  if(s&&s.usuario)window.location.replace("painel.html");
+  else window.location.replace("login.html");
+}catch(e){window.location.replace("login.html");}
 </script>
 </body>
 </html>

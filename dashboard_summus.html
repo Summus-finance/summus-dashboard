@@ -192,7 +192,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
 <body>
 
 <!-- LOGIN -->
-<div id="login-page" style="display:flex;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9000;background:#fff">
+<div id="login-page" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9000;background:#fff">
   <div class="login-wrap">
     <div class="login-left">
       <div class="login-box">
@@ -250,12 +250,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
   <div id="dash"></div>
 </div>
 <button id="rot-btn" onclick="toggleRot()" style="display:none">⏸</button>
-<div id="version-lbl" style="display:none;position:fixed;bottom:52px;left:14px;font-size:9px;color:#8fa5bb;z-index:9997;background:var(--cd,#fff);padding:2px 6px;border-radius:4px;border:1px solid var(--bd,#cdd8e5)">v2.1</div>
+<div id="version-lbl" style="display:none"></div>
 <div id="rot-bar"></div>
 
 <script>
 var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwluZV7Rhgxl-0IKV6n4yOa_mEVIG7EogdOkNYlerboZWcVZU1LvzNYgfUQ016mMldDBw/exec";
-var SESSION_KEY = "summus_v2";
+var SESSION_KEY = "summus_auth";
 
 // Logos
 var IC={
@@ -264,10 +264,10 @@ var IC={
 };
 var dark=false;
 function toggleTheme(){dark=!dark;document.getElementById('root').classList.toggle('dk',dark);document.getElementById('ti').innerHTML=dark?IC.sun:IC.moon;document.getElementById('tlbl').textContent=dark?'Tema claro':'Tema escuro';try{localStorage.setItem('summus_dark',dark?'1':'0');}catch(e){}}
-function getSession(){try{return JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;}}
-function setSession(u){sessionStorage.setItem(SESSION_KEY,JSON.stringify(u));}
-function clearSession(){sessionStorage.removeItem(SESSION_KEY);}
-function logout(){clearSession();location.reload();}
+function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;}}
+function setSession(u){localStorage.setItem(SESSION_KEY,JSON.stringify(u));}
+function clearSession(){localStorage.removeItem(SESSION_KEY);}
+function logout(){clearSession();window.location.replace('login.html');}
 
 function _jsonp(params, cb) {
   var id = '_cb' + Date.now() + Math.floor(Math.random()*9999);
@@ -341,7 +341,6 @@ function showApp(){
   document.getElementById('login-page').style.display='none';
   document.getElementById('root').style.display='block';
   document.getElementById('rot-btn').style.display='';
-  var vl=document.getElementById('version-lbl');if(vl)vl.style.display='';
   document.getElementById('u-nome').textContent=s?s.usuario:'';
   try{if(localStorage.getItem('summus_dark')==='1'){dark=true;document.getElementById('root').classList.add('dk');document.getElementById('ti').innerHTML=IC.sun;document.getElementById('tlbl').textContent='Tema claro';}}catch(e){}
   syncDash();
@@ -426,7 +425,7 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
   if(s){
     showApp();
   } else {
-    initLogin();
+    window.location.replace('login.html');
   }
 })();
 
@@ -577,5 +576,6 @@ function saveDM() {
   });
 }
 </script>
+<div style="text-align:center;padding:10px 0 6px;font-size:10px;color:#aab8c6;letter-spacing:.3px">Summus v2.1</div>
 </body>
 </html>
