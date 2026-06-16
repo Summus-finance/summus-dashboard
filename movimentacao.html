@@ -4,7 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Movimentação – Summus</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
+// Tema global (controlado pelo painel)
+(function(){
+  try{
+    var dk = localStorage.getItem('summus_dark');
+    if(dk==='1'){
+      var el = document.getElementById('root') || document.getElementById('app');
+      if(el){el.classList.add('dk');}
+    }
+  }catch(e){}
+})();
+
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--br:#2CA1D8;--bg:#eef3f8;--cd:#fff;--cd2:#f4f7fb;--bd:#cdd8e5;--t1:#16263a;--t2:#4a607a;--t3:#8fa5bb}
@@ -147,10 +159,10 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
   <div class="top">
     <div><h1>Painel de Movimentação</h1><p>Operações · Prorrogações · Redescontos · Inadimplência · Resultado</p></div>
     <div class="top-r">
-      <a class="tbtn" href="dashboard_summus.html"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Dashboard</span></a>
-      <a class="tbtn" href="acompanhamento_metas.html"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Metas</span></a>
-      <button class="tbtn" onclick="toggleTheme()"><svg id="ticon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg><span id="tlbl">Tema escuro</span></button>
-      <a href="painel.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:7px 14px;font-size:13px;color:#fff;text-decoration:none;font-family:inherit;cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.28)'" onmouseout="this.style.background='rgba(255,255,255,.18)'"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="15 18 9 12 15 6"/></svg>Painel</a> <button class="tbtn" onclick="logout()"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Sair</span></button>
+      
+      
+      
+      <a href="painel.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:7px 14px;font-size:13px;color:#fff;text-decoration:none;font-family:inherit;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.28)'" onmouseout="this.style.background='rgba(255,255,255,.18)'"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="15 18 9 12 15 6"/></svg>Painel</a> <button class="tbtn" onclick="logout()"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Sair</span></button>
       <img class="top-logo" id="tlogo" src="" alt="">
     </div>
   </div>

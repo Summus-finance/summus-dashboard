@@ -233,10 +233,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
     <div><h1>Acompanhamento de Metas</h1><p>Progresso diário em relação às metas do mês</p></div>
     <div class="top-r">
       <span class="u-info">👤 <span id="u-nome"></span></span>
-      <a class="tbtn" href="dashboard_summus.html"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
-      <a class="tbtn" href="movimentacao.html"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Movimentação</a>
-      <button class="tbtn" onclick="toggleTheme()"><svg id="ti" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg><span id="tlbl">Tema escuro</span></button>
-      <a href="painel.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:7px 14px;font-size:13px;color:#fff;text-decoration:none;font-family:inherit;cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.28)'" onmouseout="this.style.background='rgba(255,255,255,.18)'"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="15 18 9 12 15 6"/></svg>Painel</a> <button class="tbtn" onclick="logout()"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair</button>
+      
+      
+      
+      <a href="painel.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:7px 14px;font-size:13px;color:#fff;text-decoration:none;font-family:inherit;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.28)'" onmouseout="this.style.background='rgba(255,255,255,.18)'"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="15 18 9 12 15 6"/></svg>Painel</a> <button class="tbtn" onclick="logout()"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair</button>
       <img class="top-logo" id="logo-top" src="" alt="Summus">
     </div>
   </div>
@@ -512,5 +512,17 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
   var s=getSession();
   if(s){showApp();}else{window.location.replace('login.html');}
 })();
+
+// Tema global (controlado pelo painel)
+(function(){
+  try{
+    var dk = localStorage.getItem('summus_dark');
+    if(dk==='1'){
+      var el = document.getElementById('root') || document.getElementById('app');
+      if(el){el.classList.add('dk');}
+    }
+  }catch(e){}
+})();
+
 </script>
 </body></html>

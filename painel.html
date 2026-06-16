@@ -7,6 +7,14 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--br:#2CA1D8;--bg:#eef3f8;--t1:#16263a;--t2:#4a607a;--t3:#8fa5bb;--cd:#fff;--bd:#cdd8e5}
+.dk{--bg:#0c1824;--cd:#162235;--bd:#1e3048;--t1:#e0ecf8;--t2:#7a98b8;--t3:#3a5568;--br:#1a7fad}
+body.dk{background:var(--bg);color:var(--t1)}
+body.dk .header{background:var(--br)}
+body.dk .card{background:var(--cd);border-color:var(--bd);color:var(--t1)}
+body.dk .card h3{color:var(--t1)}
+body.dk .card p{color:var(--t2)}
+body.dk .card-icon{background:#1e3048}
+body.dk .footer{color:var(--t3)}
 body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
 
 /* HEADER */
@@ -63,6 +71,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100
       <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <span id="u-nome"></span>
     </div>
+    <button class="logout-btn" id="theme-btn" onclick="toggleTheme()" style="margin-right:4px">
+      <svg id="theme-icon" viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <span id="theme-lbl">Tema escuro</span>
+    </button>
     <button class="logout-btn" onclick="logout()">
       <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Sair
@@ -107,22 +119,38 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100
 
 <script>
 var SESSION_KEY = "summus_auth";
+var THEME_KEY   = "summus_dark";
 
-function getSession(){
-  try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;}
+function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;}}
+function logout(){try{localStorage.removeItem(SESSION_KEY);}catch(e){}window.location.replace('login.html');}
+
+function applyTheme(dark){
+  if(dark){
+    document.body.classList.add('dk');
+    document.getElementById('theme-icon').innerHTML='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+    document.getElementById('theme-lbl').textContent='Tema claro';
+  }else{
+    document.body.classList.remove('dk');
+    document.getElementById('theme-icon').innerHTML='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+    document.getElementById('theme-lbl').textContent='Tema escuro';
+  }
 }
-function logout(){
-  try{localStorage.removeItem(SESSION_KEY);}catch(e){}
-  window.location.replace('login.html');
+function toggleTheme(){
+  var dark = !document.body.classList.contains('dk');
+  try{localStorage.setItem(THEME_KEY, dark?'1':'0');}catch(e){}
+  applyTheme(dark);
 }
 
+// Init sessão
 var s = getSession();
-if(!s||!s.usuario){
-  window.location.replace('login.html');
-} else {
-  document.getElementById('u-nome').textContent = s.usuario;
+if(!s||!s.usuario){window.location.replace('login.html');}
+else{
+  document.getElementById('u-nome').textContent  = s.usuario;
   document.getElementById('u-nome2').textContent = s.usuario;
 }
+
+// Init tema
+try{if(localStorage.getItem(THEME_KEY)==='1')applyTheme(true);}catch(e){}
 </script>
 </body>
 </html>
