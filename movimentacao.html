@@ -4,18 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Movimentação – Summus</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
-// Tema global (controlado pelo painel)
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// Tema global (controlado pelo painel) — aplicado cedo para evitar flash de tela clara
 (function(){
   try{
-    var dk = localStorage.getItem('summus_dark');
-    if(dk==='1'){
-      var el = document.getElementById('root') || document.getElementById('app');
-      if(el){el.classList.add('dk');}
+    if(localStorage.getItem('summus_dark')==='1'){
+      document.documentElement.classList.add('dk');
     }
   }catch(e){}
 })();
-
 </script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -382,7 +380,7 @@ function renderKPIs(d){
       '<div class="krows">'+rows([['Receitas',fRC(rec),''],['Despesas',fRC(dep),'neg']])+'</div></div>'+
 
     kbase('#f3eafe','#7b2fbe','<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>','Contratos')+
-      '<div class="kv">'+fN(qOp)+' op / '+fN(qPr)+' pr / '+fN(qRd)+' re</div>'+
+      '<div class="kv" style="display:flex;justify-content:space-between;align-items:baseline"><span>'+fN(qOp)+' op / '+fN(qPr)+' pr / '+fN(qRd)+' re</span><span>'+fN(qOp+qPr+qRd)+'</span></div>'+
       '<div class="krows">'+rows([['Vol.Op',fRC(vOp),''],['Vol.Pr',fRC(vPr),''],['Redesc.',fRC(vRd),''],['Total',fRC(vOp+vPr+vRd),'']])+'</div></div>'+
 
     kbase('#e8f5e9','#16a085','<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>','Taxa Média')+
@@ -471,10 +469,10 @@ function renderCharts(d){
   var L=d.map(lbl);
   document.getElementById('cdiv').innerHTML=
     '<div class="r2">'+cc('cf','Faturamento Mensal','','h220')+cc('cr','Resultado Líquido','','h220')+'</div>'+
-    '<div class="r2">'+cc('cvo','Volume Operado (R$)','','h190')+cc('cvp','Volume Prorrogado (R$)','','h190')+'</div>'+
+    '<div class="r2">'+cc('cvo','Volume Operação (R$)','','h190')+cc('cvp','Volume Prorrogação (R$)','','h190')+'</div>'+
     '<div class="r2">'+cc('cvrd','Volume Redesconto (R$)','','h190')+cc('cvt','Volume Total (Op+Prorr+Redesc)','','h190')+'</div>'+
     '<div class="r2">'+cc('cq','Qtd Op · Prorr · Redesconto','','h190')+cc('ct','Taxa Média Ponderada (%)','','h190')+'</div>'+
-    '<div class="r2">'+cc('cpz','Prazo Médio (dias)','','h190')+cc('ci','Inadimplência (%)','','h190')+'</div>';
+    '<div class="r2">'+cc('cpz','Prazo Médio (dias)','','h190')+cc('ci','Inadimplência (R$)','','h190')+'</div>';
 
   CH.f=mkC('cf','bar',L,[{label:'Faturamento',data:d.map(function(r){return n(r.faturamento);}),backgroundColor:'rgba(44,161,216,.78)',borderRadius:4}],'R');
   CH.r=mkC('cr','bar',L,[
@@ -499,7 +497,7 @@ function renderCharts(d){
   ],'d');
   CH.vt=mkC('cvt','bar',L,[{label:'Vol.Total',data:d.map(function(r){return n(r.volume_operado)+n(r.volume_prorrogado)+n(r.volume_redesconto);}),backgroundColor:'rgba(44,161,216,.78)',borderRadius:4}],'R');
   CH.vrd=mkC('cvrd','bar',L,[{label:'Vol.Redesconto',data:d.map(function(r){return n(r.volume_redesconto);}),backgroundColor:'rgba(231,76,60,.75)',borderRadius:4}],'R');
-  CH.i=mkC('ci','line',L,[{label:'Inadimplência',data:d.map(function(r){return n(r.inadimplencia);}),borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,.10)',pointRadius:4,tension:.3,fill:true,borderWidth:2.5}],'%');
+  CH.i=mkC('ci','line',L,[{label:'Inadimplência',data:d.map(function(r){return n(r.inadimplencia);}),borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,.10)',pointRadius:4,tension:.3,fill:true,borderWidth:2.5}],'R');
 
 
 }
@@ -533,7 +531,16 @@ function toggleRot(){rp=!rp;var b=document.getElementById('rbtn');if(rp){clearTi
 
 /* INIT */
 (function(){
-  try{if(localStorage.getItem('sdark')==='1'){dark=true;document.body.classList.add('dk');document.getElementById('ticon').innerHTML='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>';document.getElementById('tlbl').textContent='Tema claro';}}catch(e){}
+  try{
+    if(localStorage.getItem('summus_dark')==='1'){
+      dark=true;
+      document.body.classList.add('dk');
+      var ti=document.getElementById('ticon');
+      if(ti)ti.innerHTML='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>';
+      var tl=document.getElementById('tlbl');
+      if(tl)tl.textContent='Tema claro';
+    }
+  }catch(e){}
   var s=gSess();
   if(s){document.getElementById('app').style.display='block';startRot();loadData();}
   else{window.location.replace('login.html');}
