@@ -253,7 +253,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
         <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
         Atualizar dados
       </button>
-      <button onclick="openDM()" class="sync-btn" style="background:#1d9e75;border:none;cursor:pointer;display:flex;align-items:center;gap:6px">
+      <button onclick="openDM()" id="btn-lancar" class="sync-btn" style="background:#1d9e75;border:none;cursor:pointer;display:flex;align-items:center;gap:6px">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         Lançar valores
       </button>
@@ -369,9 +369,20 @@ function pickVal(pair){
 function isPctField(path){
   return ['fat.rt','fat.mt','pdd.his','pdd.atu','pdd.lim'].indexOf(path)>=0;
 }
+function isTextField(path){
+  return ['cob.f1','cob.f2','cob.f3','mkt.seg','mkt.qua','mkt.sex','mr','mm'].indexOf(path)>=0;
+}
 function pickValSmart(pair,path){
   if(pair===undefined||pair===null)return '—';
   if(typeof pair!=='object')return pair;
+  // Campos de texto: não soma, apenas retorna o valor de uma empresa selecionada (preferência: sec, depois esc)
+  if(isTextField(path)){
+    for(var i=0;i<EMPRESAS_SEL.length;i++){
+      var tv=pair[EMPRESAS_SEL[i]];
+      if(tv!==undefined&&tv!==null&&tv!=='')return tv;
+    }
+    return '—';
+  }
   var vals=[];
   EMPRESAS_SEL.forEach(function(emp){
     var v=pair[emp];
@@ -405,6 +416,13 @@ function renderEmpresaChips(){
     btn.style.background=ativo?'#fff':'transparent';
     btn.style.color=ativo?'#2CA1D8':'#fff';
   });
+  var btnL=document.getElementById('btn-lancar');
+  if(btnL){
+    var podeLancar=EMPRESAS_SEL.length===1;
+    btnL.style.opacity=podeLancar?'1':'.5';
+    btnL.style.cursor=podeLancar?'pointer':'not-allowed';
+    btnL.title=podeLancar?'':'Selecione apenas uma empresa para lançar valores';
+  }
 }
 function toggleEmpresa(emp){
   var idx=EMPRESAS_SEL.indexOf(emp);
@@ -579,6 +597,10 @@ var DM_FIELDS = [
 ];
 
 function openDM() {
+  if(EMPRESAS_SEL.length!==1){
+    alert('Selecione apenas UMA empresa (SEC ou ESC) no topo da tela para lançar valores.\n\nCom as duas selecionadas, o sistema mostra dados consolidados e não saberia em qual planilha gravar.');
+    return;
+  }
   rotPaused = true;
   clearTimeout(rotTimer);
 
@@ -641,7 +663,7 @@ function saveDM() {
     if (v !== '') payload[inp.dataset.key] = v;
   });
 
-  apiPost({action:'saveDashboard', data:JSON.stringify(payload)}, function(e, res) {
+  apiPost({action:'saveDashboard', empresa:EMPRESAS_SEL[0], data:JSON.stringify(payload)}, function(e, res) {
     btn.textContent = 'Salvar no Sheets';
     btn.disabled = false;
     if (e || !res || !res.ok) {
