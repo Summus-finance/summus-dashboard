@@ -240,6 +240,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
   <div class="top">
     <div><h1>Acompanhamento de Metas</h1><p>Progresso diário em relação às metas do mês</p></div>
     <div class="top-r">
+      <div id="empresa-filtro" style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:3px">
+        <button type="button" class="emp-chip" data-emp="sec" onclick="toggleEmpresa('sec')" style="border:none;background:transparent;color:#fff;font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;transition:background .2s">SEC</button>
+        <button type="button" class="emp-chip" data-emp="esc" onclick="toggleEmpresa('esc')" style="border:none;background:transparent;color:#fff;font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;transition:background .2s">ESC</button>
+      </div>
       <span class="u-info">👤 <span id="u-nome"></span></span>
       
       
@@ -339,6 +343,100 @@ function fmtMeta(v){
 }
 
 var PROG={data:"",faturamento:0,despesa:0,receitas:0,novos_inv:0,cedentes:0,cedentes_op:0,novos:0,operaram:0,operacoes:0,prorrogacoes:0,entrevistas:0};
+var PROG_RAW={esc:{},sec:{}}; // dados crus por empresa
+var META_RAW={}; // metas cruas {sec,esc} por campo do Dashboard
+var EMPRESAS_SEL=['sec','esc'];
+var EMPRESA_KEY='summus_empresas_dash';
+try{var _es=JSON.parse(localStorage.getItem(EMPRESA_KEY)||'null');if(Array.isArray(_es)&&_es.length)EMPRESAS_SEL=_es;}catch(e){}
+
+function isPctFieldM(k){return false;} // nenhum campo de PROG é percentual hoje
+
+function consolidarProg(){
+  var keys=['faturamento','despesa','receitas','novos_inv','cedentes','cedentes_op','novos','operaram','operacoes','prorrogacoes','entrevistas'];
+  keys.forEach(function(k){
+    var vals=[];
+    EMPRESAS_SEL.forEach(function(emp){
+      var v=(PROG_RAW[emp]||{})[k];
+      if(v!==undefined&&v!==null&&v!=='')vals.push(parseFloat(String(v).replace(',','.'))||0);
+    });
+    PROG[k]=vals.length?vals.reduce(function(a,b){return a+b;},0):0;
+  });
+  // Data: usa a da primeira empresa selecionada que tiver valor
+  PROG.data='';
+  EMPRESAS_SEL.forEach(function(emp){
+    if(!PROG.data&&PROG_RAW[emp]&&PROG_RAW[emp].data)PROG.data=PROG_RAW[emp].data;
+  });
+}
+
+function consolidarMetas(){
+  if(!META_RAW||!Object.keys(META_RAW).length)return;
+  function pick(pair,isPct){
+    if(!pair)return null;
+    var vals=[];
+    EMPRESAS_SEL.forEach(function(emp){
+      var v=pair[emp];
+      if(v!==undefined&&v!==null&&v!=='')vals.push(parseFloat(String(v).replace(',','.'))||0);
+    });
+    if(!vals.length)return null;
+    var sum=vals.reduce(function(a,b){return a+b;},0);
+    return isPct&&vals.length>1?sum/vals.length:sum;
+  }
+  if(META_RAW.fat){
+    var mf=pick(META_RAW.fat.mf);if(mf!==null){METAS.faturamento_n=mf;METAS.faturamento='R$ '+mf.toLocaleString('pt-BR');}
+    var md=pick(META_RAW.fat.md);if(md!==null){METAS.despesa_n=md;METAS.despesa='R$ '+md.toLocaleString('pt-BR');}
+    var ml=pick(META_RAW.fat.ml);if(ml!==null){METAS.lucro_n=ml;METAS.lucro='R$ '+ml.toLocaleString('pt-BR');}
+  }
+  if(META_RAW.comercial){
+    var mc=pick(META_RAW.comercial.mc);if(mc!==null){METAS.cedentes_n=mc;METAS.cedentes=String(mc);METAS.cedentes_op_n=mc;METAS.cedentes_op=String(mc);}
+    var mn=pick(META_RAW.comercial.mn);if(mn!==null){METAS.novos_n=mn;METAS.novos=String(mn);}
+    var mo=pick(META_RAW.comercial.mo);if(mo!==null){METAS.operaram_n=mo;METAS.operaram=String(mo);}
+  }
+  if(META_RAW.operacao){
+    var oo=pick(META_RAW.operacao.mo);if(oo!==null){METAS.operacoes_n=oo;METAS.operacoes=String(oo);}
+    var op=pick(META_RAW.operacao.mp);if(op!==null){METAS.prorrogacoes_n=op;METAS.prorrogacoes=String(op);}
+  }
+  if(META_RAW.rh){
+    var me=pick(META_RAW.rh.me);if(me!==null){METAS.entrevistas_n=me;METAS.entrevistas=String(me);}
+  }
+  if(META_RAW.ast){
+    var mn2=pick(META_RAW.ast.mn);if(mn2!==null){METAS.novos_inv_n=mn2;METAS.novos_inv='R$ '+mn2.toLocaleString('pt-BR');}
+  }
+}
+
+function applyFilter(){
+  consolidarProg();
+  consolidarMetas();
+  (function(){
+    var raw = PROG.data || '';
+    if(!raw){ document.getElementById('data-atual').textContent='—'; return; }
+    var iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if(iso){ document.getElementById('data-atual').textContent=iso[3]+'/'+iso[2]+'/'+iso[1]+' '+iso[4]+':'+iso[5]; return; }
+    document.getElementById('data-atual').textContent=raw;
+  })();
+  render();
+}
+
+function renderEmpresaChips(){
+  document.querySelectorAll('.emp-chip').forEach(function(btn){
+    var emp=btn.getAttribute('data-emp');
+    var ativo=EMPRESAS_SEL.indexOf(emp)>=0;
+    btn.style.background=ativo?'#fff':'transparent';
+    btn.style.color=ativo?'#2CA1D8':'#fff';
+  });
+}
+function toggleEmpresa(emp){
+  var idx=EMPRESAS_SEL.indexOf(emp);
+  if(idx>=0){
+    if(EMPRESAS_SEL.length===1)return;
+    EMPRESAS_SEL.splice(idx,1);
+  }else{
+    EMPRESAS_SEL.push(emp);
+  }
+  try{localStorage.setItem(EMPRESA_KEY,JSON.stringify(EMPRESAS_SEL));}catch(e){}
+  renderEmpresaChips();
+  applyFilter();
+}
+
 var METAS={faturamento_n:350000,faturamento:'R$ 350.000',lucro_n:110000,lucro:'R$ 110.000',despesa_n:270000,despesa:'R$ 270.000',novos_inv_n:500000,novos_inv:'R$ 500.000',cedentes_n:170,cedentes:'170',cedentes_op_n:130,cedentes_op:'130',novos_n:6,novos:'6',operaram_n:130,operaram:'130',operacoes_n:60,operacoes:'60',prorrogacoes_n:10,prorrogacoes:'10',entrevistas_n:3,entrevistas:'3'};
 
 function showApp(){
@@ -347,14 +445,10 @@ function showApp(){
   document.getElementById('root').style.display='block';
   document.getElementById('u-nome').textContent=s?s.usuario:'';
   try{if(localStorage.getItem('summus_dark')==='1'){dark=true;document.getElementById('root').classList.add('dk');document.getElementById('ti').innerHTML=IC.sun;document.getElementById('tlbl').textContent='Tema claro';}}catch(e){}
+  renderEmpresaChips();
   apiGet({action:'getDashboard'},function(e,res){
     if(res&&res.ok&&res.data){
-      var d=res.data;
-      if(d.fat){if(d.fat.mf){METAS.faturamento=String(d.fat.mf);METAS.faturamento_n=parseN(d.fat.mf);}if(d.fat.md){METAS.despesa=String(d.fat.md);METAS.despesa_n=parseN(d.fat.md);}if(d.fat.ml){METAS.lucro=String(d.fat.ml);METAS.lucro_n=parseN(d.fat.ml);}}
-      if(d.comercial){if(d.comercial.mc){METAS.cedentes=String(d.comercial.mc);METAS.cedentes_n=parseInt(d.comercial.mc)||METAS.cedentes_n;}if(d.comercial.mn){METAS.novos=String(d.comercial.mn);METAS.novos_n=parseInt(d.comercial.mn)||METAS.novos_n;}if(d.comercial.mo){METAS.operaram=String(d.comercial.mo);METAS.operaram_n=parseInt(d.comercial.mo)||METAS.operaram_n;}if(d.comercial.mc){METAS.cedentes_op=String(d.comercial.mc);METAS.cedentes_op_n=parseInt(d.comercial.mc)||METAS.cedentes_op_n;}}
-      if(d.operacao){if(d.operacao.mo){METAS.operacoes=String(d.operacao.mo);METAS.operacoes_n=parseInt(d.operacao.mo)||METAS.operacoes_n;}if(d.operacao.mp){METAS.prorrogacoes=String(d.operacao.mp);METAS.prorrogacoes_n=parseInt(d.operacao.mp)||METAS.prorrogacoes_n;}}
-      if(d.rh&&d.rh.me){METAS.entrevistas=String(d.rh.me);METAS.entrevistas_n=parseInt(d.rh.me)||METAS.entrevistas_n;}
-      if(d.ast&&d.ast.mn){METAS.novos_inv=String(d.ast.mn);METAS.novos_inv_n=parseN(d.ast.mn);}
+      META_RAW=res.data;
     }
     syncProg();
   });
@@ -366,18 +460,9 @@ function syncProg(){
   apiGet({action:'getProg'},function(e,res){
     btn.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg> Atualizar dados';btn.style.opacity='1';
     if(e||!res||!res.ok){alert('Erro: '+(e?e.message:(res&&res.error)||'desconhecido'));return;}
-    Object.keys(res.data).forEach(function(k){if(k in PROG)PROG[k]=res.data[k];});
+    PROG_RAW=res.data||{esc:{},sec:{}};
     document.getElementById('ultima-sync').textContent=new Date().toLocaleTimeString('pt-BR');
-    (function(){
-  var raw = PROG.data || '';
-  if(!raw){ document.getElementById('data-atual').textContent='—'; return; }
-  // Convert ISO: 2026-06-12T01:00:00.000Z -> 12/06/2026 01:00
-  var iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-  if(iso){ document.getElementById('data-atual').textContent=iso[3]+'/'+iso[2]+'/'+iso[1]+' '+iso[4]+':'+iso[5]; return; }
-  // Already in dd/mm/yyyy format - show as-is
-  document.getElementById('data-atual').textContent=raw;
-})();
-    render();
+    applyFilter();
   });
 }
 

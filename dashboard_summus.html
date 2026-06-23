@@ -234,6 +234,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
   <div class="top">
     <div><h1>Dashboard Gerencial – Summus</h1><p>Visão executiva do desempenho do negócio</p></div>
     <div class="top-r">
+      <div id="empresa-filtro" style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:3px">
+        <button type="button" class="emp-chip" data-emp="sec" onclick="toggleEmpresa('sec')" style="border:none;background:transparent;color:#fff;font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;transition:background .2s">SEC</button>
+        <button type="button" class="emp-chip" data-emp="esc" onclick="toggleEmpresa('esc')" style="border:none;background:transparent;color:#fff;font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;transition:background .2s">ESC</button>
+      </div>
       <span class="u-info">👤 <span id="u-nome"></span></span>
       
       
@@ -343,6 +347,78 @@ function fmtVal(v){
 }
 
 var D={mr:"—",mm:"—",comercial:{rc:"—",rn:"—",ro:"—",mc:"—",mn:"—",mo:"—"},operacao:{ro:"—",rp:"—",mo:"—",mp:"—"},fat:{rf:"—",rt:"—",rl:"—",rd:"—",mf:"—",mt:"—",ml:"—",md:"—"},ast:{aum:"—",inv:"—",sum:"—",aud:"—",rn:"—",mn:"—"},pdd:{his:"—",atu:"—",lim:"—"},rh:{re:"—",me:"—"},cob:{f1:"—",f2:"—",f3:"—"},mkt:{ads:"—",seg:"—",qua:"—",sex:"—"}};
+var D_RAW={}; // dados crus por empresa, vindos do Apps Script: {comercial:{rc:{sec,esc},...},...}
+var EMPRESAS_SEL=['sec','esc']; // filtro ativo (padrão: ambas selecionadas = consolidado)
+var EMPRESA_KEY='summus_empresas_dash';
+try{var _es=JSON.parse(localStorage.getItem(EMPRESA_KEY)||'null');if(Array.isArray(_es)&&_es.length)EMPRESAS_SEL=_es;}catch(e){}
+
+// Soma (ou pega) o valor de um campo {sec,esc} conforme empresas selecionadas
+function pickVal(pair){
+  if(pair===undefined||pair===null)return '—';
+  if(typeof pair!=='object')return pair; // já é valor simples (compat)
+  var vals=[];
+  EMPRESAS_SEL.forEach(function(emp){
+    var v=pair[emp];
+    if(v!==undefined&&v!==null&&v!=='')vals.push(parseFloat(String(v).toString().replace(',','.'))||0);
+  });
+  if(!vals.length)return '—';
+  var sum=vals.reduce(function(a,b){return a+b;},0);
+  // Campos percentuais (taxa, históricos) fazem média em vez de soma quando 2 empresas selecionadas
+  return sum;
+}
+function isPctField(path){
+  return ['fat.rt','fat.mt','pdd.his','pdd.atu','pdd.lim'].indexOf(path)>=0;
+}
+function pickValSmart(pair,path){
+  if(pair===undefined||pair===null)return '—';
+  if(typeof pair!=='object')return pair;
+  var vals=[];
+  EMPRESAS_SEL.forEach(function(emp){
+    var v=pair[emp];
+    if(v!==undefined&&v!==null&&v!=='')vals.push(parseFloat(String(v).toString().replace(',','.'))||0);
+  });
+  if(!vals.length)return '—';
+  if(isPctField(path)&&vals.length>1){
+    return vals.reduce(function(a,b){return a+b;},0)/vals.length; // média para %
+  }
+  return vals.reduce(function(a,b){return a+b;},0); // soma para valores absolutos
+}
+
+// Recalcula D a partir de D_RAW conforme EMPRESAS_SEL e re-renderiza
+function applyFilter(){
+  if(!D_RAW||!Object.keys(D_RAW).length)return;
+  if(D_RAW.mr)D.mr=D_RAW.mr.sec||D_RAW.mr.esc||'—';
+  if(D_RAW.mm)D.mm=D_RAW.mm.sec||D_RAW.mm.esc||'—';
+  ['comercial','operacao','fat','ast','pdd','rh','cob','mkt'].forEach(function(sec){
+    if(!D_RAW[sec])return;
+    Object.keys(D_RAW[sec]).forEach(function(field){
+      D[sec][field]=pickValSmart(D_RAW[sec][field], sec+'.'+field);
+    });
+  });
+  render();
+}
+
+function renderEmpresaChips(){
+  document.querySelectorAll('.emp-chip').forEach(function(btn){
+    var emp=btn.getAttribute('data-emp');
+    var ativo=EMPRESAS_SEL.indexOf(emp)>=0;
+    btn.style.background=ativo?'#fff':'transparent';
+    btn.style.color=ativo?'#2CA1D8':'#fff';
+  });
+}
+function toggleEmpresa(emp){
+  var idx=EMPRESAS_SEL.indexOf(emp);
+  if(idx>=0){
+    if(EMPRESAS_SEL.length===1)return; // não permite ficar sem nenhuma selecionada
+    EMPRESAS_SEL.splice(idx,1);
+  }else{
+    EMPRESAS_SEL.push(emp);
+  }
+  try{localStorage.setItem(EMPRESA_KEY,JSON.stringify(EMPRESAS_SEL));}catch(e){}
+  renderEmpresaChips();
+  applyFilter();
+}
+
 
 function showApp(){
   var s=getSession();
@@ -351,6 +427,7 @@ function showApp(){
   document.getElementById('rot-btn').style.display='';
   document.getElementById('u-nome').textContent=s?s.usuario:'';
     try{if(localStorage.getItem('summus_dark')==='1'){dark=true;document.getElementById('root').classList.add('dk');}}catch(e){}
+  renderEmpresaChips();
   syncDash();
   startRot();
 }
@@ -363,17 +440,9 @@ function syncDash(){
     btn.style.opacity='1';
     if(e||!res||!res.ok){console.warn('syncDash error', e?e.message:(res&&res.error)||'?');return;}
     var d=res.data||{};
-    if(d.mr)D.mr=d.mr; if(d.mm)D.mm=d.mm;
-    if(d.comercial)Object.assign(D.comercial,d.comercial);
-    if(d.operacao)Object.assign(D.operacao,d.operacao);
-    if(d.fat)Object.assign(D.fat,d.fat);
-    if(d.ast)Object.assign(D.ast,d.ast);
-    if(d.pdd)Object.assign(D.pdd,d.pdd);
-    if(d.rh)Object.assign(D.rh,d.rh);
-    if(d.cob)Object.assign(D.cob,d.cob);
-    if(d.mkt)Object.assign(D.mkt,d.mkt);
+    D_RAW=d;
     document.getElementById('ultima-sync').textContent=new Date().toLocaleTimeString('pt-BR');
-    render();
+    applyFilter();
     try{loadDMData(d);}catch(err){console.warn('loadDMData error:',err);}
   });
 }
