@@ -194,6 +194,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
   #rot-btn{width:30px;height:30px;font-size:13px;bottom:10px;left:10px}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 (function(){
   try{
@@ -474,7 +475,7 @@ function syncProg(){
 }
 
 function item(lbl,real,mn,ms){var rn=parseN(real),pct=mn>0?Math.min(Math.round(rn/mn*100),100):0,cls,pcls,plbl;if(pct>=100){cls='b-g';pcls='p-g';plbl=pct+'% ✓';}else if(pct>=60){cls='b-y';pcls='p-y';plbl=pct+'%';}else{cls='b-r';pcls='p-r';plbl=pct+'%';}var falta=mn-rn,fstr=falta>0?'Falta: '+fmtN(falta):'✓ Meta atingida!';return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">de</span><span class="v-meta">'+fmtMeta(ms)+'</span></div><span class="v-rest">'+fstr+'</span></div></div>';}
-function itemD(lbl,real,lim_n,ls){var rn=parseN(real),rawPct=lim_n>0?Math.round(rn/lim_n*100):0,pct=Math.min(rawPct,100),cls,pcls,plbl;if(rawPct<=100){cls='b-g';pcls='p-g';plbl=rawPct+'% usado';}else{cls='b-r';pcls='p-r';plbl=rawPct+'% ⚠';}var rest=lim_n-rn,rstr=rest>0?'Disponível: '+fmtN(rest):'⚠ Limite ultrapassado! '+fmtN(Math.abs(rest));return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">limite</span><span class="v-meta">'+fmtMeta(ls)+'</span></div><span class="v-rest">'+rstr+'</span></div></div>';}
+function itemD(lbl,real,lim_n,ls,showEye){var rn=parseN(real),rawPct=lim_n>0?Math.round(rn/lim_n*100):0,pct=Math.min(rawPct,100),cls,pcls,plbl;if(rawPct<=100){cls='b-g';pcls='p-g';plbl=rawPct+'% usado';}else{cls='b-r';pcls='p-r';plbl=rawPct+'% ⚠';}var rest=lim_n-rn,rstr=rest>0?'Disponível: '+fmtN(rest):'⚠ Limite ultrapassado! '+fmtN(Math.abs(rest));var eyeBtn=showEye?'<button onclick="openTitulosPagos()" title="Ver detalhamento das despesas" style="background:none;border:none;cursor:pointer;padding:0;margin-left:6px;vertical-align:middle;color:#8fa5bb;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>':'';return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+eyeBtn+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">limite</span><span class="v-meta">'+fmtMeta(ls)+'</span></div><span class="v-rest">'+rstr+'</span></div></div>';}
 // Barra de receitas (sem meta definida — só mostra o valor)
 function itemReceita(lbl,real){
   var rn=parseN(real);
@@ -571,7 +572,7 @@ function render(){
   };
   document.getElementById('dash').innerHTML=
   '<div class="g3">'+
-    card(I.rec,'Faturamento',item('Faturamento',PROG.faturamento,METAS.faturamento_n,METAS.faturamento)+'<hr class="div">'+itemReceita('Receitas do mês',PROG.receitas)+'<hr class="div">'+itemD('Despesa do mês',PROG.despesa,METAS.despesa_n,METAS.despesa)+'<hr class="div">'+itemResultado('Resultado do mês',PROG.receitas,PROG.despesa,METAS.lucro_n,METAS.lucro))+
+    card(I.rec,'Faturamento',item('Faturamento',PROG.faturamento,METAS.faturamento_n,METAS.faturamento)+'<hr class="div">'+itemReceita('Receitas do mês',PROG.receitas)+'<hr class="div">'+itemD('Despesa do mês',PROG.despesa,METAS.despesa_n,METAS.despesa,true)+'<hr class="div">'+itemResultado('Resultado do mês',PROG.receitas,PROG.despesa,METAS.lucro_n,METAS.lucro))+
     card(I.usr,'Comercial',itemBarra('Total cedentes cadastrados',PROG.cedentes,METAS.cedentes_n,METAS.cedentes)+'<hr class="div">'+itemOperado('Total cedentes operado',PROG.cedentes_op,PROG.cedentes)+'<hr class="div">'+item('Novos cedentes',PROG.novos,METAS.novos_n,METAS.novos)+'<hr class="div">'+item('Operaram no mês',PROG.operaram,METAS.operaram_n,METAS.operaram))+
     card(I.ref,'Operação',item('Operações',PROG.operacoes,METAS.operacoes_n,METAS.operacoes)+'<hr class="div">'+item('Prorrogações',PROG.prorrogacoes,METAS.prorrogacoes_n,METAS.prorrogacoes)+'<hr class="div">'+item('Total',tOp,tM,String(tM)))+
   '</div><div class="g2">'+
@@ -673,5 +674,240 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
   }catch(e){}
 })();
 
+</script>
+
+<!-- ═══════════ MODAL TÍTULOS PAGOS - QUITADO ═══════════ -->
+<div id="tp-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:9999;padding:20px;overflow-y:auto">
+  <div id="tp-box" style="background:#fff;border-radius:14px;max-width:1180px;margin:0 auto;padding:24px 28px 32px;box-shadow:0 10px 50px rgba(0,0,0,.35);min-height:calc(100vh - 40px)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div>
+        <h2 style="font-size:19px;font-weight:700;color:#16263a;margin:0">Despesas Detalhadas</h2>
+        <p style="font-size:12px;color:#6b7a8d;margin:3px 0 0">Títulos pagos e quitados — dados da planilha</p>
+      </div>
+      <button onclick="closeTitulosPagos()" style="background:none;border:none;font-size:26px;cursor:pointer;color:#8fa5bb;padding:0;line-height:1">&times;</button>
+    </div>
+
+    <!-- FILTROS -->
+    <div id="tp-filtros" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;padding:14px 16px;background:#f4f7fa;border-radius:10px">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#4a607a;display:block;margin-bottom:4px">MÊS</label>
+        <select id="tp-f-mes" onchange="tpAplicarFiltros()" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:120px"><option value="">Todos</option></select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#4a607a;display:block;margin-bottom:4px">ANO</label>
+        <select id="tp-f-ano" onchange="tpAplicarFiltros()" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:90px"><option value="">Todos</option></select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#4a607a;display:block;margin-bottom:4px">EMPRESA</label>
+        <select id="tp-f-empresa" onchange="tpAplicarFiltros()" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:140px"><option value="">Todas</option></select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#4a607a;display:block;margin-bottom:4px">CATEGORIA</label>
+        <select id="tp-f-categoria" onchange="tpAplicarFiltros()" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:180px"><option value="">Todas</option></select>
+      </div>
+      <div style="margin-left:auto;align-self:flex-end">
+        <button onclick="tpLimparFiltros()" style="background:#fff;border:1px solid #cdd8e5;border-radius:7px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:inherit;color:#4a607a">Limpar filtros</button>
+      </div>
+    </div>
+
+    <div id="tp-total-bar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding:10px 16px;background:#fff3f3;border:1px solid #f3c5c5;border-radius:9px">
+      <span style="font-size:13px;color:#8b1a1a;font-weight:600">Total filtrado</span>
+      <span id="tp-total-valor" style="font-size:18px;font-weight:700;color:#8b1a1a">R$ 0,00</span>
+    </div>
+
+    <!-- GRÁFICOS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <div style="background:#fff;border:1px solid #e3e9f0;border-radius:12px;padding:14px">
+        <div style="font-size:13px;font-weight:700;color:#16263a;margin-bottom:10px">Por Categoria</div>
+        <div style="height:260px"><canvas id="tp-chart-cat"></canvas></div>
+      </div>
+      <div style="background:#fff;border:1px solid #e3e9f0;border-radius:12px;padding:14px">
+        <div style="font-size:13px;font-weight:700;color:#16263a;margin-bottom:10px">Por Fornecedor (maiores valores)</div>
+        <div style="height:260px"><canvas id="tp-chart-forn"></canvas></div>
+      </div>
+    </div>
+
+    <!-- TABELA -->
+    <div style="background:#fff;border:1px solid #e3e9f0;border-radius:12px;overflow:hidden">
+      <div style="max-height:420px;overflow-y:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead style="position:sticky;top:0;background:#2CA1D8;color:#fff;z-index:1">
+            <tr>
+              <th style="text-align:left;padding:10px 12px;font-weight:700">DATA</th>
+              <th style="text-align:left;padding:10px 12px;font-weight:700">FORNECEDOR</th>
+              <th style="text-align:right;padding:10px 12px;font-weight:700">VALOR</th>
+              <th style="text-align:left;padding:10px 12px;font-weight:700">CATEGORIA</th>
+              <th style="text-align:left;padding:10px 12px;font-weight:700">OBS</th>
+            </tr>
+          </thead>
+          <tbody id="tp-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var TP_DATA=[];       // dados crus vindos do Apps Script
+var TP_FILTRADO=[];   // após aplicar filtros
+var TP_CHARTS={};
+var TP_LOADED=false;
+
+function tpFmtMoney(v){
+  return 'R$ '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function tpFmtDate(iso){
+  if(!iso)return '—';
+  var m=String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m)return m[3]+'/'+m[2]+'/'+m[1];
+  return iso;
+}
+function tpMesAno(iso){
+  var m=String(iso||'').match(/^(\d{4})-(\d{2})/);
+  if(!m)return {mes:'',ano:''};
+  return {mes:m[2],ano:m[1]};
+}
+var TP_MESES={'01':'Janeiro','02':'Fevereiro','03':'Março','04':'Abril','05':'Maio','06':'Junho','07':'Julho','08':'Agosto','09':'Setembro','10':'Outubro','11':'Novembro','12':'Dezembro'};
+
+function openTitulosPagos(){
+  document.getElementById('tp-overlay').style.display='block';
+  document.getElementById('tp-box').classList.toggle('dk', dark);
+  if(!TP_LOADED){
+    tpCarregarDados();
+  } else {
+    tpAplicarFiltros();
+  }
+}
+function closeTitulosPagos(){
+  document.getElementById('tp-overlay').style.display='none';
+}
+
+function tpCarregarDados(){
+  document.getElementById('tp-tbody').innerHTML='<tr><td colspan="5" style="padding:20px;text-align:center;color:#8fa5bb">Carregando...</td></tr>';
+  apiGet({action:'getTitulosPagos'},function(e,res){
+    if(e||!res||!res.ok){
+      document.getElementById('tp-tbody').innerHTML='<tr><td colspan="5" style="padding:20px;text-align:center;color:#c0392b">Erro ao carregar: '+(e?e.message:(res&&res.error)||'desconhecido')+'</td></tr>';
+      return;
+    }
+    TP_DATA=res.data||[];
+    TP_LOADED=true;
+    tpPopularFiltros();
+    tpAplicarFiltros();
+  });
+}
+
+function tpPopularFiltros(){
+  var meses={}, anos={}, empresas={}, categorias={};
+  TP_DATA.forEach(function(r){
+    var ma=tpMesAno(r.data);
+    if(ma.mes)meses[ma.mes]=true;
+    if(ma.ano)anos[ma.ano]=true;
+    if(r.empresa)empresas[r.empresa]=true;
+    if(r.categoria)categorias[r.categoria]=true;
+  });
+  function fill(id, obj, labelFn){
+    var sel=document.getElementById(id);
+    var atual=sel.value;
+    var keys=Object.keys(obj).sort();
+    sel.innerHTML='<option value="">'+(id==='tp-f-mes'?'Todos':id==='tp-f-ano'?'Todos':id==='tp-f-empresa'?'Todas':'Todas')+'</option>'+
+      keys.map(function(k){return '<option value="'+k+'">'+(labelFn?labelFn(k):k)+'</option>';}).join('');
+    if(keys.indexOf(atual)>=0)sel.value=atual;
+  }
+  fill('tp-f-mes', meses, function(k){return TP_MESES[k]||k;});
+  fill('tp-f-ano', anos);
+  fill('tp-f-empresa', empresas);
+  fill('tp-f-categoria', categorias);
+}
+
+function tpLimparFiltros(){
+  ['tp-f-mes','tp-f-ano','tp-f-empresa','tp-f-categoria'].forEach(function(id){document.getElementById(id).value='';});
+  tpAplicarFiltros();
+}
+
+function tpAplicarFiltros(){
+  var fMes=document.getElementById('tp-f-mes').value;
+  var fAno=document.getElementById('tp-f-ano').value;
+  var fEmp=document.getElementById('tp-f-empresa').value;
+  var fCat=document.getElementById('tp-f-categoria').value;
+
+  TP_FILTRADO=TP_DATA.filter(function(r){
+    var ma=tpMesAno(r.data);
+    if(fMes && ma.mes!==fMes)return false;
+    if(fAno && ma.ano!==fAno)return false;
+    if(fEmp && r.empresa!==fEmp)return false;
+    if(fCat && r.categoria!==fCat)return false;
+    return true;
+  });
+
+  tpRenderTotal();
+  tpRenderTabela();
+  tpRenderGraficos();
+}
+
+function tpRenderTotal(){
+  var total=TP_FILTRADO.reduce(function(s,r){return s+(r.valor||0);},0);
+  document.getElementById('tp-total-valor').textContent=tpFmtMoney(total);
+}
+
+function tpRenderTabela(){
+  var tbody=document.getElementById('tp-tbody');
+  if(!TP_FILTRADO.length){
+    tbody.innerHTML='<tr><td colspan="5" style="padding:20px;text-align:center;color:#8fa5bb">Nenhum registro encontrado para os filtros selecionados</td></tr>';
+    return;
+  }
+  var ordenado=TP_FILTRADO.slice().sort(function(a,b){return (a.data||'')<(b.data||'')?1:-1;});
+  var html='';
+  ordenado.forEach(function(r,idx){
+    var bg=idx%2===0?'#fff':'#f8fafc';
+    html+='<tr style="background:'+bg+'">'+
+      '<td style="padding:8px 12px;border-bottom:1px solid #eef2f6;white-space:nowrap">'+tpFmtDate(r.data)+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid #eef2f6">'+r.fornecedor+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid #eef2f6;text-align:right;font-weight:600;white-space:nowrap">'+tpFmtMoney(r.valor)+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid #eef2f6">'+r.categoria+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid #eef2f6;color:#6b7a8d;font-size:12px">'+(r.obs||'—')+'</td>'+
+      '</tr>';
+  });
+  tbody.innerHTML=html;
+}
+
+function tpRenderGraficos(){
+  // Agrupar por categoria
+  var porCat={};
+  TP_FILTRADO.forEach(function(r){
+    var k=r.categoria||'(sem categoria)';
+    porCat[k]=(porCat[k]||0)+(r.valor||0);
+  });
+  var catLabels=Object.keys(porCat).sort(function(a,b){return porCat[b]-porCat[a];});
+  var catValues=catLabels.map(function(k){return porCat[k];});
+
+  // Agrupar por fornecedor, decrescente, top 12
+  var porForn={};
+  TP_FILTRADO.forEach(function(r){
+    var k=r.fornecedor||'(sem fornecedor)';
+    porForn[k]=(porForn[k]||0)+(r.valor||0);
+  });
+  var fornLabels=Object.keys(porForn).sort(function(a,b){return porForn[b]-porForn[a];}).slice(0,12);
+  var fornValues=fornLabels.map(function(k){return porForn[k];});
+
+  var palette=['#2CA1D8','#1d9e75','#e74c3c','#f39c12','#9b59b6','#34495e','#16a085','#c0392b','#2980b9','#8e44ad','#27ae60','#d35400'];
+
+  if(TP_CHARTS.cat)TP_CHARTS.cat.destroy();
+  TP_CHARTS.cat=new Chart(document.getElementById('tp-chart-cat'),{
+    type:'doughnut',
+    data:{labels:catLabels,datasets:[{data:catValues,backgroundColor:palette,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:function(c){return ' '+c.label+': '+tpFmtMoney(c.raw);}}}}}
+  });
+
+  if(TP_CHARTS.forn)TP_CHARTS.forn.destroy();
+  TP_CHARTS.forn=new Chart(document.getElementById('tp-chart-forn'),{
+    type:'bar',
+    data:{labels:fornLabels,datasets:[{data:fornValues,backgroundColor:'#2CA1D8',borderRadius:4}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' '+tpFmtMoney(c.raw);}}}},
+      scales:{x:{ticks:{callback:function(v){return tpFmtMoney(v);},font:{size:10}}},y:{ticks:{font:{size:10}}}}
+    }
+  });
+}
 </script>
 </body></html>
