@@ -329,7 +329,7 @@ function initLogin(){
   document.getElementById('inp-pass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 }
 
-function fmtN(v){var n=parseFloat(String(v).replace(/[^0-9.,]/g,'').replace(',','.'))||0;if(n>=1000000)return'R$ '+(n/1000000).toFixed(2).replace('.',',')+'M';if(n>=1000)return'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2});return String(v||0);}
+function fmtN(v){var n=parseFloat(String(v).replace(/[^0-9.,-]/g,'').replace(',','.'))||0;n=Math.round(n*100)/100;if(n>=1000000)return'R$ '+(n/1000000).toFixed(2).replace('.',',')+'M';if(n>=1000)return'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});if(n===Math.trunc(n))return String(n);return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function parseN(v){return parseFloat(String(v).replace(/[^0-9.,]/g,'').replace(',','.'))||0;}
 function fmtMeta(v){
   if(!v&&v!==0) return '';
@@ -475,7 +475,7 @@ function syncProg(){
 }
 
 function item(lbl,real,mn,ms){var rn=parseN(real),pct=mn>0?Math.min(Math.round(rn/mn*100),100):0,cls,pcls,plbl;if(pct>=100){cls='b-g';pcls='p-g';plbl=pct+'% ✓';}else if(pct>=60){cls='b-y';pcls='p-y';plbl=pct+'%';}else{cls='b-r';pcls='p-r';plbl=pct+'%';}var falta=mn-rn,fstr=falta>0?'Falta: '+fmtN(falta):'✓ Meta atingida!';return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">de</span><span class="v-meta">'+fmtMeta(ms)+'</span></div><span class="v-rest">'+fstr+'</span></div></div>';}
-function itemD(lbl,real,lim_n,ls,showEye){var rn=parseN(real),rawPct=lim_n>0?Math.round(rn/lim_n*100):0,pct=Math.min(rawPct,100),cls,pcls,plbl;if(rawPct<=100){cls='b-g';pcls='p-g';plbl=rawPct+'% usado';}else{cls='b-r';pcls='p-r';plbl=rawPct+'% ⚠';}var rest=lim_n-rn,rstr=rest>0?'Disponível: '+fmtN(rest):'⚠ Limite ultrapassado! '+fmtN(Math.abs(rest));var eyeBtn=showEye?'<button onclick="openTitulosPagos()" title="Ver detalhamento das despesas" style="background:none;border:none;cursor:pointer;padding:0;margin-left:6px;vertical-align:middle;color:#8fa5bb;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>':'';return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+eyeBtn+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">limite</span><span class="v-meta">'+fmtMeta(ls)+'</span></div><span class="v-rest">'+rstr+'</span></div></div>';}
+function itemD(lbl,real,lim_n,ls,showEye){var rn=parseN(real),rawPct=lim_n>0?(rn/lim_n*100):0,rawPctStr=rawPct.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}),pct=Math.min(rawPct,100),cls,pcls,plbl;if(rawPct<=100){cls='b-g';pcls='p-g';plbl=rawPctStr+'% usado';}else{cls='b-r';pcls='p-r';plbl=rawPctStr+'% ⚠';}var rest=lim_n-rn,rstr=rest>0?'Disponível: '+fmtN(rest):'⚠ Limite ultrapassado! '+fmtN(Math.abs(rest));var eyeBtn=showEye?'<button onclick="openTitulosPagos()" title="Ver detalhamento das despesas" style="background:none;border:none;cursor:pointer;padding:0;margin-left:6px;vertical-align:middle;color:#8fa5bb;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>':'';return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+eyeBtn+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">limite</span><span class="v-meta">'+fmtMeta(ls)+'</span></div><span class="v-rest">'+rstr+'</span></div></div>';}
 // Barra de receitas (sem meta definida — só mostra o valor)
 function itemReceita(lbl,real){
   var rn=parseN(real);
@@ -716,7 +716,7 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
     </div>
 
     <!-- GRÁFICOS -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
       <div style="background:#fff;border:1px solid #e3e9f0;border-radius:12px;padding:14px">
         <div style="font-size:13px;font-weight:700;color:#16263a;margin-bottom:10px">Por Categoria</div>
         <div style="height:260px"><canvas id="tp-chart-cat"></canvas></div>
@@ -727,16 +727,22 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
       </div>
     </div>
 
+    <div style="background:#fff;border:1px solid #e3e9f0;border-radius:12px;padding:14px;margin-bottom:20px">
+      <div style="font-size:13px;font-weight:700;color:#16263a;margin-bottom:2px" id="tp-chart-evol-titulo">Evolução Mensal por Categoria</div>
+      <div style="font-size:11px;color:#8fa5bb;margin-bottom:10px">Selecione uma categoria no filtro acima para focar em um item específico — sem seleção, mostra todas agrupadas por mês</div>
+      <div style="height:280px"><canvas id="tp-chart-evol"></canvas></div>
+    </div>
+
     <!-- TABELA -->
     <div style="background:#fff;border:1px solid #e3e9f0;border-radius:12px;overflow:hidden">
       <div style="max-height:420px;overflow-y:auto">
         <table style="width:100%;border-collapse:collapse;font-size:13px">
           <thead style="position:sticky;top:0;background:#2CA1D8;color:#fff;z-index:1">
             <tr>
-              <th style="text-align:left;padding:10px 12px;font-weight:700">DATA</th>
-              <th style="text-align:left;padding:10px 12px;font-weight:700">FORNECEDOR</th>
-              <th style="text-align:right;padding:10px 12px;font-weight:700">VALOR</th>
-              <th style="text-align:left;padding:10px 12px;font-weight:700">CATEGORIA</th>
+              <th onclick="tpOrdenarPor('data')" style="text-align:left;padding:10px 12px;font-weight:700;cursor:pointer;user-select:none">DATA<span id="tp-sort-data" style="margin-left:4px;opacity:.6"></span></th>
+              <th onclick="tpOrdenarPor('fornecedor')" style="text-align:left;padding:10px 12px;font-weight:700;cursor:pointer;user-select:none">FORNECEDOR<span id="tp-sort-fornecedor" style="margin-left:4px;opacity:.6"></span></th>
+              <th onclick="tpOrdenarPor('valor')" style="text-align:right;padding:10px 12px;font-weight:700;cursor:pointer;user-select:none">VALOR<span id="tp-sort-valor" style="margin-left:4px;opacity:.6"></span></th>
+              <th onclick="tpOrdenarPor('categoria')" style="text-align:left;padding:10px 12px;font-weight:700;cursor:pointer;user-select:none">CATEGORIA<span id="tp-sort-categoria" style="margin-left:4px;opacity:.6"></span></th>
               <th style="text-align:left;padding:10px 12px;font-weight:700">OBS</th>
             </tr>
           </thead>
@@ -750,6 +756,7 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
 <script>
 var TP_DATA=[];       // dados crus vindos do Apps Script
 var TP_FILTRADO=[];   // após aplicar filtros
+var TP_SORT={campo:'data', dir:'desc'}; // ordenação padrão: data, mais recente primeiro
 var TP_CHARTS={};
 var TP_LOADED=false;
 
@@ -849,13 +856,50 @@ function tpRenderTotal(){
   document.getElementById('tp-total-valor').textContent=tpFmtMoney(total);
 }
 
+function tpOrdenarPor(campo){
+  if(TP_SORT.campo===campo){
+    TP_SORT.dir = TP_SORT.dir==='asc' ? 'desc' : 'asc';
+  } else {
+    TP_SORT.campo=campo;
+    // Padrão amigável: texto começa A-Z (asc), valor começa maior-menor (desc), data começa mais recente (desc)
+    TP_SORT.dir = (campo==='valor' || campo==='data') ? 'desc' : 'asc';
+  }
+  tpRenderTabela();
+}
+
+function tpAtualizarIconesOrdenacao(){
+  ['data','fornecedor','valor','categoria'].forEach(function(campo){
+    var el=document.getElementById('tp-sort-'+campo);
+    if(!el)return;
+    if(TP_SORT.campo===campo){
+      el.textContent = TP_SORT.dir==='asc' ? '▲' : '▼';
+      el.style.opacity='1';
+    } else {
+      el.textContent='';
+      el.style.opacity='.6';
+    }
+  });
+}
+
 function tpRenderTabela(){
   var tbody=document.getElementById('tp-tbody');
+  tpAtualizarIconesOrdenacao();
   if(!TP_FILTRADO.length){
     tbody.innerHTML='<tr><td colspan="5" style="padding:20px;text-align:center;color:#8fa5bb">Nenhum registro encontrado para os filtros selecionados</td></tr>';
     return;
   }
-  var ordenado=TP_FILTRADO.slice().sort(function(a,b){return (a.data||'')<(b.data||'')?1:-1;});
+  var campo=TP_SORT.campo, dir=TP_SORT.dir;
+  var ordenado=TP_FILTRADO.slice().sort(function(a,b){
+    var va=a[campo], vb=b[campo];
+    if(campo==='valor'){
+      va=parseFloat(va)||0; vb=parseFloat(vb)||0;
+    } else {
+      va=String(va||'').toLowerCase(); vb=String(vb||'').toLowerCase();
+    }
+    if(va<vb)return dir==='asc'?-1:1;
+    if(va>vb)return dir==='asc'?1:-1;
+    return 0;
+  });
   var html='';
   ordenado.forEach(function(r,idx){
     var bg=idx%2===0?'#fff':'#f8fafc';
@@ -906,6 +950,85 @@ function tpRenderGraficos(){
       responsive:true,maintainAspectRatio:false,indexAxis:'y',
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' '+tpFmtMoney(c.raw);}}}},
       scales:{x:{ticks:{callback:function(v){return tpFmtMoney(v);},font:{size:10}}},y:{ticks:{font:{size:10}}}}
+    }
+  });
+
+  tpRenderGraficoEvolucao();
+}
+
+function tpRenderGraficoEvolucao(){
+  // Este gráfico ignora os filtros de MÊS/ANO de propósito (precisa comparar todos os meses).
+  // Respeita apenas os filtros de EMPRESA e CATEGORIA.
+  var fEmp=document.getElementById('tp-f-empresa').value;
+  var fCat=document.getElementById('tp-f-categoria').value;
+
+  var baseDados=TP_DATA.filter(function(r){
+    if(fEmp && r.empresa!==fEmp)return false;
+    if(fCat && r.categoria!==fCat)return false;
+    return true;
+  });
+
+  var titulo=document.getElementById('tp-chart-evol-titulo');
+  titulo.textContent = fCat ? ('Evolução Mensal — '+fCat) : 'Evolução Mensal por Categoria (todas)';
+
+  // Descobrir todos os meses (aaaa-mm) presentes, ordenados cronologicamente
+  var mesesSet={};
+  baseDados.forEach(function(r){
+    var ma=tpMesAno(r.data);
+    if(ma.ano && ma.mes)mesesSet[ma.ano+'-'+ma.mes]=true;
+  });
+  var mesesOrdenados=Object.keys(mesesSet).sort();
+  var mesesLabels=mesesOrdenados.map(function(k){
+    var p=k.split('-');
+    return (TP_MESES[p[1]]||p[1]).substring(0,3)+'/'+p[0].substring(2);
+  });
+
+  var datasets=[];
+  var palette=['#2CA1D8','#1d9e75','#e74c3c','#f39c12','#9b59b6','#34495e','#16a085','#c0392b','#2980b9','#8e44ad','#27ae60','#d35400'];
+
+  if(fCat){
+    // Uma categoria específica selecionada: uma única série, uma barra por mês
+    var porMes={};
+    mesesOrdenados.forEach(function(k){porMes[k]=0;});
+    baseDados.forEach(function(r){
+      var ma=tpMesAno(r.data);
+      var k=ma.ano+'-'+ma.mes;
+      if(porMes[k]!==undefined)porMes[k]+=(r.valor||0);
+    });
+    datasets.push({label:fCat, data:mesesOrdenados.map(function(k){return porMes[k];}), backgroundColor:'#2CA1D8', borderRadius:4});
+  } else {
+    // Nenhuma categoria selecionada: uma série por categoria, barras agrupadas por mês
+    var categorias={};
+    baseDados.forEach(function(r){categorias[r.categoria||'(sem categoria)']=true;});
+    var catList=Object.keys(categorias).sort();
+    catList.forEach(function(cat, idx){
+      var porMes={};
+      mesesOrdenados.forEach(function(k){porMes[k]=0;});
+      baseDados.forEach(function(r){
+        if((r.categoria||'(sem categoria)')!==cat)return;
+        var ma=tpMesAno(r.data);
+        var k=ma.ano+'-'+ma.mes;
+        if(porMes[k]!==undefined)porMes[k]+=(r.valor||0);
+      });
+      datasets.push({label:cat, data:mesesOrdenados.map(function(k){return porMes[k];}), backgroundColor:palette[idx%palette.length], borderRadius:3});
+    });
+  }
+
+  if(TP_CHARTS.evol)TP_CHARTS.evol.destroy();
+  TP_CHARTS.evol=new Chart(document.getElementById('tp-chart-evol'),{
+    type:'bar',
+    data:{labels:mesesLabels, datasets:datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:!fCat, position:'bottom', labels:{boxWidth:12,font:{size:10}}},
+        tooltip:{callbacks:{label:function(c){return ' '+c.dataset.label+': '+tpFmtMoney(c.raw);}}}
+      },
+      scales:{
+        x:{ticks:{font:{size:10}}},
+        y:{ticks:{callback:function(v){return tpFmtMoney(v);},font:{size:10}}}
+      }
     }
   });
 }
