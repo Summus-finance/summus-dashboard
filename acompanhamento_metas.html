@@ -139,6 +139,23 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
   .td-l{font-size:13px}
 }
 
+/* ── MODAL DESPESAS DETALHADAS (Títulos Pagos) — RESPONSIVO ── */
+@media (max-width: 768px) {
+  #tp-overlay{padding:0!important}
+  .tp-box{padding:16px 14px 24px!important;border-radius:0!important;max-width:100%!important;min-height:100vh!important}
+  .tp-filtros{flex-direction:column;align-items:stretch!important;gap:10px!important;padding:12px!important}
+  .tp-filtro-campo{width:100%}
+  .tp-btn-limpar-wrap{margin-left:0!important}
+  .tp-select{font-size:14px!important;padding:9px 10px!important}
+  .tp-graficos-row{grid-template-columns:1fr!important;gap:12px!important}
+  .tp-chart-wrap{height:220px!important}
+  .tp-table-scroll{-webkit-overflow-scrolling:touch}
+}
+@media (max-width: 480px) {
+  .tp-box{padding:14px 10px 20px!important}
+  .tp-chart-wrap{height:200px!important}
+}
+
 /* ── CELULAR DEITADO (landscape) ───────────────────── */
 @media (max-width: 900px) and (orientation: landscape) {
   .root{padding:8px}
@@ -679,7 +696,7 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
 
 <!-- ═══════════ MODAL TÍTULOS PAGOS - QUITADO ═══════════ -->
 <div id="tp-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:9999;padding:20px;overflow-y:auto">
-  <div id="tp-box" style="background:#fff;border-radius:14px;max-width:1180px;margin:0 auto;padding:24px 28px 32px;box-shadow:0 10px 50px rgba(0,0,0,.35);min-height:calc(100vh - 40px)">
+  <div id="tp-box" class="tp-box" style="background:#fff;border-radius:14px;max-width:1180px;margin:0 auto;padding:24px 28px 32px;box-shadow:0 10px 50px rgba(0,0,0,.35);min-height:calc(100vh - 40px)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
       <div>
         <h2 style="font-size:19px;font-weight:700;color:#16263a;margin:0">Despesas Detalhadas</h2>
@@ -689,33 +706,33 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
     </div>
 
     <!-- FILTROS -->
-    <div id="tp-filtros" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;padding:14px 16px;background:#f4f7fa;border-radius:10px">
-      <div>
+    <div id="tp-filtros" class="tp-filtros" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;padding:14px 16px;background:#f4f7fa;border-radius:10px">
+      <div class="tp-filtro-campo">
         <label style="font-size:11px;font-weight:700;color:#4a607a;display:block;margin-bottom:4px">MÊS</label>
-        <select id="tp-f-mes" onchange="tpAplicarFiltros()" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:120px"><option value="">Todos</option></select>
+        <select id="tp-f-mes" onchange="tpAplicarFiltros()" class="tp-select" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:120px;width:100%"><option value="">Todos</option></select>
       </div>
-      <div>
+      <div class="tp-filtro-campo">
         <label style="font-size:11px;font-weight:700;color:#4a607a;display:block;margin-bottom:4px">ANO</label>
-        <select id="tp-f-ano" onchange="tpAplicarFiltros()" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:90px"><option value="">Todos</option></select>
+        <select id="tp-f-ano" onchange="tpAplicarFiltros()" class="tp-select" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:90px;width:100%"><option value="">Todos</option></select>
       </div>
-      <div>
+      <div class="tp-filtro-campo">
         <label style="font-size:11px;font-weight:700;color:#4a607a;display:block;margin-bottom:4px">EMPRESA</label>
-        <select id="tp-f-empresa" onchange="tpAplicarFiltros()" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:140px"><option value="">Todas</option></select>
+        <select id="tp-f-empresa" onchange="tpAplicarFiltros()" class="tp-select" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:140px;width:100%"><option value="">Todas</option></select>
       </div>
-      <div>
+      <div class="tp-filtro-campo">
         <label style="font-size:11px;font-weight:700;color:#4a607a;display:block;margin-bottom:4px">CATEGORIA</label>
-        <select id="tp-f-categoria" onchange="tpAplicarFiltros()" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:180px"><option value="">Todas</option></select>
+        <select id="tp-f-categoria" onchange="tpAplicarFiltros()" class="tp-select" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:180px;width:100%"><option value="">Todas</option></select>
       </div>
-      <div>
+      <div class="tp-filtro-campo">
         <label style="font-size:11px;font-weight:700;color:#4a607a;display:block;margin-bottom:4px">FORNECEDOR</label>
-        <select id="tp-f-fornecedor" onchange="tpAplicarFiltros()" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:180px"><option value="">Todos</option></select>
+        <select id="tp-f-fornecedor" onchange="tpAplicarFiltros()" class="tp-select" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:180px;width:100%"><option value="">Todos</option></select>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;padding:7px 4px">
-        <input type="checkbox" id="tp-f-mostrar-valores" onchange="tpToggleMostrarValores()" style="width:16px;height:16px;cursor:pointer;accent-color:#2CA1D8">
+      <div class="tp-filtro-campo" style="display:flex;align-items:center;gap:6px;padding:7px 4px">
+        <input type="checkbox" id="tp-f-mostrar-valores" onchange="tpToggleMostrarValores()" style="width:16px;height:16px;cursor:pointer;accent-color:#2CA1D8;flex-shrink:0">
         <label for="tp-f-mostrar-valores" style="font-size:12px;color:#4a607a;cursor:pointer;user-select:none">Mostrar valores no gráfico</label>
       </div>
-      <div style="margin-left:auto;align-self:flex-end">
-        <button onclick="tpLimparFiltros()" style="background:#fff;border:1px solid #cdd8e5;border-radius:7px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:inherit;color:#4a607a">Limpar filtros</button>
+      <div class="tp-filtro-campo tp-btn-limpar-wrap" style="margin-left:auto;align-self:flex-end">
+        <button onclick="tpLimparFiltros()" style="background:#fff;border:1px solid #cdd8e5;border-radius:7px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:inherit;color:#4a607a;width:100%">Limpar filtros</button>
       </div>
     </div>
 
@@ -725,34 +742,34 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
     </div>
 
     <!-- GRÁFICOS -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div style="background:#fff;border:1px solid #e3e9f0;border-radius:12px;padding:14px">
+    <div class="tp-graficos-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div style="background:#fff;border:1px solid #e3e9f0;border-radius:12px;padding:14px;min-width:0">
         <div style="font-size:13px;font-weight:700;color:#16263a;margin-bottom:10px">Por Categoria</div>
-        <div style="height:260px"><canvas id="tp-chart-cat"></canvas></div>
+        <div class="tp-chart-wrap" style="height:260px"><canvas id="tp-chart-cat"></canvas></div>
       </div>
-      <div style="background:#fff;border:1px solid #e3e9f0;border-radius:12px;padding:14px">
+      <div style="background:#fff;border:1px solid #e3e9f0;border-radius:12px;padding:14px;min-width:0">
         <div style="font-size:13px;font-weight:700;color:#16263a;margin-bottom:10px">Por Fornecedor (maiores valores)</div>
-        <div style="height:260px"><canvas id="tp-chart-forn"></canvas></div>
+        <div class="tp-chart-wrap" style="height:260px"><canvas id="tp-chart-forn"></canvas></div>
       </div>
     </div>
 
     <div style="background:#fff;border:1px solid #e3e9f0;border-radius:12px;padding:14px;margin-bottom:20px">
       <div style="font-size:13px;font-weight:700;color:#16263a;margin-bottom:2px" id="tp-chart-evol-titulo">Evolução Mensal por Categoria</div>
       <div style="font-size:11px;color:#8fa5bb;margin-bottom:10px">Selecione uma categoria no filtro acima para focar em um item específico — sem seleção, mostra todas agrupadas por mês</div>
-      <div style="height:280px"><canvas id="tp-chart-evol"></canvas></div>
+      <div class="tp-chart-wrap" style="height:280px"><canvas id="tp-chart-evol"></canvas></div>
     </div>
 
     <!-- TABELA -->
     <div style="background:#fff;border:1px solid #e3e9f0;border-radius:12px;overflow:hidden">
-      <div style="max-height:420px;overflow-y:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <div class="tp-table-scroll" style="max-height:420px;overflow-y:auto;overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:560px">
           <thead style="position:sticky;top:0;background:#2CA1D8;color:#fff;z-index:1">
             <tr>
-              <th onclick="tpOrdenarPor('data')" style="text-align:left;padding:10px 12px;font-weight:700;cursor:pointer;user-select:none">DATA<span id="tp-sort-data" style="margin-left:4px;opacity:.6"></span></th>
-              <th onclick="tpOrdenarPor('fornecedor')" style="text-align:left;padding:10px 12px;font-weight:700;cursor:pointer;user-select:none">FORNECEDOR<span id="tp-sort-fornecedor" style="margin-left:4px;opacity:.6"></span></th>
-              <th onclick="tpOrdenarPor('valor')" style="text-align:right;padding:10px 12px;font-weight:700;cursor:pointer;user-select:none">VALOR<span id="tp-sort-valor" style="margin-left:4px;opacity:.6"></span></th>
-              <th onclick="tpOrdenarPor('categoria')" style="text-align:left;padding:10px 12px;font-weight:700;cursor:pointer;user-select:none">CATEGORIA<span id="tp-sort-categoria" style="margin-left:4px;opacity:.6"></span></th>
-              <th style="text-align:left;padding:10px 12px;font-weight:700">OBS</th>
+              <th onclick="tpOrdenarPor('data')" style="text-align:left;padding:10px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">DATA<span id="tp-sort-data" style="margin-left:4px;opacity:.6"></span></th>
+              <th onclick="tpOrdenarPor('fornecedor')" style="text-align:left;padding:10px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">FORNECEDOR<span id="tp-sort-fornecedor" style="margin-left:4px;opacity:.6"></span></th>
+              <th onclick="tpOrdenarPor('valor')" style="text-align:right;padding:10px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">VALOR<span id="tp-sort-valor" style="margin-left:4px;opacity:.6"></span></th>
+              <th onclick="tpOrdenarPor('categoria')" style="text-align:left;padding:10px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">CATEGORIA<span id="tp-sort-categoria" style="margin-left:4px;opacity:.6"></span></th>
+              <th style="text-align:left;padding:10px 12px;font-weight:700;white-space:nowrap">OBS</th>
             </tr>
           </thead>
           <tbody id="tp-tbody"></tbody>
@@ -763,6 +780,7 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
 </div>
 
 <script>
+try{ if(typeof Chart!=='undefined' && typeof ChartDataLabels!=='undefined'){ Chart.register(ChartDataLabels); } }catch(e){}
 var TP_DATA=[];       // dados crus vindos do Apps Script
 var TP_FILTRADO=[];   // após aplicar filtros
 var TP_SORT={campo:'data', dir:'desc'}; // ordenação padrão: data, mais recente primeiro
