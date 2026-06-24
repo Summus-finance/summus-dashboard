@@ -195,6 +195,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script>
 (function(){
   try{
@@ -688,7 +689,7 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
     </div>
 
     <!-- FILTROS -->
-    <div id="tp-filtros" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;padding:14px 16px;background:#f4f7fa;border-radius:10px">
+    <div id="tp-filtros" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;padding:14px 16px;background:#f4f7fa;border-radius:10px">
       <div>
         <label style="font-size:11px;font-weight:700;color:#4a607a;display:block;margin-bottom:4px">MÊS</label>
         <select id="tp-f-mes" onchange="tpAplicarFiltros()" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:120px"><option value="">Todos</option></select>
@@ -704,6 +705,14 @@ function toggleRot(){rotPaused=!rotPaused;var b=document.getElementById('rot-btn
       <div>
         <label style="font-size:11px;font-weight:700;color:#4a607a;display:block;margin-bottom:4px">CATEGORIA</label>
         <select id="tp-f-categoria" onchange="tpAplicarFiltros()" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:180px"><option value="">Todas</option></select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#4a607a;display:block;margin-bottom:4px">FORNECEDOR</label>
+        <select id="tp-f-fornecedor" onchange="tpAplicarFiltros()" style="border:1px solid #cdd8e5;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;min-width:180px"><option value="">Todos</option></select>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;padding:7px 4px">
+        <input type="checkbox" id="tp-f-mostrar-valores" onchange="tpToggleMostrarValores()" style="width:16px;height:16px;cursor:pointer;accent-color:#2CA1D8">
+        <label for="tp-f-mostrar-valores" style="font-size:12px;color:#4a607a;cursor:pointer;user-select:none">Mostrar valores no gráfico</label>
       </div>
       <div style="margin-left:auto;align-self:flex-end">
         <button onclick="tpLimparFiltros()" style="background:#fff;border:1px solid #cdd8e5;border-radius:7px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:inherit;color:#4a607a">Limpar filtros</button>
@@ -759,6 +768,8 @@ var TP_FILTRADO=[];   // após aplicar filtros
 var TP_SORT={campo:'data', dir:'desc'}; // ordenação padrão: data, mais recente primeiro
 var TP_CHARTS={};
 var TP_LOADED=false;
+var TP_MOSTRAR_VALORES=false;
+try{TP_MOSTRAR_VALORES = localStorage.getItem('summus_tp_mostrar_valores')==='1';}catch(e){}
 
 function tpFmtMoney(v){
   return 'R$ '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -779,6 +790,7 @@ var TP_MESES={'01':'Janeiro','02':'Fevereiro','03':'Março','04':'Abril','05':'M
 function openTitulosPagos(){
   document.getElementById('tp-overlay').style.display='block';
   document.getElementById('tp-box').classList.toggle('dk', dark);
+  document.getElementById('tp-f-mostrar-valores').checked = TP_MOSTRAR_VALORES;
   if(!TP_LOADED){
     tpCarregarDados();
   } else {
@@ -804,19 +816,21 @@ function tpCarregarDados(){
 }
 
 function tpPopularFiltros(){
-  var meses={}, anos={}, empresas={}, categorias={};
+  var meses={}, anos={}, empresas={}, categorias={}, fornecedores={};
   TP_DATA.forEach(function(r){
     var ma=tpMesAno(r.data);
     if(ma.mes)meses[ma.mes]=true;
     if(ma.ano)anos[ma.ano]=true;
     if(r.empresa)empresas[r.empresa]=true;
     if(r.categoria)categorias[r.categoria]=true;
+    if(r.fornecedor)fornecedores[r.fornecedor]=true;
   });
   function fill(id, obj, labelFn){
     var sel=document.getElementById(id);
     var atual=sel.value;
     var keys=Object.keys(obj).sort();
-    sel.innerHTML='<option value="">'+(id==='tp-f-mes'?'Todos':id==='tp-f-ano'?'Todos':id==='tp-f-empresa'?'Todas':'Todas')+'</option>'+
+    var placeholder = (id==='tp-f-mes' || id==='tp-f-ano' || id==='tp-f-fornecedor') ? 'Todos' : 'Todas';
+    sel.innerHTML='<option value="">'+placeholder+'</option>'+
       keys.map(function(k){return '<option value="'+k+'">'+(labelFn?labelFn(k):k)+'</option>';}).join('');
     if(keys.indexOf(atual)>=0)sel.value=atual;
   }
@@ -824,10 +838,17 @@ function tpPopularFiltros(){
   fill('tp-f-ano', anos);
   fill('tp-f-empresa', empresas);
   fill('tp-f-categoria', categorias);
+  fill('tp-f-fornecedor', fornecedores);
+}
+
+function tpToggleMostrarValores(){
+  TP_MOSTRAR_VALORES = document.getElementById('tp-f-mostrar-valores').checked;
+  try{localStorage.setItem('summus_tp_mostrar_valores', TP_MOSTRAR_VALORES?'1':'0');}catch(e){}
+  tpRenderGraficos();
 }
 
 function tpLimparFiltros(){
-  ['tp-f-mes','tp-f-ano','tp-f-empresa','tp-f-categoria'].forEach(function(id){document.getElementById(id).value='';});
+  ['tp-f-mes','tp-f-ano','tp-f-empresa','tp-f-categoria','tp-f-fornecedor'].forEach(function(id){document.getElementById(id).value='';});
   tpAplicarFiltros();
 }
 
@@ -836,6 +857,7 @@ function tpAplicarFiltros(){
   var fAno=document.getElementById('tp-f-ano').value;
   var fEmp=document.getElementById('tp-f-empresa').value;
   var fCat=document.getElementById('tp-f-categoria').value;
+  var fForn=document.getElementById('tp-f-fornecedor').value;
 
   TP_FILTRADO=TP_DATA.filter(function(r){
     var ma=tpMesAno(r.data);
@@ -843,6 +865,7 @@ function tpAplicarFiltros(){
     if(fAno && ma.ano!==fAno)return false;
     if(fEmp && r.empresa!==fEmp)return false;
     if(fCat && r.categoria!==fCat)return false;
+    if(fForn && r.fornecedor!==fForn)return false;
     return true;
   });
 
@@ -935,11 +958,28 @@ function tpRenderGraficos(){
 
   var palette=['#2CA1D8','#1d9e75','#e74c3c','#f39c12','#9b59b6','#34495e','#16a085','#c0392b','#2980b9','#8e44ad','#27ae60','#d35400'];
 
+  // Config compartilhada do plugin de rótulos (mostra valor fixo em cima das barras/rosca)
+  function dl(cor, fonte){
+    return {
+      display: TP_MOSTRAR_VALORES,
+      color: cor||'#16263a',
+      font: {size: fonte||10, weight:'700'},
+      formatter: function(v){return v?tpFmtMoney(v):'';}
+    };
+  }
+
   if(TP_CHARTS.cat)TP_CHARTS.cat.destroy();
   TP_CHARTS.cat=new Chart(document.getElementById('tp-chart-cat'),{
     type:'doughnut',
     data:{labels:catLabels,datasets:[{data:catValues,backgroundColor:palette,borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:function(c){return ' '+c.label+': '+tpFmtMoney(c.raw);}}}}}
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'right',labels:{boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{label:function(c){return ' '+c.label+': '+tpFmtMoney(c.raw);}}},
+        datalabels: dl('#fff', 10)
+      }
+    }
   });
 
   if(TP_CHARTS.forn)TP_CHARTS.forn.destroy();
@@ -948,7 +988,11 @@ function tpRenderGraficos(){
     data:{labels:fornLabels,datasets:[{data:fornValues,backgroundColor:'#2CA1D8',borderRadius:4}]},
     options:{
       responsive:true,maintainAspectRatio:false,indexAxis:'y',
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' '+tpFmtMoney(c.raw);}}}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(c){return ' '+tpFmtMoney(c.raw);}}},
+        datalabels: Object.assign(dl('#16263a',10), {anchor:'end', align:'right'})
+      },
       scales:{x:{ticks:{callback:function(v){return tpFmtMoney(v);},font:{size:10}}},y:{ticks:{font:{size:10}}}}
     }
   });
@@ -958,13 +1002,15 @@ function tpRenderGraficos(){
 
 function tpRenderGraficoEvolucao(){
   // Este gráfico ignora os filtros de MÊS/ANO de propósito (precisa comparar todos os meses).
-  // Respeita apenas os filtros de EMPRESA e CATEGORIA.
+  // Respeita os filtros de EMPRESA, CATEGORIA e FORNECEDOR.
   var fEmp=document.getElementById('tp-f-empresa').value;
   var fCat=document.getElementById('tp-f-categoria').value;
+  var fForn=document.getElementById('tp-f-fornecedor').value;
 
   var baseDados=TP_DATA.filter(function(r){
     if(fEmp && r.empresa!==fEmp)return false;
     if(fCat && r.categoria!==fCat)return false;
+    if(fForn && r.fornecedor!==fForn)return false;
     return true;
   });
 
@@ -1023,7 +1069,14 @@ function tpRenderGraficoEvolucao(){
       interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{display:!fCat, position:'bottom', labels:{boxWidth:12,font:{size:10}}},
-        tooltip:{callbacks:{label:function(c){return ' '+c.dataset.label+': '+tpFmtMoney(c.raw);}}}
+        tooltip:{callbacks:{label:function(c){return ' '+c.dataset.label+': '+tpFmtMoney(c.raw);}}},
+        datalabels:{
+          display: TP_MOSTRAR_VALORES,
+          color:'#16263a',
+          font:{size:9,weight:'700'},
+          anchor:'end', align:'top',
+          formatter:function(v){return v?tpFmtMoney(v):'';}
+        }
       },
       scales:{
         x:{ticks:{font:{size:10}}},
