@@ -216,7 +216,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
 <script>
 (function(){
   try{
-    var s=JSON.parse(localStorage.getItem("summus_auth")||"null");
+    var s=JSON.parse(sessionStorage.getItem("summus_auth")||"null");
     if(!s||!s.usuario)window.location.replace("login.html");
   }catch(e){window.location.replace("login.html");}
 })();
@@ -310,10 +310,10 @@ var IC={
 };
 var dark=false;
 function toggleTheme(){dark=!dark;document.getElementById('root').classList.toggle('dk',dark);var mw=document.getElementById('mwrap');if(mw)mw.classList.toggle('dk',dark);document.getElementById('ti').innerHTML=dark?IC.sun:IC.moon;document.getElementById('tlbl').textContent=dark?'Tema claro':'Tema escuro';try{localStorage.setItem('summus_dark',dark?'1':'0');}catch(e){}}
-function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;}}
-function setSession(u){localStorage.setItem(SESSION_KEY,JSON.stringify(u));}
-function clearSession(){localStorage.removeItem(SESSION_KEY);}
-function logout(){try{localStorage.removeItem(SESSION_KEY);}catch(e){}window.location.replace('login.html');}
+function getSession(){try{return JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;}}
+function setSession(u){sessionStorage.setItem(SESSION_KEY,JSON.stringify(u));}
+function clearSession(){sessionStorage.removeItem(SESSION_KEY);}
+function logout(){try{sessionStorage.removeItem(SESSION_KEY);}catch(e){}window.location.replace('login.html');}
 
 function _jsonp(params,cb){
   var id='_cb'+Date.now()+Math.floor(Math.random()*9999);
@@ -444,10 +444,17 @@ function renderEmpresaChips(){
   });
   var btnL=document.getElementById('btn-lancar');
   if(btnL){
-    var podeLancar=EMPRESAS_SEL.length===1;
-    btnL.style.opacity=podeLancar?'1':'.5';
-    btnL.style.cursor=podeLancar?'pointer':'not-allowed';
-    btnL.title=podeLancar?'':'Selecione apenas uma empresa para lançar valores';
+    var s=getSession();
+    var temPermissao = !!(s && s.podeAtualizar);
+    if(!temPermissao){
+      btnL.style.display='none';
+    } else {
+      btnL.style.display='';
+      var podeLancar=EMPRESAS_SEL.length===1;
+      btnL.style.opacity=podeLancar?'1':'.5';
+      btnL.style.cursor=podeLancar?'pointer':'not-allowed';
+      btnL.title=podeLancar?'':'Selecione apenas uma empresa para lançar valores';
+    }
   }
 }
 function toggleEmpresa(emp){
@@ -606,6 +613,11 @@ var FIELDS=[
   {sec:'RH / Investidores',f:[{l:'Entrevistas realizadas',k:'entrevistas',ph:'ex: 1'},{l:'Novos investidores (R$)',k:'novos_inv',ph:'ex: 200000'}]}
 ];
 function openModal(){
+  var s=getSession();
+  if(!s||!s.podeAtualizar){
+    alert('Seu usuário não tem permissão para lançar valores. Fale com o administrador.');
+    return;
+  }
   if(EMPRESAS_SEL.length!==1){
     alert('Selecione apenas UMA empresa (SEC ou ESC) no topo da tela para lançar valores.\n\nCom as duas selecionadas, o sistema mostra dados consolidados e não saberia em qual planilha gravar.');
     return;

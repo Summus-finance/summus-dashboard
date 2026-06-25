@@ -60,7 +60,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100
 // Verificação IMEDIATA — antes de qualquer renderização
 (function(){
   try{
-    var s = JSON.parse(localStorage.getItem("summus_auth")||"null");
+    var s = JSON.parse(sessionStorage.getItem("summus_auth")||"null");
     if(!s||!s.usuario) window.location.replace("login.html");
   }catch(e){ window.location.replace("login.html"); }
 })();
@@ -130,8 +130,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100
 var SESSION_KEY = "summus_auth";
 var THEME_KEY   = "summus_dark";
 
-function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;}}
-function logout(){try{localStorage.removeItem(SESSION_KEY);}catch(e){}window.location.replace('login.html');}
+function getSession(){try{return JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;}}
+function logout(){try{sessionStorage.removeItem(SESSION_KEY);}catch(e){}window.location.replace('login.html');}
 
 function applyTheme(dark){
   if(dark){

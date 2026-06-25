@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="UTF-8"><title>Summus</title></head>
 <body><script>
-try{var s=JSON.parse(localStorage.getItem("summus_auth")||"null");
+try{var s=JSON.parse(sessionStorage.getItem("summus_auth")||"null");
 if(s&&s.usuario)window.location.replace("painel.html");
 else window.location.replace("login.html");}catch(e){window.location.replace("login.html");}
 </script></body></html>

@@ -55,24 +55,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef3f8;min-height:100vh
     </div>
   </div>
   <div class="right">
-    <div class="right-text">
-      <h2>Painel de Gestão<br>Summus</h2>
-      <p>Acompanhe indicadores, metas e movimentações em tempo real, direto da sua planilha.</p>
-    </div>
-    <div class="right-modules">
-      <div class="right-mod">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-        Dashboard Gerencial
-      </div>
-      <div class="right-mod">
-        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        Acompanhamento de Metas
-      </div>
-      <div class="right-mod">
-        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Painel de Movimentação
-      </div>
-    </div>
   </div>
 </div>
 <div class="version">Summus v2.1</div>
@@ -80,9 +62,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef3f8;min-height:100vh
 var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbytBLSuf758v_8TCG0ilhmKgDNVunANTgqtkYZaIhDaRaqZgXfZkUeG5J-aNHGg4Ny_5g/exec";
 var SESSION_KEY = "summus_auth";
 
-// Se já está logado, vai direto para o painel
+// Se já está logado NESTA ABA (sessionStorage), vai direto para o painel
 try {
-  var _s = localStorage.getItem(SESSION_KEY);
+  var _s = sessionStorage.getItem(SESSION_KEY);
   if (_s && JSON.parse(_s).usuario) {
     window.location.replace('painel.html');
   }
@@ -122,7 +104,7 @@ function doLogin(){
     btn.disabled=false; spin.style.display='none';
     if(e||!res){err.textContent='Erro de conexão: '+(e?e.message:'sem resposta')+'.';err.style.display='block';return;}
     if(!res.ok){err.textContent=res.error||'Usuário ou senha incorretos.';err.style.display='block';return;}
-    try{localStorage.setItem(SESSION_KEY, JSON.stringify({usuario:res.usuario,ts:Date.now()}));}catch(ex){}
+    try{sessionStorage.setItem(SESSION_KEY, JSON.stringify({usuario:res.usuario, podeAtualizar:!!res.podeAtualizar, ts:Date.now()}));}catch(ex){}
     window.location.replace('painel.html');
   });
 }
