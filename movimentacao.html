@@ -191,8 +191,8 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
       <div class="fa">
         <button class="btn sec" onclick="clearFil()">Limpar filtros</button>
         <button class="btn" id="sbtn" onclick="loadData()"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>Atualizar</button>
-        <label class="chk"><input type="checkbox" id="cvals" onchange="if(allData.length)applyFil()"> Mostrar valores nos gráficos</label>
-        <label class="chk"><input type="checkbox" id="ccomp" onchange="valComp=this.checked;if(allData.length)applyFil()"> Valores completos</label>
+        <label class="chk"><input type="checkbox" id="cvals" onchange="if(allData.length)applyFil();if(INV_CHARTS.main)INV_CHARTS.main.update();"> Mostrar valores nos gráficos</label>
+        <label class="chk"><input type="checkbox" id="ccomp" onchange="valComp=this.checked;if(allData.length)applyFil();renderInvBloco();"> Valores completos</label>
         <span class="sts" id="sts"></span>
       </div>
     </div>
@@ -204,19 +204,32 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 <!-- ══ BLOCO INVESTIDORES ══ -->
 <div id="inv-bloco" style="display:none;margin-top:18px">
   <div class="cc" style="margin-bottom:0">
-    <div class="cc-head" style="align-items:center">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px">
+      <!-- Esquerda: título + olho -->
       <h3 style="font-size:14px;display:flex;align-items:center;gap:8px;margin:0">
         Carteira de Investidores — Volume por Investidor
         <button onclick="openInvModal()" title="Ver detalhamento mensal" style="background:none;border:none;cursor:pointer;padding:0;vertical-align:middle;color:#8fa5bb;display:inline-flex;align-items:center">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </h3>
-      <div style="display:flex;align-items:center;gap:12px">
+      <!-- Centro: filtro de empresa -->
+      <div style="display:flex;align-items:center;gap:6px">
+        <label style="font-size:11px;font-weight:700;color:var(--t2);white-space:nowrap">Empresa:</label>
+        <select id="inv-emp-fil" onchange="renderInvBloco()" style="border:1px solid var(--bd);border-radius:7px;padding:5px 10px;font-size:12px;font-family:inherit;background:var(--cd);color:var(--t1);min-width:140px">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <!-- Direita: cards -->
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="background:linear-gradient(135deg,#f0faf5,#d4f2e5);border:1px solid #a8e0c5;border-radius:10px;padding:6px 16px;text-align:right;white-space:nowrap">
+          <div style="font-size:10px;font-weight:700;color:#1d9e75;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Investidores</div>
+          <div id="inv-qtd-card" style="font-size:17px;font-weight:700;color:#16263a">0</div>
+        </div>
         <div style="background:linear-gradient(135deg,#eaf6ff,#d0edfb);border:1px solid #b3daf5;border-radius:10px;padding:6px 16px;text-align:right;white-space:nowrap">
           <div style="font-size:10px;font-weight:700;color:#2CA1D8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Total Investido</div>
           <div id="inv-total-card" style="font-size:17px;font-weight:700;color:#16263a">R$ 0,00</div>
         </div>
-        <div id="cinv-leg" style="display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end"></div>
+        <div id="cinv-leg"></div>
       </div>
     </div>
     <div class="cw h220"><canvas id="cinv"></canvas></div>
@@ -609,27 +622,42 @@ function renderInvBloco(){
   }
   document.getElementById('inv-bloco').style.display='block';
   var palette=['#2CA1D8','#1d9e75','#e74c3c','#f39c12','#9b59b6','#34495e','#16a085','#c0392b','#8e44ad','#27ae60','#d35400','#2980b9'];
-
-  // Agrupar por investidor — soma de valor
-  var por={};
-  invData.forEach(function(r){
-    var k=String(r.nome_investidor||'').trim();
-    if(!k)return;
-    if(!por[k])por[k]={vol:0,cnt:0};
-    por[k].vol+=invN(r.valor);
-    por[k].cnt++;
-  });
-  var nomes=Object.keys(por).sort(function(a,b){return por[b].vol-por[a].vol;});
-  var vals=nomes.map(function(k){return por[k].vol;});
-  var cores=nomes.map(function(_,i){return palette[i%palette.length];});
-
+  var nomes=[],vals=[],cores=[];
   if(INV_CHARTS.main)INV_CHARTS.main.destroy();
   var gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
   var tc=dark?'#7a98b8':'#4a607a';
-  // Atualizar card de total
+  // Popular combobox de empresa (só na primeira vez ou quando mudam os dados)
+  var empSel=document.getElementById('inv-emp-fil');
+  if(empSel){
+    var empAtual=empSel.value;
+    var emps={};
+    invData.forEach(function(r){var e=String(r.empresa||'').trim();if(e)emps[e]=true;});
+    var empKeys=Object.keys(emps).sort();
+    empSel.innerHTML='<option value="">Todas</option>'+empKeys.map(function(e){return'<option value="'+e+'">'+ e+'</option>';}).join('');
+    if(empKeys.indexOf(empAtual)>=0)empSel.value=empAtual;
+  }
+
+  // Filtrar por empresa selecionada
+  var empFil=empSel?empSel.value:'';
+  var dadosFil=empFil?invData.filter(function(r){return String(r.empresa||'').trim()===empFil;}):invData;
+
+  // Agrupar por investidor com dados filtrados
+  var por={};
+  dadosFil.forEach(function(r){
+    var k=String(r.nome_investidor||'').trim();if(!k)return;
+    if(!por[k])por[k]=0;
+    por[k]+=invN(r.valor);
+  });
+  nomes=Object.keys(por).sort(function(a,b){return por[b]-por[a];});
+  vals=nomes.map(function(k){return por[k];});
+  cores=nomes.map(function(_,i){return palette[i%palette.length];});
+
+  // Atualizar cards
   var totalInv=vals.reduce(function(s,v){return s+v;},0);
   var cardEl=document.getElementById('inv-total-card');
   if(cardEl)cardEl.textContent=invFmtR(totalInv);
+  var qtdEl=document.getElementById('inv-qtd-card');
+  if(qtdEl)qtdEl.textContent=String(nomes.length);
 
   if(INV_CHARTS.main)INV_CHARTS.main.destroy();
   INV_CHARTS.main=new Chart(document.getElementById('cinv'),{
@@ -642,14 +670,16 @@ function renderInvBloco(){
       responsive:true,maintainAspectRatio:false,
       plugins:{
         legend:{display:false},
-        tooltip:{callbacks:{label:function(c){return ' '+invFmtR(c.raw);}}}
+        tooltip:{callbacks:{label:function(ctx){var fRC=valComp?fRF:fR;return ' '+fRC(ctx.raw);}}}
       },
       scales:{
         x:{ticks:{color:tc,font:{size:10},maxRotation:30,autoSkip:false},grid:{color:gc}},
-        y:{ticks:{color:tc,font:{size:10},callback:function(v){return invFmtR(v);}},grid:{color:gc}}
+        y:{ticks:{color:tc,font:{size:10},callback:function(v){var fRC=valComp?fRF:fR;return fRC(v);}},grid:{color:gc}}
       }
-    }
+    },
+    plugins:[labelsPlugin]
   });
+  INV_CHARTS.main.__fmt='R';
 }
 
 /* ── modal ── */
