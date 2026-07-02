@@ -201,6 +201,22 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
   <div id="errdiv"></div>
   <div class="kpis" id="kdiv"><div class="empty">Carregando...</div></div>
   <div id="cdiv"></div>
+<!-- ══ BLOCO INVESTIDORES ══ -->
+<div id="inv-bloco" style="display:none;margin-top:18px">
+  <div class="cc" style="margin-bottom:0">
+    <div class="cc-head">
+      <h3 style="font-size:14px">
+        Carteira de Investidores — Volume por Investidor
+        <button onclick="openInvModal()" title="Ver detalhamento mensal" style="background:none;border:none;cursor:pointer;padding:0;margin-left:8px;vertical-align:middle;color:#8fa5bb;display:inline-flex;align-items:center">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </h3>
+      <div id="cinv-leg" style="display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end"></div>
+    </div>
+    <div class="cw h220"><canvas id="cinv"></canvas></div>
+  </div>
+</div>
+
 
 </div>
 
@@ -542,8 +558,369 @@ function toggleRot(){rp=!rp;var b=document.getElementById('rbtn');if(rp){clearTi
     }
   }catch(e){}
   var s=gSess();
-  if(s){document.getElementById('app').style.display='block';startRot();loadData();}
+  if(s){document.getElementById('app').style.display='block';startRot();loadData();loadInvestidores();}
   else{window.location.replace('login.html');}
 })();
+
+/* ═══════════════════════════════════════════════════════════════
+   INVESTIDORES — dados, gráficos, modal
+═══════════════════════════════════════════════════════════════ */
+var invData   = [];   // todos os registros crus da aba investidor
+var invFilt   = [];   // registros após filtros do modal
+var INV_CHARTS= {};
+var INV_SORT  = {campo:'valor', dir:'desc'};
+var INV_MESES = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
+var INV_MESES_FULL = {1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
+
+/* ── helpers ── */
+function invN(v){var x=parseFloat(String(v||0).toString().replace(',','.'));return isNaN(x)?0:x;}
+function invFmtR(v){return 'R$ '+invN(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function invFmtPct(v){return invN(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';}
+function invFmtDate(iso){if(!iso)return '—';var m=String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[3]+'/'+m[2]+'/'+m[1];return iso;}
+
+function invGetMesAno(r){
+  if(!r.data_aporte)return {mes:0,ano:0};
+  var s=String(r.data_aporte);
+  var m=s.match(/^(\d{4})-(\d{2})/);
+  if(m)return {mes:parseInt(m[2]),ano:parseInt(m[1])};
+  return {mes:0,ano:0};
+}
+
+/* ── carregar dados ── */
+function loadInvestidores(){
+  apiCall({action:'getInvestidores'},function(err,res){
+    if(err||!res||!res.ok)return;
+    invData=res.data||[];
+    renderInvBloco();
+  });
+}
+
+/* ── gráfico principal (bloco dentro do painel) ── */
+function renderInvBloco(){
+  if(!invData.length){
+    document.getElementById('inv-bloco').style.display='none';
+    return;
+  }
+  document.getElementById('inv-bloco').style.display='block';
+  var palette=['#2CA1D8','#1d9e75','#e74c3c','#f39c12','#9b59b6','#34495e','#16a085','#c0392b','#8e44ad','#27ae60','#d35400','#2980b9'];
+
+  // Agrupar por investidor — soma de valor
+  var por={};
+  invData.forEach(function(r){
+    var k=String(r.nome_investidor||'').trim();
+    if(!k)return;
+    if(!por[k])por[k]={vol:0,cnt:0};
+    por[k].vol+=invN(r.valor);
+    por[k].cnt++;
+  });
+  var nomes=Object.keys(por).sort(function(a,b){return por[b].vol-por[a].vol;});
+  var vals=nomes.map(function(k){return por[k].vol;});
+  var cores=nomes.map(function(_,i){return palette[i%palette.length];});
+
+  if(INV_CHARTS.main)INV_CHARTS.main.destroy();
+  var gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
+  var tc=dark?'#7a98b8':'#4a607a';
+  INV_CHARTS.main=new Chart(document.getElementById('cinv'),{
+    type:'bar',
+    data:{
+      labels:nomes,
+      datasets:[{data:vals,backgroundColor:cores,borderRadius:5,label:'Volume'}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      indexAxis:'y',
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(c){return ' '+invFmtR(c.raw);}}}
+      },
+      scales:{
+        x:{ticks:{color:tc,font:{size:10},callback:function(v){return invFmtR(v);}},grid:{color:gc}},
+        y:{ticks:{color:tc,font:{size:10}},grid:{color:gc}}
+      }
+    }
+  });
+}
+
+/* ── modal ── */
+function openInvModal(){
+  var box=document.getElementById('inv-box');
+  box.classList.toggle('dk',dark);
+  document.getElementById('inv-overlay').style.display='block';
+  invPopularFiltros();
+  invAplicarFiltros();
+}
+function closeInvModal(){document.getElementById('inv-overlay').style.display='none';}
+
+function invPopularFiltros(){
+  var meses={},anos={},invest={},empresas={};
+  invData.forEach(function(r){
+    var ma=invGetMesAno(r);
+    if(ma.mes)meses[ma.mes]=true;
+    if(ma.ano)anos[ma.ano]=true;
+    var inv=String(r.nome_investidor||'').trim();if(inv)invest[inv]=true;
+    var emp=String(r.empresa||'').trim();if(emp)empresas[emp]=true;
+  });
+  function fill(id,keys,labelFn,placeholder){
+    var sel=document.getElementById(id);
+    var cur=sel.value;
+    sel.innerHTML='<option value="">'+placeholder+'</option>'+
+      keys.map(function(k){return '<option value="'+k+'">'+(labelFn?labelFn(k):k)+'</option>';}).join('');
+    if(keys.indexOf(cur)>=0)sel.value=cur;
+  }
+  fill('inv-f-mes', Object.keys(meses).map(Number).sort(function(a,b){return a-b;}), function(k){return INV_MESES_FULL[k]||k;}, 'Todos os meses');
+  fill('inv-f-ano', Object.keys(anos).map(Number).sort(function(a,b){return b-a;}), null, 'Todos os anos');
+  fill('inv-f-investidor', Object.keys(invest).sort(), null, 'Todos');
+  fill('inv-f-empresa', Object.keys(empresas).sort(), null, 'Todas');
+}
+
+function invLimparFiltros(){
+  ['inv-f-mes','inv-f-ano','inv-f-investidor','inv-f-empresa'].forEach(function(id){document.getElementById(id).value='';});
+  invAplicarFiltros();
+}
+
+function invAplicarFiltros(){
+  var fMes=document.getElementById('inv-f-mes').value;
+  var fAno=document.getElementById('inv-f-ano').value;
+  var fInv=document.getElementById('inv-f-investidor').value;
+  var fEmp=document.getElementById('inv-f-empresa').value;
+  invFilt=invData.filter(function(r){
+    var ma=invGetMesAno(r);
+    if(fMes && String(ma.mes)!==String(fMes))return false;
+    if(fAno && String(ma.ano)!==String(fAno))return false;
+    if(fInv && String(r.nome_investidor||'').trim()!==fInv)return false;
+    if(fEmp && String(r.empresa||'').trim()!==fEmp)return false;
+    return true;
+  });
+  invRenderKPIs();
+  invRenderGraficos();
+  invRenderTabela();
+}
+
+function invRenderKPIs(){
+  var total=invFilt.reduce(function(s,r){return s+invN(r.valor);},0);
+  var cnt=invFilt.length;
+  var taxas=invFilt.filter(function(r){return invN(r.taxa)>0;}).map(function(r){return invN(r.taxa);});
+  var taxaMed=taxas.length?(taxas.reduce(function(a,b){return a+b;},0)/taxas.length):0;
+  var invest={};invFilt.forEach(function(r){var k=String(r.nome_investidor||'').trim();if(k)invest[k]=true;});
+  var nInv=Object.keys(invest).length;
+
+  var kpis=[
+    {lbl:'Volume Total',val:invFmtR(total),cor:'#2CA1D8'},
+    {lbl:'Nº Aportes',val:String(cnt),cor:'#1d9e75'},
+    {lbl:'Investidores',val:String(nInv),cor:'#9b59b6'},
+    {lbl:'Taxa Média',val:invFmtPct(taxaMed),cor:'#f39c12'},
+  ];
+  document.getElementById('inv-kpis').innerHTML=kpis.map(function(k){
+    return '<div style="background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:12px 14px">'+
+      '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">'+k.lbl+'</div>'+
+      '<div style="font-size:18px;font-weight:700;color:'+k.cor+'">'+k.val+'</div>'+
+      '</div>';
+  }).join('');
+}
+
+function invRenderGraficos(){
+  var palette=['#2CA1D8','#1d9e75','#e74c3c','#f39c12','#9b59b6','#34495e','#16a085','#c0392b','#8e44ad','#27ae60','#d35400','#2980b9'];
+  var gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
+  var tc=dark?'#7a98b8':'#4a607a';
+
+  // ── Gráfico 1: Volume por investidor (horizontal bars) ──
+  var porVol={};
+  invFilt.forEach(function(r){
+    var k=String(r.nome_investidor||'').trim();if(!k)return;
+    porVol[k]=(porVol[k]||0)+invN(r.valor);
+  });
+  var nomesVol=Object.keys(porVol).sort(function(a,b){return porVol[b]-porVol[a];});
+  var valsVol=nomesVol.map(function(k){return porVol[k];});
+
+  if(INV_CHARTS.vol)INV_CHARTS.vol.destroy();
+  INV_CHARTS.vol=new Chart(document.getElementById('inv-c-vol'),{
+    type:'bar',
+    data:{labels:nomesVol,datasets:[{data:valsVol,backgroundColor:nomesVol.map(function(_,i){return palette[i%palette.length];}),borderRadius:4,label:'Volume'}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' '+invFmtR(c.raw);}}}},
+      scales:{x:{ticks:{color:tc,font:{size:10},callback:function(v){return invFmtR(v);}},grid:{color:gc}},y:{ticks:{color:tc,font:{size:10}},grid:{color:gc}}}
+    }
+  });
+
+  // ── Gráfico 2: Taxa por investidor (bubble / bar) ──
+  // Média de taxa por investidor
+  var porTaxa={sum:{},cnt:{}};
+  invFilt.forEach(function(r){
+    var k=String(r.nome_investidor||'').trim();var t=invN(r.taxa);if(!k||!t)return;
+    porTaxa.sum[k]=(porTaxa.sum[k]||0)+t;
+    porTaxa.cnt[k]=(porTaxa.cnt[k]||0)+1;
+  });
+  var nomesTaxa=Object.keys(porTaxa.sum).sort(function(a,b){
+    return (porTaxa.sum[b]/porTaxa.cnt[b])-(porTaxa.sum[a]/porTaxa.cnt[a]);
+  });
+  var valsTaxa=nomesTaxa.map(function(k){return Math.round(porTaxa.sum[k]/porTaxa.cnt[k]*100)/100;});
+
+  if(INV_CHARTS.taxa)INV_CHARTS.taxa.destroy();
+  INV_CHARTS.taxa=new Chart(document.getElementById('inv-c-taxa'),{
+    type:'bar',
+    data:{labels:nomesTaxa,datasets:[{data:valsTaxa,backgroundColor:'rgba(44,161,216,.75)',borderRadius:4,label:'Taxa Média (%)'}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' '+invFmtPct(c.raw);}}}},
+      scales:{x:{ticks:{color:tc,font:{size:10},callback:function(v){return v+'%';}},grid:{color:gc}},y:{ticks:{color:tc,font:{size:10}},grid:{color:gc}}}
+    }
+  });
+
+  // ── Gráfico 3: Evolução mensal de aportes ──
+  // Agrupar por ano-mes, mostrar cronológico
+  var porMes={};
+  invFilt.forEach(function(r){
+    var ma=invGetMesAno(r);
+    if(!ma.ano||!ma.mes)return;
+    var k=ma.ano+'-'+(ma.mes<10?'0':'')+ma.mes;
+    porMes[k]=(porMes[k]||0)+invN(r.valor);
+  });
+  var mesesOrdenados=Object.keys(porMes).sort();
+  var mesesLabels=mesesOrdenados.map(function(k){
+    var p=k.split('-');return (INV_MESES[parseInt(p[1])]||p[1])+'/'+p[0].substring(2);
+  });
+  var mesesVals=mesesOrdenados.map(function(k){return porMes[k];});
+
+  if(INV_CHARTS.evol)INV_CHARTS.evol.destroy();
+  if(mesesOrdenados.length>0){
+    INV_CHARTS.evol=new Chart(document.getElementById('inv-c-evol'),{
+      type:'bar',
+      data:{labels:mesesLabels,datasets:[{data:mesesVals,backgroundColor:'rgba(44,161,216,.75)',borderRadius:4,label:'Aportes'}]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' '+invFmtR(c.raw);}}}},
+        scales:{
+          x:{ticks:{color:tc,font:{size:10}},grid:{color:gc}},
+          y:{ticks:{color:tc,font:{size:10},callback:function(v){return invFmtR(v);}},grid:{color:gc}}
+        }
+      }
+    });
+  } else {
+    document.getElementById('inv-c-evol').parentElement.innerHTML='<div style="height:200px;display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:13px">Sem dados com data de aporte para exibir evolução mensal.</div>';
+  }
+}
+
+function invRenderTabela(){
+  var tbody=document.getElementById('inv-tbody');
+  document.getElementById('inv-total').textContent=invFmtR(invFilt.reduce(function(s,r){return s+invN(r.valor);},0));
+
+  if(!invFilt.length){
+    tbody.innerHTML='<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--t3)">Nenhum registro para os filtros selecionados</td></tr>';
+    return;
+  }
+
+  // Atualizar ícones
+  ['nome_investidor','data_aporte','valor','taxa'].forEach(function(c){
+    var el=document.getElementById('inv-sort-'+c);
+    if(el)el.textContent=INV_SORT.campo===c?(INV_SORT.dir==='asc'?'▲':'▼'):'';
+  });
+
+  var campo=INV_SORT.campo,dir=INV_SORT.dir;
+  var ord=invFilt.slice().sort(function(a,b){
+    var va=campo==='valor'||campo==='taxa'?invN(a[campo]):String(a[campo]||'').toLowerCase();
+    var vb=campo==='valor'||campo==='taxa'?invN(b[campo]):String(b[campo]||'').toLowerCase();
+    if(va<vb)return dir==='asc'?-1:1;
+    if(va>vb)return dir==='asc'?1:-1;
+    return 0;
+  });
+
+  tbody.innerHTML=ord.map(function(r,i){
+    var bg=i%2===0?'var(--cd)':'var(--bg)';
+    return '<tr style="background:'+bg+'">'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd)">'+String(r.nome_investidor||'—')+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);white-space:nowrap">'+invFmtDate(r.data_aporte)+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);text-align:right;font-weight:600;white-space:nowrap">'+invFmtR(r.valor)+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap">'+(invN(r.taxa)?invFmtPct(r.taxa):'—')+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);color:var(--t2)">'+String(r.empresa||'—')+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function invOrdenar(campo){
+  if(INV_SORT.campo===campo){INV_SORT.dir=INV_SORT.dir==='asc'?'desc':'asc';}
+  else{INV_SORT.campo=campo;INV_SORT.dir=campo==='valor'||campo==='taxa'?'desc':'asc';}
+  invRenderTabela();
+}
+
 </script>
+
+<!-- ══ MODAL INVESTIDORES ══ -->
+<div id="inv-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:9999;padding:16px;overflow-y:auto">
+  <div id="inv-box" style="background:var(--cd);border-radius:14px;max-width:1100px;margin:0 auto;padding:22px 26px 30px;box-shadow:0 10px 50px rgba(0,0,0,.35);min-height:calc(100vh - 32px)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+      <div>
+        <h2 style="font-size:18px;font-weight:700;color:var(--t1);margin:0">Carteira de Investidores</h2>
+        <p style="font-size:12px;color:var(--t3);margin:3px 0 0">Análise detalhada — aportes, volumes e taxas</p>
+      </div>
+      <button onclick="closeInvModal()" style="background:none;border:none;font-size:26px;cursor:pointer;color:var(--t3);padding:0;line-height:1">&times;</button>
+    </div>
+
+    <!-- FILTROS -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;padding:12px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--bd)">
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px">MÊS</label>
+        <select id="inv-f-mes" onchange="invAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);min-width:110px"></select>
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px">ANO</label>
+        <select id="inv-f-ano" onchange="invAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);min-width:90px"></select>
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px">INVESTIDOR</label>
+        <select id="inv-f-investidor" onchange="invAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);min-width:190px"></select>
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px">EMPRESA</label>
+        <select id="inv-f-empresa" onchange="invAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);min-width:150px"></select>
+      </div>
+      <div style="margin-left:auto">
+        <button onclick="invLimparFiltros()" style="background:var(--cd);border:1px solid var(--bd);border-radius:7px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2)">Limpar</button>
+      </div>
+    </div>
+
+    <!-- KPIs RÁPIDOS -->
+    <div id="inv-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
+
+    <!-- GRÁFICOS 2x2 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div style="background:var(--cd);border:1px solid var(--bd);border-radius:11px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">Volume por Investidor</div>
+        <div style="height:240px"><canvas id="inv-c-vol"></canvas></div>
+      </div>
+      <div style="background:var(--cd);border:1px solid var(--bd);border-radius:11px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">Taxa por Investidor (%)</div>
+        <div style="height:240px"><canvas id="inv-c-taxa"></canvas></div>
+      </div>
+    </div>
+    <div style="background:var(--cd);border:1px solid var(--bd);border-radius:11px;padding:14px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">Evolução Mensal de Aportes</div>
+      <div style="height:200px"><canvas id="inv-c-evol"></canvas></div>
+    </div>
+
+    <!-- TABELA -->
+    <div style="background:var(--cd);border:1px solid var(--bd);border-radius:11px;overflow:hidden">
+      <div style="max-height:380px;overflow-y:auto;overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:560px">
+          <thead style="position:sticky;top:0;background:#2CA1D8;color:#fff;z-index:1">
+            <tr>
+              <th onclick="invOrdenar('nome_investidor')" style="text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">INVESTIDOR <span id="inv-sort-nome_investidor"></span></th>
+              <th onclick="invOrdenar('data_aporte')" style="text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">DATA APORTE <span id="inv-sort-data_aporte"></span></th>
+              <th onclick="invOrdenar('valor')" style="text-align:right;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">VALOR <span id="inv-sort-valor"></span></th>
+              <th onclick="invOrdenar('taxa')" style="text-align:right;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">TAXA <span id="inv-sort-taxa"></span></th>
+              <th style="text-align:left;padding:9px 12px;font-weight:700;white-space:nowrap">EMPRESA</th>
+            </tr>
+          </thead>
+          <tbody id="inv-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="text-align:right;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd)">
+      <span style="font-size:12px;color:var(--t3)">Total filtrado: </span>
+      <span id="inv-total" style="font-size:14px;font-weight:700;color:var(--t1)">R$ 0,00</span>
+    </div>
+  </div>
+</div>
+
 </body></html>
