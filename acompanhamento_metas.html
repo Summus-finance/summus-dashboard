@@ -650,7 +650,7 @@ function render(){
   document.getElementById('dash').innerHTML=
   '<div class="g3">'+
     card(I.rec,'Faturamento',item('Faturamento',PROG.faturamento,METAS.faturamento_n,METAS.faturamento)+'<hr class="div">'+itemReceita('Receitas do mês',PROG.receitas)+'<hr class="div">'+itemD('Despesa do mês',PROG.despesa,METAS.despesa_n,METAS.despesa,true)+'<hr class="div">'+itemResultado('Resultado do mês',PROG.receitas,PROG.despesa,METAS.lucro_n,METAS.lucro))+
-    card(I.usr,'Comercial',itemCedentes()+'<hr class="div">'+itemOperado('Total cedentes operado',PROG.cedentes_op,PROG.cedentes)+'<hr class="div">'+item('Novos cedentes',PROG.novos,METAS.novos_n,METAS.novos)+'<hr class="div">'+item('Operaram no mês',PROG.operaram,METAS.operaram_n,METAS.operaram))+
+    card(I.usr,'Comercial',itemCedentes()+'<hr class="div">'+itemOperado('Total cedentes operado',PROG.cedentes_op,getCedentesValores().real)+'<hr class="div">'+item('Novos cedentes',PROG.novos,METAS.novos_n,METAS.novos)+'<hr class="div">'+item('Operaram no mês',PROG.operaram,METAS.operaram_n,METAS.operaram))+
     card(I.ref,'Operação',item('Operações',PROG.operacoes,METAS.operacoes_n,METAS.operacoes)+'<hr class="div">'+item('Prorrogações',PROG.prorrogacoes,METAS.prorrogacoes_n,METAS.prorrogacoes)+'<hr class="div">'+item('Total',tOp,tM,String(tM)))+
   '</div><div class="g2">'+
     card(I.bdg,'RH',item('Entrevistas realizadas',PROG.entrevistas,METAS.entrevistas_n,METAS.entrevistas))+
