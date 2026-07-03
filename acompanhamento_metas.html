@@ -365,6 +365,7 @@ var PROG={data:"",faturamento:0,despesa:0,receitas:0,novos_inv:0,cedentes:0,cede
 var PROG_RAW={esc:{},sec:{}}; // dados crus por empresa
 var META_RAW={}; // metas cruas {sec,esc} por campo do Dashboard
 var EMPRESAS_SEL=['sec','esc'];
+var SOMAR_CEDENTES=false; // checkbox 'Somar as duas empresas' para cedentes cadastrados
 var EMPRESA_KEY='summus_empresas_dash';
 try{var _es=JSON.parse(localStorage.getItem(EMPRESA_KEY)||'null');if(Array.isArray(_es)&&_es.length)EMPRESAS_SEL=_es;}catch(e){}
 
@@ -385,6 +386,37 @@ function consolidarProg(){
   EMPRESAS_SEL.forEach(function(emp){
     if(!PROG.data&&PROG_RAW[emp]&&PROG_RAW[emp].data)PROG.data=PROG_RAW[emp].data;
   });
+}
+
+// Retorna valores de cedentes cadastrados conforme checkbox e empresas selecionadas
+function getCedentesValores(){
+  var ambas = EMPRESAS_SEL.length===2;
+  if(ambas && SOMAR_CEDENTES){
+    // Soma explícita das duas empresas
+    var real = parseN((PROG_RAW.esc||{}).cedentes||0) + parseN((PROG_RAW.sec||{}).cedentes||0);
+    // Meta: soma das metas de cada empresa (vindas de META_RAW)
+    var mEsc=0,mSec=0;
+    if(META_RAW&&META_RAW.comercial&&META_RAW.comercial.mc){
+      var mc=META_RAW.comercial.mc;
+      if(mc.esc)mEsc=parseN(mc.esc);
+      if(mc.sec)mSec=parseN(mc.sec);
+    }
+    var meta_n=mEsc+mSec;
+    return {real:real, meta_n:meta_n, meta_str:meta_n?String(meta_n):'—', ambas:true, somando:true};
+  }
+  if(ambas && !SOMAR_CEDENTES){
+    // Desmarcado com 2 empresas: mostra só ESC (primeira empresa prioridade)
+    var emp = EMPRESAS_SEL.indexOf('esc')>=0 ? 'esc' : EMPRESAS_SEL[0];
+    var real2 = parseN((PROG_RAW[emp]||{}).cedentes||0);
+    var meta_n2 = 0, meta_str2 = '—';
+    if(META_RAW&&META_RAW.comercial&&META_RAW.comercial.mc){
+      var mc2=META_RAW.comercial.mc;
+      if(mc2[emp]){meta_n2=parseN(mc2[emp]);meta_str2=String(meta_n2);}
+    }
+    return {real:real2, meta_n:meta_n2, meta_str:meta_str2, ambas:true, somando:false, empresa:emp.toUpperCase()};
+  }
+  // Apenas 1 empresa selecionada: comportamento normal
+  return {real:PROG.cedentes, meta_n:METAS.cedentes_n, meta_str:METAS.cedentes, ambas:false, somando:false};
 }
 
 function consolidarMetas(){
@@ -466,6 +498,8 @@ function toggleEmpresa(emp){
     EMPRESAS_SEL.push(emp);
   }
   try{localStorage.setItem(EMPRESA_KEY,JSON.stringify(EMPRESAS_SEL));}catch(e){}
+  // Se não tem mais 2 empresas, reseta o checkbox de cedentes
+  if(EMPRESAS_SEL.length!==2){SOMAR_CEDENTES=false;}
   renderEmpresaChips();
   applyFilter();
 }
@@ -531,15 +565,16 @@ function itemResultado(lbl,receitas,despesas,meta_n,meta_str){
 }
 
 // Item com barra mas SEM percentual no badge (total cedentes cadastrados)
-function itemBarra(lbl,real,meta_n,meta_str){
+// Se extraHtml passado, injeta HTML adicional no header (ex: checkbox)
+function itemBarra(lbl,real,meta_n,meta_str,extraHtml){
   var rn=parseN(real);
   var pct=meta_n>0?Math.min(Math.round(rn/meta_n*100),100):0;
-  var cls,bcls;
-  if(pct>=100){cls='b-g';bcls='bar-green';}
-  else if(pct>=60){cls='b-y';bcls='bar-yellow';}
-  else{cls='b-r';bcls='bar-red';}
+  var cls;
+  if(pct>=100){cls='b-g';}
+  else if(pct>=60){cls='b-y';}
+  else{cls='b-r';}
   return '<div class="mi">'+
-    '<div class="mi-h"><span class="mi-l">'+lbl+'</span></div>'+
+    '<div class="mi-h"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+'</div>'+
     '<div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div>'+
     '<div class="mi-v">'+
       '<div><span class="v-real">'+String(rn)+'</span>'+
@@ -547,6 +582,23 @@ function itemBarra(lbl,real,meta_n,meta_str){
       '</div>'+
     '</div>'+
   '</div>';
+}
+
+// Gera o HTML do item "Total cedentes cadastrados" com checkbox quando 2 empresas selecionadas
+function itemCedentes(){
+  var cv=getCedentesValores();
+  var chkHtml='';
+  if(cv.ambas){
+    var labelSomar=cv.somando
+      ? 'Somando '+((PROG_RAW.sec&&PROG_RAW.sec.cedentes?'SEC+ESC':'ambas'))
+      : 'Apenas '+(cv.empresa||'ESC');
+    chkHtml='<label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--t2);cursor:pointer;margin-left:8px;font-weight:400;white-space:nowrap">'+
+      '<input type="checkbox" onchange="SOMAR_CEDENTES=this.checked;render();" '+
+      (cv.somando?'checked':'')+
+      ' style="accent-color:#2CA1D8;cursor:pointer">'+
+      'Somar as duas empresas</label>';
+  }
+  return itemBarra('Total cedentes cadastrados',cv.real,cv.meta_n,cv.meta_str,chkHtml);
 }
 
 // Item com barra E percentual do operado em relação ao cadastrado
@@ -598,7 +650,7 @@ function render(){
   document.getElementById('dash').innerHTML=
   '<div class="g3">'+
     card(I.rec,'Faturamento',item('Faturamento',PROG.faturamento,METAS.faturamento_n,METAS.faturamento)+'<hr class="div">'+itemReceita('Receitas do mês',PROG.receitas)+'<hr class="div">'+itemD('Despesa do mês',PROG.despesa,METAS.despesa_n,METAS.despesa,true)+'<hr class="div">'+itemResultado('Resultado do mês',PROG.receitas,PROG.despesa,METAS.lucro_n,METAS.lucro))+
-    card(I.usr,'Comercial',itemBarra('Total cedentes cadastrados',PROG.cedentes,METAS.cedentes_n,METAS.cedentes)+'<hr class="div">'+itemOperado('Total cedentes operado',PROG.cedentes_op,PROG.cedentes)+'<hr class="div">'+item('Novos cedentes',PROG.novos,METAS.novos_n,METAS.novos)+'<hr class="div">'+item('Operaram no mês',PROG.operaram,METAS.operaram_n,METAS.operaram))+
+    card(I.usr,'Comercial',itemCedentes()+'<hr class="div">'+itemOperado('Total cedentes operado',PROG.cedentes_op,PROG.cedentes)+'<hr class="div">'+item('Novos cedentes',PROG.novos,METAS.novos_n,METAS.novos)+'<hr class="div">'+item('Operaram no mês',PROG.operaram,METAS.operaram_n,METAS.operaram))+
     card(I.ref,'Operação',item('Operações',PROG.operacoes,METAS.operacoes_n,METAS.operacoes)+'<hr class="div">'+item('Prorrogações',PROG.prorrogacoes,METAS.prorrogacoes_n,METAS.prorrogacoes)+'<hr class="div">'+item('Total',tOp,tM,String(tM)))+
   '</div><div class="g2">'+
     card(I.bdg,'RH',item('Entrevistas realizadas',PROG.entrevistas,METAS.entrevistas_n,METAS.entrevistas))+
