@@ -593,8 +593,19 @@ var INV_MESES_FULL = {1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:
 
 /* ── helpers ── */
 function invN(v){var x=parseFloat(String(v||0).toString().replace(',','.'));return isNaN(x)?0:x;}
+function invNTaxa(v){
+  // Normaliza taxa: se vem como fração decimal do Sheets (0.02 = 2%), converte para 2.0
+  var x=invN(v);
+  if(x>0&&x<1)x=x*100;
+  return x;
+}
 function invFmtR(v){return 'R$ '+invN(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function invFmtPct(v){return invN(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';}
+function invFmtPct(v){
+  var n=invN(v);
+  // Se o valor veio como fração decimal do Sheets (ex: 0.02 = 2%), multiplica por 100
+  if(n>0&&n<1)n=n*100;
+  return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+}
 function invFmtDate(iso){if(!iso)return '—';var m=String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[3]+'/'+m[2]+'/'+m[1];return iso;}
 
 function invGetMesAno(r){
@@ -740,8 +751,13 @@ function invAplicarFiltros(){
 function invRenderKPIs(){
   var total=invFilt.reduce(function(s,r){return s+invN(r.valor);},0);
   var cnt=invFilt.length;
-  var taxas=invFilt.filter(function(r){return invN(r.taxa)>0;}).map(function(r){return invN(r.taxa);});
-  var taxaMed=taxas.length?(taxas.reduce(function(a,b){return a+b;},0)/taxas.length):0;
+  // Taxa média ponderada: soma(taxa_i × valor_i) / soma(valor_i) — apenas registros com taxa e valor
+  var taxaNum=0,taxaDen=0;
+  invFilt.forEach(function(r){
+    var t=invNTaxa(r.taxa),v=invN(r.valor);
+    if(t>0&&v>0){taxaNum+=t*v;taxaDen+=v;}
+  });
+  var taxaMed=taxaDen>0?taxaNum/taxaDen:0;
   var invest={};invFilt.forEach(function(r){var k=String(r.nome_investidor||'').trim();if(k)invest[k]=true;});
   var nInv=Object.keys(invest).length;
 
@@ -786,16 +802,21 @@ function invRenderGraficos(){
 
   // ── Gráfico 2: Taxa por investidor (bubble / bar) ──
   // Média de taxa por investidor
-  var porTaxa={sum:{},cnt:{}};
+  // Taxa ponderada por investidor (taxa × valor / soma_valor por investidor)
+  var porTaxa={num:{},den:{}};
   invFilt.forEach(function(r){
-    var k=String(r.nome_investidor||'').trim();var t=invN(r.taxa);if(!k||!t)return;
-    porTaxa.sum[k]=(porTaxa.sum[k]||0)+t;
-    porTaxa.cnt[k]=(porTaxa.cnt[k]||0)+1;
+    var k=String(r.nome_investidor||'').trim();
+    var t=invNTaxa(r.taxa),v=invN(r.valor);
+    if(!k||!t||!v)return;
+    porTaxa.num[k]=(porTaxa.num[k]||0)+t*v;
+    porTaxa.den[k]=(porTaxa.den[k]||0)+v;
   });
-  var nomesTaxa=Object.keys(porTaxa.sum).sort(function(a,b){
-    return (porTaxa.sum[b]/porTaxa.cnt[b])-(porTaxa.sum[a]/porTaxa.cnt[a]);
+  var nomesTaxa=Object.keys(porTaxa.num).sort(function(a,b){
+    return (porTaxa.num[b]/porTaxa.den[b])-(porTaxa.num[a]/porTaxa.den[a]);
   });
-  var valsTaxa=nomesTaxa.map(function(k){return Math.round(porTaxa.sum[k]/porTaxa.cnt[k]*100)/100;});
+  var valsTaxa=nomesTaxa.map(function(k){
+    return Math.round(porTaxa.num[k]/porTaxa.den[k]*100)/100;
+  });
 
   if(INV_CHARTS.taxa)INV_CHARTS.taxa.destroy();
   INV_CHARTS.taxa=new Chart(document.getElementById('inv-c-taxa'),{
