@@ -418,7 +418,7 @@ function renderKPIs(d){
       '<div class="kv" style="display:flex;justify-content:space-between;align-items:baseline"><span>'+fN(qOp)+' op / '+fN(qPr)+' pr / '+fN(qRd)+' re</span><span>'+fN(qOp+qPr+qRd)+'</span></div>'+
       '<div class="krows">'+rows([['Vol.Op',fRC(vOp),''],['Vol.Pr',fRC(vPr),''],['Redesc.',fRC(vRd),''],['Total',fRC(vOp+vPr+vRd),'']])+'</div></div>'+
 
-    kbase('#e8f5e9','#16a085','<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>','Taxa Média')+
+    kbase('#e8f5e9','#16a085','<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>','Taxa Média Ponderada')+
       '<div class="kv">'+fP((tOp+tPr)/2)+' geral</div>'+
       '<div class="krows">'+rows([['Op',fP(tOp),''],['Prorr',fP(tPr),'']])+'</div></div>'+
 
@@ -498,6 +498,23 @@ function cc(id,t,s,h){
   '</div>';
 }
 
+// Versão especial do cc() para o gráfico de inadimplência com card de total
+function ccInad(id,t,s,h){
+  return '<div class="cc">'+
+    '<div class="cc-head">'+
+      '<h3>'+t+'</h3>'+
+      '<div style="display:flex;align-items:center;gap:10px">'+
+        '<div id="inad-total-card" style="background:linear-gradient(135deg,#fff0f0,#fde0e0);border:1px solid #f5b8b8;border-radius:9px;padding:5px 14px;text-align:right;white-space:nowrap">'+
+          '<div style="font-size:9px;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px">Total Inadimplência</div>'+
+          '<div id="inad-total-valor" style="font-size:15px;font-weight:700;color:#8b1a1a">R$ 0,00</div>'+
+        '</div>'+
+        '<div id="'+id+'-leg" style="display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end"></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="cw '+h+'"><canvas id="'+id+'"></canvas></div>'+
+  '</div>';
+}
+
 function renderCharts(d){
   killAll();
   if(!d.length){document.getElementById('cdiv').innerHTML='<div class="empty">Sem dados.</div>';return;}
@@ -507,7 +524,7 @@ function renderCharts(d){
     '<div class="r2">'+cc('cvo','Volume Operação (R$)','','h190')+cc('cvp','Volume Prorrogação (R$)','','h190')+'</div>'+
     '<div class="r2">'+cc('cvrd','Volume Redesconto (R$)','','h190')+cc('cvt','Volume Total (Op+Prorr+Redesc)','','h190')+'</div>'+
     '<div class="r2">'+cc('cq','Qtd Op · Prorr · Redesconto','','h190')+cc('ct','Taxa Média Ponderada (%)','','h190')+'</div>'+
-    '<div class="r2">'+cc('cpz','Prazo Médio (dias)','','h190')+cc('ci','Inadimplência (R$)','','h190')+'</div>';
+    '<div class="r2">'+cc('cpz','Prazo Médio (dias)','','h190')+ccInad('ci','Inadimplência (R$)','','h190')+'</div>';
 
   CH.f=mkC('cf','bar',L,[{label:'Faturamento',data:d.map(function(r){return n(r.faturamento);}),backgroundColor:'rgba(44,161,216,.78)',borderRadius:4}],'R');
   CH.r=mkC('cr','bar',L,[
@@ -533,6 +550,12 @@ function renderCharts(d){
   CH.vt=mkC('cvt','bar',L,[{label:'Vol.Total',data:d.map(function(r){return n(r.volume_operado)+n(r.volume_prorrogado)+n(r.volume_redesconto);}),backgroundColor:'rgba(44,161,216,.78)',borderRadius:4}],'R');
   CH.vrd=mkC('cvrd','bar',L,[{label:'Vol.Redesconto',data:d.map(function(r){return n(r.volume_redesconto);}),backgroundColor:'rgba(231,76,60,.75)',borderRadius:4}],'R');
   CH.i=mkC('ci','line',L,[{label:'Inadimplência',data:d.map(function(r){return n(r.inadimplencia);}),borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,.10)',pointRadius:4,tension:.3,fill:true,borderWidth:2.5}],'R');
+  // Atualizar card de total de inadimplência
+  (function(){
+    var totalInad=d.reduce(function(s,r){return s+n(r.inadimplencia);},0);
+    var el=document.getElementById('inad-total-valor');
+    if(el)el.textContent=fR(totalInad);
+  })();
 
 
 }
@@ -765,7 +788,7 @@ function invRenderKPIs(){
     {lbl:'Volume Total',val:invFmtR(total),cor:'#2CA1D8'},
     {lbl:'Nº Aportes',val:String(cnt),cor:'#1d9e75'},
     {lbl:'Investidores',val:String(nInv),cor:'#9b59b6'},
-    {lbl:'Taxa Média',val:invFmtPct(taxaMed),cor:'#f39c12'},
+    {lbl:'Taxa Média Ponderada',val:invFmtPct(taxaMed),cor:'#f39c12'},
   ];
   document.getElementById('inv-kpis').innerHTML=kpis.map(function(k){
     return '<div style="background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:12px 14px">'+
