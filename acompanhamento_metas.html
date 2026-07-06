@@ -366,6 +366,7 @@ var PROG_RAW={esc:{},sec:{}}; // dados crus por empresa
 var META_RAW={}; // metas cruas {sec,esc} por campo do Dashboard
 var EMPRESAS_SEL=['sec','esc'];
 var SOMAR_CEDENTES=false; // checkbox 'Somar as duas empresas' para cedentes cadastrados
+var SOMAR_NOVOS=false;    // checkbox 'Somar as duas empresas' para novos cedentes
 var EMPRESA_KEY='summus_empresas_dash';
 try{var _es=JSON.parse(localStorage.getItem(EMPRESA_KEY)||'null');if(Array.isArray(_es)&&_es.length)EMPRESAS_SEL=_es;}catch(e){}
 
@@ -386,6 +387,32 @@ function consolidarProg(){
   EMPRESAS_SEL.forEach(function(emp){
     if(!PROG.data&&PROG_RAW[emp]&&PROG_RAW[emp].data)PROG.data=PROG_RAW[emp].data;
   });
+}
+
+// Retorna valores de Novos cedentes conforme checkbox e empresas selecionadas
+function getNovosCedentesValores(){
+  var ambas = EMPRESAS_SEL.length===2;
+  if(ambas && SOMAR_NOVOS){
+    var real = parseN((PROG_RAW.esc||{}).novos||0) + parseN((PROG_RAW.sec||{}).novos||0);
+    var meta_n=0;
+    if(META_RAW&&META_RAW.comercial&&META_RAW.comercial.mn){
+      var mn=META_RAW.comercial.mn;
+      if(mn.esc)meta_n+=parseN(mn.esc);
+      if(mn.sec)meta_n+=parseN(mn.sec);
+    }
+    return {real:real, meta_n:meta_n, meta_str:meta_n?String(meta_n):'—', ambas:true, somando:true};
+  }
+  if(ambas && !SOMAR_NOVOS){
+    var emp = EMPRESAS_SEL.indexOf('esc')>=0 ? 'esc' : EMPRESAS_SEL[0];
+    var real2 = parseN((PROG_RAW[emp]||{}).novos||0);
+    var meta_n2=0, meta_str2='—';
+    if(META_RAW&&META_RAW.comercial&&META_RAW.comercial.mn){
+      var mn2=META_RAW.comercial.mn;
+      if(mn2[emp]){meta_n2=parseN(mn2[emp]);meta_str2=String(meta_n2);}
+    }
+    return {real:real2, meta_n:meta_n2, meta_str:meta_str2, ambas:true, somando:false};
+  }
+  return {real:PROG.novos, meta_n:METAS.novos_n, meta_str:METAS.novos, ambas:false, somando:false};
 }
 
 // Retorna valores de cedentes cadastrados conforme checkbox e empresas selecionadas
@@ -499,7 +526,7 @@ function toggleEmpresa(emp){
   }
   try{localStorage.setItem(EMPRESA_KEY,JSON.stringify(EMPRESAS_SEL));}catch(e){}
   // Se não tem mais 2 empresas, reseta o checkbox de cedentes
-  if(EMPRESAS_SEL.length!==2){SOMAR_CEDENTES=false;}
+  if(EMPRESAS_SEL.length!==2){SOMAR_CEDENTES=false;SOMAR_NOVOS=false;}
   renderEmpresaChips();
   applyFilter();
 }
@@ -533,7 +560,7 @@ function syncProg(){
   });
 }
 
-function item(lbl,real,mn,ms){var rn=parseN(real),pct=mn>0?Math.min(Math.round(rn/mn*100),100):0,cls,pcls,plbl;if(pct>=100){cls='b-g';pcls='p-g';plbl=pct+'% ✓';}else if(pct>=60){cls='b-y';pcls='p-y';plbl=pct+'%';}else{cls='b-r';pcls='p-r';plbl=pct+'%';}var falta=mn-rn,fstr=falta>0?'Falta: '+fmtN(falta):'✓ Meta atingida!';return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">de</span><span class="v-meta">'+fmtMeta(ms)+'</span></div><span class="v-rest">'+fstr+'</span></div></div>';}
+function item(lbl,real,mn,ms,extraHtml){var rn=parseN(real),pct=mn>0?Math.min(Math.round(rn/mn*100),100):0,cls,pcls,plbl;if(pct>=100){cls='b-g';pcls='p-g';plbl=pct+'% ✓';}else if(pct>=60){cls='b-y';pcls='p-y';plbl=pct+'%';}else{cls='b-r';pcls='p-r';plbl=pct+'%';}var falta=mn-rn,fstr=falta>0?'Falta: '+fmtN(falta):'✓ Meta atingida!';return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+'<span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">de</span><span class="v-meta">'+fmtMeta(ms)+'</span></div><span class="v-rest">'+fstr+'</span></div></div>';}
 function itemD(lbl,real,lim_n,ls,showEye){var rn=parseN(real),rawPct=lim_n>0?(rn/lim_n*100):0,rawPctStr=rawPct.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}),pct=Math.min(rawPct,100),cls,pcls,plbl;if(rawPct<=100){cls='b-g';pcls='p-g';plbl=rawPctStr+'% usado';}else{cls='b-r';pcls='p-r';plbl=rawPctStr+'% ⚠';}var rest=lim_n-rn,rstr=rest>0?'Disponível: '+fmtN(rest):'⚠ Limite ultrapassado! '+fmtN(Math.abs(rest));var eyeBtn=showEye?'<button onclick="openTitulosPagos()" title="Ver detalhamento das despesas" style="background:none;border:none;cursor:pointer;padding:0;margin-left:6px;vertical-align:middle;color:#8fa5bb;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>':'';return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+eyeBtn+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">limite</span><span class="v-meta">'+fmtMeta(ls)+'</span></div><span class="v-rest">'+rstr+'</span></div></div>';}
 // Barra de receitas (sem meta definida — só mostra o valor)
 function itemReceita(lbl,real){
@@ -556,7 +583,7 @@ function itemResultado(lbl,receitas,despesas,meta_n,meta_str){
   var rest=meta_n-res;
   var rstr=rest>0?'Falta: '+rest.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'Meta atingida ✓';
   return '<div class="mi">'+
-    '<div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div>'+
+    '<div class="mi-h"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+' <span class="mi-p '+pcls+'">'+plbl+'</span></div>'+
     '<div class="bar-w"><div class="bar '+cls+'" style="width:'+barPct+'%"></div></div>'+
     '<div class="mi-v"><div>'+
       '<span class="v-real">'+resFormatado+'</span>'+
@@ -599,6 +626,20 @@ function itemCedentes(){
       'Somar as duas empresas</label>';
   }
   return itemBarra('Total cedentes cadastrados',cv.real,cv.meta_n,cv.meta_str,chkHtml);
+}
+
+// Gera o HTML do item "Novos cedentes" com checkbox quando 2 empresas selecionadas
+function itemNovosCedentes(){
+  var nv=getNovosCedentesValores();
+  var chkHtml='';
+  if(nv.ambas){
+    chkHtml='<label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--t2);cursor:pointer;margin-left:8px;font-weight:400;white-space:nowrap">'+
+      '<input type="checkbox" onchange="SOMAR_NOVOS=this.checked;render();" '+
+      (nv.somando?'checked':'')+
+      ' style="accent-color:#2CA1D8;cursor:pointer">'+
+      'Somar as duas empresas</label>';
+  }
+  return item('Novos cedentes',nv.real,nv.meta_n,nv.meta_str,chkHtml);
 }
 
 // Item com barra E percentual do operado em relação ao cadastrado
@@ -650,7 +691,7 @@ function render(){
   document.getElementById('dash').innerHTML=
   '<div class="g3">'+
     card(I.rec,'Faturamento',item('Faturamento',PROG.faturamento,METAS.faturamento_n,METAS.faturamento)+'<hr class="div">'+itemReceita('Receitas do mês',PROG.receitas)+'<hr class="div">'+itemD('Despesa do mês',PROG.despesa,METAS.despesa_n,METAS.despesa,true)+'<hr class="div">'+itemResultado('Resultado do mês',PROG.receitas,PROG.despesa,METAS.lucro_n,METAS.lucro))+
-    card(I.usr,'Comercial',itemCedentes()+'<hr class="div">'+itemOperado('Total cedentes operado',PROG.cedentes_op,getCedentesValores().real)+'<hr class="div">'+item('Novos cedentes',PROG.novos,METAS.novos_n,METAS.novos)+'<hr class="div">'+item('Operaram no mês',PROG.operaram,METAS.operaram_n,METAS.operaram))+
+    card(I.usr,'Comercial',itemCedentes()+'<hr class="div">'+itemOperado('Total cedentes operado',PROG.cedentes_op,getCedentesValores().real)+'<hr class="div">'+itemNovosCedentes()+'<hr class="div">'+item('Operaram no mês',PROG.operaram,METAS.operaram_n,METAS.operaram))+
     card(I.ref,'Operação',item('Operações',PROG.operacoes,METAS.operacoes_n,METAS.operacoes)+'<hr class="div">'+item('Prorrogações',PROG.prorrogacoes,METAS.prorrogacoes_n,METAS.prorrogacoes)+'<hr class="div">'+item('Total',tOp,tM,String(tM)))+
   '</div><div class="g2">'+
     card(I.bdg,'RH',item('Entrevistas realizadas',PROG.entrevistas,METAS.entrevistas_n,METAS.entrevistas))+
