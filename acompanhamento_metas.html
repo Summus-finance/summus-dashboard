@@ -583,7 +583,7 @@ function itemResultado(lbl,receitas,despesas,meta_n,meta_str){
   var rest=meta_n-res;
   var rstr=rest>0?'Falta: '+rest.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'Meta atingida ✓';
   return '<div class="mi">'+
-    '<div class="mi-h"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+' <span class="mi-p '+pcls+'">'+plbl+'</span></div>'+
+    '<div class="mi-h"><span class="mi-l">'+lbl+'</span>'+'<span class="mi-p '+pcls+'">'+plbl+'</span></div>'+
     '<div class="bar-w"><div class="bar '+cls+'" style="width:'+barPct+'%"></div></div>'+
     '<div class="mi-v"><div>'+
       '<span class="v-real">'+resFormatado+'</span>'+
