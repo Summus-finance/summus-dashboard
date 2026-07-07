@@ -99,13 +99,13 @@ tbody td.num{text-align:right;font-weight:600}
 </div>
 <div class="kpis">
   <div class="kpi"><div class="kpi-lbl">Total (R$)</div><div class="kpi-val" id="k-total" style="color:var(--br)">&#8212;</div></div>
-  <div class="kpi"><div class="kpi-lbl">Concentra&#231;&#227;o M&#233;dia</div><div class="kpi-val" id="k-pct-med" style="color:#9b59b6">&#8212;</div></div>
+  <div class="kpi"><div class="kpi-lbl">Concentra&#231;&#227;o M&#233;dia Ponderada</div><div class="kpi-val" id="k-pct-med" style="color:#9b59b6">&#8212;</div></div>
   <div class="kpi"><div class="kpi-lbl">N&#186; Sacados</div><div class="kpi-val" id="k-sacados" style="color:#2CA1D8">&#8212;</div></div>
   <div class="kpi"><div class="kpi-lbl">N&#186; Mutu&#225;rios</div><div class="kpi-val" id="k-mutuarios" style="color:#9b59b6">&#8212;</div></div>
 </div>
 <div class="graficos">
   <div class="chart-card">
-    <h3>Top 10 &#8212; Concentra&#231;&#227;o (R$)</h3>
+    <h3 style="display:flex;justify-content:space-between;align-items:center"><span>Top 5 &#8212; Concentra&#231;&#227;o (R$)</span><span style="font-size:11px;font-weight:400;color:var(--t3)">Total: <strong id="top5-total" style="color:var(--t1);font-size:13px">R$ 0,00</strong></span></h3>
     <div class="chart-wrap"><canvas id="chart-top"></canvas></div>
   </div>
   <div class="chart-card">
@@ -180,7 +180,10 @@ function aplicarFiltros(){
 }
 function renderKPIs(){
   var total=dadosFilt.reduce(function(s,r){return s+n(r.conc_rs);},0);
-  var pctMed=dadosFilt.length?(dadosFilt.reduce(function(s,r){return s+n(r.conc_pct);},0)/dadosFilt.length):0;
+  // Concentração média ponderada: soma(pct_i × rs_i) / soma(rs_i)
+  var _pctNum=0,_pctDen=0;
+  dadosFilt.forEach(function(r){var p=n(r.conc_pct),v=n(r.conc_rs);if(v>0){_pctNum+=p*v;_pctDen+=v;}});
+  var pctMed=_pctDen>0?_pctNum/_pctDen:0;
   var sac=dadosFilt.filter(function(r){return (r.tipo||'').toLowerCase()==='sacado';}).length;
   var mut=dadosFilt.filter(function(r){return (r.tipo||'').toLowerCase()==='mutuario';}).length;
   document.getElementById('k-total').textContent=fR(total);
@@ -193,8 +196,14 @@ function renderKPIs(){
 function renderGraficos(){
   var dk=document.body.classList.contains('dk');
   var gc=dk?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';var tc=dk?'#7a98b8':'#4a607a';
-  var sorted=dadosFilt.slice().sort(function(a,b){return n(b.conc_rs)-n(a.conc_rs);}).slice(0,10);
+  var sorted=dadosFilt.slice().sort(function(a,b){return n(b.conc_rs)-n(a.conc_rs);}).slice(0,5);
   var cores=sorted.map(function(r){return (r.tipo||'').toLowerCase()==='sacado'?'rgba(44,161,216,.8)':'rgba(155,89,182,.8)';});
+  // Atualizar card de total do top 5
+  (function(){
+    var tot5=sorted.reduce(function(s,r){return s+n(r.conc_rs);},0);
+    var el=document.getElementById('top5-total');
+    if(el)el.textContent=fR(tot5);
+  })();
   if(CH.top)CH.top.destroy();
   CH.top=new Chart(document.getElementById('chart-top'),{
     type:'bar',
