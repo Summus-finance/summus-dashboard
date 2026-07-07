@@ -416,7 +416,9 @@ function renderKPIs(d){
 
     kbase('#f3eafe','#7b2fbe','<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>','Contratos')+
       '<div class="kv" style="display:flex;justify-content:space-between;align-items:baseline"><span>'+fN(qOp)+' op / '+fN(qPr)+' pr / '+fN(qRd)+' re</span><span>'+fN(qOp+qPr+qRd)+'</span></div>'+
-      '<div class="krows">'+rows([['Vol.Op',fRC(vOp),''],['Vol.Pr',fRC(vPr),''],['Redesc.',fRC(vRd),''],['Total',fRC(vOp+vPr+vRd),'']])+'</div></div>'+
+      '<div class="krows">'+rows([['Vol.Op',fRC(vOp),''],['Vol.Pr',fRC(vPr),''],['Redesc.',fRC(vRd),''],['Total',fRC(vOp+vPr+vRd),'']])+
+      '<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--bd2,#e0e8f0);display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--t3)">Ticket Médio</span><span style="font-weight:700;color:var(--t1)">'+fRC((qOp+qPr+qRd)>0?(vOp+vPr+vRd)/(qOp+qPr+qRd):0)+'</span></div>'+
+      '</div></div>'+
 
     kbase('#e8f5e9','#16a085','<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>','Taxa Média Ponderada')+
       '<div class="kv">'+fP((tOp+tPr)/2)+' geral</div>'+
