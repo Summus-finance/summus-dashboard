@@ -361,7 +361,7 @@ function fmtMeta(v){
   return s;
 }
 
-var PROG={data:"",faturamento:0,despesa:0,receitas:0,novos_inv:0,cedentes:0,cedentes_op:0,novos:0,operaram:0,operacoes:0,prorrogacoes:0,entrevistas:0};
+var PROG={data:"",faturamento:0,despesa:0,receitas:0,novos_inv:0,cedentes:0,cedentes_op:0,novos:0,operaram:0,operacoes:0,prorrogacoes:0,entrevistas:0,vol_operacoes:0,vol_redesconto:0,vol_prorrogacoes:0,qtd_redesconto:0};
 var PROG_RAW={esc:{},sec:{}}; // dados crus por empresa
 var META_RAW={}; // metas cruas {sec,esc} por campo do Dashboard
 var EMPRESAS_SEL=['sec','esc'];
@@ -373,7 +373,7 @@ try{var _es=JSON.parse(localStorage.getItem(EMPRESA_KEY)||'null');if(Array.isArr
 function isPctFieldM(k){return false;} // nenhum campo de PROG é percentual hoje
 
 function consolidarProg(){
-  var keys=['faturamento','despesa','receitas','novos_inv','cedentes','cedentes_op','novos','operaram','operacoes','prorrogacoes','entrevistas'];
+  var keys=['faturamento','despesa','receitas','novos_inv','cedentes','cedentes_op','novos','operaram','operacoes','prorrogacoes','entrevistas','vol_operacoes','vol_redesconto','vol_prorrogacoes','qtd_redesconto'];
   keys.forEach(function(k){
     var vals=[];
     EMPRESAS_SEL.forEach(function(emp){
@@ -568,6 +568,21 @@ function itemReceita(lbl,real){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span></div>'+
     '<div class="mi-v"><div><span class="v-real">'+fmtN(rn)+'</span></div></div></div>';
 }
+// Bloco de volumes de operação (sem barra, informativo)
+function itemVolumes(){
+  var vOp=PROG.vol_operacoes,vPr=PROG.vol_prorrogacoes,vRd=PROG.vol_redesconto,qRd=PROG.qtd_redesconto;
+  var total=parseN(vOp)+parseN(vPr)+parseN(vRd);
+  return '<div class="mi">'+
+    '<div class="mi-h"><span class="mi-l" style="font-weight:700;font-size:12px;color:var(--t2)">Volumes (R$)</span></div>'+
+    '<div style="display:flex;flex-direction:column;gap:3px;margin-top:4px">'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--t2)">Operações</span><span style="font-weight:600;color:var(--t1)">'+fmtN(vOp)+'</span></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--t2)">Prorrogações</span><span style="font-weight:600;color:var(--t1)">'+fmtN(vPr)+'</span></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--t2)">Redescontos <span style="font-size:11px;color:var(--t3)">('+String(parseInt(qRd)||0)+')</span></span><span style="font-weight:600;color:var(--t1)">'+fmtN(vRd)+'</span></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px;padding-top:4px;border-top:1px solid var(--bd);margin-top:2px"><span style="color:var(--t2);font-weight:700">Total</span><span style="font-weight:700;color:var(--br)">'+fmtN(total)+'</span></div>'+
+    '</div>'+
+  '</div>';
+}
+
 // Barra de resultado (receitas - despesas) com meta de lucro
 function itemResultado(lbl,receitas,despesas,meta_n,meta_str){
   var rec=parseN(receitas),desp=parseN(despesas),res=rec-desp;
@@ -692,7 +707,7 @@ function render(){
   '<div class="g3">'+
     card(I.rec,'Faturamento',item('Faturamento',PROG.faturamento,METAS.faturamento_n,METAS.faturamento)+'<hr class="div">'+itemReceita('Receitas do mês',PROG.receitas)+'<hr class="div">'+itemD('Despesa do mês',PROG.despesa,METAS.despesa_n,METAS.despesa,true)+'<hr class="div">'+itemResultado('Resultado do mês',PROG.receitas,PROG.despesa,METAS.lucro_n,METAS.lucro))+
     card(I.usr,'Comercial',itemCedentes()+'<hr class="div">'+itemOperado('Total cedentes operado',PROG.cedentes_op,getCedentesValores().real)+'<hr class="div">'+itemNovosCedentes()+'<hr class="div">'+item('Operaram no mês',PROG.operaram,METAS.operaram_n,METAS.operaram))+
-    card(I.ref,'Operação',item('Operações',PROG.operacoes,METAS.operacoes_n,METAS.operacoes)+'<hr class="div">'+item('Prorrogações',PROG.prorrogacoes,METAS.prorrogacoes_n,METAS.prorrogacoes)+'<hr class="div">'+item('Total',tOp,tM,String(tM)))+
+    card(I.ref,'Operação',item('Operações',PROG.operacoes,METAS.operacoes_n,METAS.operacoes)+'<hr class="div">'+item('Prorrogações',PROG.prorrogacoes,METAS.prorrogacoes_n,METAS.prorrogacoes)+'<hr class="div">'+item('Redescontos',PROG.qtd_redesconto,0,'')+'<hr class="div">'+item('Total',tOp,tM,String(tM))+'<hr class="div">'+itemVolumes())+
   '</div><div class="g2">'+
     card(I.bdg,'RH',item('Entrevistas realizadas',PROG.entrevistas,METAS.entrevistas_n,METAS.entrevistas))+
     card(I.cht,'Novos Investidores',item('Captação do mês',PROG.novos_inv,METAS.novos_inv_n,METAS.novos_inv))+
@@ -702,7 +717,7 @@ function render(){
 var FIELDS=[
   {sec:'Faturamento',f:[{l:'Faturamento realizado (R$)',k:'faturamento',ph:'ex: 50000'},{l:'Receitas do mês (R$)',k:'receitas',ph:'ex: 30000'},{l:'Despesa realizada (R$)',k:'despesa',ph:'ex: 80000'}]},
   {sec:'Comercial',f:[{l:'Total cedentes cadastrados',k:'cedentes',ph:'ex: 90'},{l:'Total cedentes operado',k:'cedentes_op',ph:'ex: 50'},{l:'Novos cedentes',k:'novos',ph:'ex: 3'},{l:'Operaram no mês',k:'operaram',ph:'ex: 60'}]},
-  {sec:'Operação',f:[{l:'Operações realizadas',k:'operacoes',ph:'ex: 30'},{l:'Prorrogações',k:'prorrogacoes',ph:'ex: 5'}]},
+  {sec:'Operação',f:[{l:'Operações realizadas',k:'operacoes',ph:'ex: 30'},{l:'Prorrogações',k:'prorrogacoes',ph:'ex: 5'},{l:'Redescontos (qtd)',k:'qtd_redesconto',ph:'ex: 3'},{l:'Vol. Operações (R$)',k:'vol_operacoes',ph:'ex: 500000'},{l:'Vol. Prorrogações (R$)',k:'vol_prorrogacoes',ph:'ex: 150000'},{l:'Vol. Redescontos (R$)',k:'vol_redesconto',ph:'ex: 80000'}]},
   {sec:'RH / Investidores',f:[{l:'Entrevistas realizadas',k:'entrevistas',ph:'ex: 1'},{l:'Novos investidores (R$)',k:'novos_inv',ph:'ex: 200000'}]}
 ];
 function openModal(){
@@ -768,7 +783,7 @@ function zerar(){
   if(EMPRESAS_SEL.length!==1){alert('Selecione apenas UMA empresa para zerar os valores.');return;}
   if(!confirm('Zerar todos os valores da empresa selecionada?'))return;
   var empresaAtual=EMPRESAS_SEL[0];
-  var keys=['faturamento','despesa','receitas','novos_inv','cedentes','cedentes_op','novos','operaram','operacoes','prorrogacoes','entrevistas'];
+  var keys=['faturamento','despesa','receitas','novos_inv','cedentes','cedentes_op','novos','operaram','operacoes','prorrogacoes','entrevistas','vol_operacoes','vol_redesconto','vol_prorrogacoes','qtd_redesconto'];
   var zerado={};
   keys.forEach(function(k){zerado[k]=0;});
   if(!PROG_RAW[empresaAtual])PROG_RAW[empresaAtual]={};
