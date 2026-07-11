@@ -347,6 +347,12 @@ function initLogin(){
   document.getElementById('inp-pass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 }
 
+function fmtVol(v){
+  // Sempre formato completo: 1.500.000,00 (nunca abrevia para M)
+  var n=parseFloat(String(v||0).replace(/[^0-9.,-]/g,'').replace(',','.'))||0;
+  n=Math.round(n*100)/100;
+  return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
 function fmtN(v){var n=parseFloat(String(v).replace(/[^0-9.,-]/g,'').replace(',','.'))||0;n=Math.round(n*100)/100;if(n>=1000000)return'R$ '+(n/1000000).toFixed(2).replace('.',',')+'M';if(n>=1000)return'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});if(n===Math.trunc(n))return String(n);return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function parseN(v){return parseFloat(String(v).replace(/[^0-9.,]/g,'').replace(',','.'))||0;}
 function fmtMeta(v){
@@ -590,9 +596,9 @@ function itemOpLinha(lbl,real,meta_n,meta_str,vol,showVol){
 
   // Coluna de volume (direita)
   var volHtml=showVol?
-    '<div style="text-align:right;flex-shrink:0;min-width:90px">'+
+    '<div style="text-align:center;flex-shrink:0;min-width:110px">'+
       '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px">Volume</div>'+
-      '<div style="font-size:13px;font-weight:700;color:var(--t1)">'+fmtN(parseN(vol)||0)+'</div>'+
+      '<div style="font-size:13px;font-weight:700;color:var(--t1)">'+fmtVol(parseN(vol)||0)+'</div>'+
     '</div>':'';
 
   return '<div class="mi">'+
@@ -612,9 +618,9 @@ function itemRedesconto(qtd,vol){
       '<div style="flex:1">'+
         '<div style="font-size:17px;font-weight:700;color:var(--t1)">'+String(parseInt(qtd)||0)+'</div>'+
       '</div>'+
-      '<div style="text-align:right;flex-shrink:0;min-width:90px">'+
+      '<div style="text-align:center;flex-shrink:0;min-width:110px">'+
         '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px">Volume</div>'+
-        '<div style="font-size:13px;font-weight:700;color:var(--t1)">'+fmtN(parseN(vol)||0)+'</div>'+
+        '<div style="font-size:13px;font-weight:700;color:var(--t1)">'+fmtVol(parseN(vol)||0)+'</div>'+
       '</div>'+
     '</div>'+
   '</div>';
@@ -643,9 +649,9 @@ function itemOpTotal(rOp,rPr,rRd,tM,vOp,vPr,vRd){
         '</div>'+
         (fstr?'<div style="font-size:11px;color:var(--t3);margin-top:1px">'+fstr+'</div>':'')+
       '</div>'+
-      '<div style="text-align:right;flex-shrink:0;min-width:90px">'+
+      '<div style="text-align:center;flex-shrink:0;min-width:110px">'+
         '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px">Vol. Total</div>'+
-        '<div style="font-size:13px;font-weight:700;color:var(--br)">'+fmtN(total)+'</div>'+
+        '<div style="font-size:13px;font-weight:700;color:var(--br)">'+fmtVol(total)+'</div>'+
       '</div>'+
     '</div>'+
   '</div>';
