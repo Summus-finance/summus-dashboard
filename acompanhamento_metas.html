@@ -597,8 +597,8 @@ function itemOpLinha(lbl,real,meta_n,meta_str,vol,showVol){
       (meta_n?'<span class="v-sep">de</span><span class="v-meta">'+fmtMeta(meta_str)+'</span>':'')+
     '</div>'+
     (showVol?
-      '<div style="text-align:right">'+
-        '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;line-height:1">VOL.</div>'+
+      '<div style="display:flex;align-items:baseline;justify-content:flex-end">'+
+        '<span style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-right:4px">VOL.</span>'+
         volPart+
       '</div>':'')
   +'</div>';
@@ -615,8 +615,8 @@ function itemRedesconto(qtd,vol){
     '<div class="mi-h"><span class="mi-l">Redescontos</span></div>'+
     '<div style="margin-top:4px;display:flex;justify-content:space-between;align-items:baseline">'+
       '<span style="font-size:17px;font-weight:700;color:var(--t1)">'+String(parseInt(qtd)||0)+'</span>'+
-      '<div style="text-align:right">'+
-        '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;line-height:1">VOL.</div>'+
+      '<div style="display:flex;align-items:baseline;justify-content:flex-end">'+
+        '<span style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-right:4px">VOL.</span>'+
         '<span style="font-size:13px;font-weight:700;color:var(--t1)">'+fmtVol(parseN(vol)||0)+'</span>'+
       '</div>'+
     '</div>'+
@@ -643,8 +643,8 @@ function itemOpTotal(rOp,rPr,rRd,tM,vOp,vPr,vRd){
         '<span class="v-real" style="font-size:17px;font-weight:700">'+String(tOp)+'</span>'+
         (tM?'<span class="v-sep">de</span><span class="v-meta">'+fmtMeta(String(tM))+'</span>':'')+
       '</div>'+
-      '<div style="text-align:right">'+
-        '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;line-height:1">VOL. TOTAL</div>'+
+      '<div style="display:flex;align-items:baseline;justify-content:flex-end">'+
+        '<span style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-right:4px">VOL. TOTAL</span>'+
         '<span style="font-size:13px;font-weight:700;color:var(--br)">'+fmtVol(total)+'</span>'+
       '</div>'+
     '</div>'+
