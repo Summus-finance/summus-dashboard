@@ -282,6 +282,11 @@ function clearSession(){sessionStorage.removeItem(SESSION_KEY);}
 function logout(){clearSession();window.location.replace('login.html');}
 
 function _jsonp(params, cb) {
+  // Anexa o token de sessão automaticamente em toda chamada, exceto no login.
+  if (params.action !== 'login') {
+    var _sess = getSession();
+    params = Object.assign({}, params, { token: _sess ? _sess.token : '' });
+  }
   var id = '_cb' + Date.now() + Math.floor(Math.random()*9999);
   var timer = setTimeout(function(){
     window[id]=null; var s=document.getElementById(id); if(s)s.remove();
@@ -290,6 +295,7 @@ function _jsonp(params, cb) {
   window[id] = function(data){
     clearTimeout(timer); window[id]=null;
     var s=document.getElementById(id); if(s)s.remove();
+    if (data && data.ok === false && data.error === 'NAO_AUTENTICADO') { clearSession(); window.location.replace('login.html'); return; }
     cb(null, data);
   };
   var qs = Object.keys(params).map(function(k){
@@ -323,7 +329,7 @@ function initLogin(){
       btn.disabled=false;spin.style.display='none';
       if(e||!res){err.textContent='Erro de conexão. Verifique se o Apps Script está publicado e a URL está correta.';err.style.display='block';return;}
       if(!res.ok){err.textContent=res.error||'Usuário ou senha incorretos.';err.style.display='block';return;}
-      setSession({usuario:res.usuario});showApp();
+      setSession({usuario:res.usuario, podeAtualizar:!!res.podeAtualizar, token:res.token, ts:Date.now()});showApp();
     });
   }
   btn.addEventListener('click',doLogin);

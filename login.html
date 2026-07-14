@@ -104,7 +104,7 @@ function doLogin(){
     btn.disabled=false; spin.style.display='none';
     if(e||!res){err.textContent='Erro de conexão: '+(e?e.message:'sem resposta')+'.';err.style.display='block';return;}
     if(!res.ok){err.textContent=res.error||'Usuário ou senha incorretos.';err.style.display='block';return;}
-    try{sessionStorage.setItem(SESSION_KEY, JSON.stringify({usuario:res.usuario, podeAtualizar:!!res.podeAtualizar, ts:Date.now()}));}catch(ex){}
+    try{sessionStorage.setItem(SESSION_KEY, JSON.stringify({usuario:res.usuario, podeAtualizar:!!res.podeAtualizar, token:res.token, ts:Date.now()}));}catch(ex){}
     window.location.replace('painel.html');
   });
 }

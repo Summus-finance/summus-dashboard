@@ -324,9 +324,17 @@ function clearFil(){
 
 /* API */
 function _jsonp(params,cb){
+  if (params.action !== 'login') {
+    var _sess = gSess();
+    params = Object.assign({}, params, { token: _sess ? _sess.token : '' });
+  }
   var id='_cb'+Date.now()+Math.floor(Math.random()*9999);
   var timer=setTimeout(function(){window[id]=null;var s=document.getElementById(id);if(s)s.remove();cb(new Error('timeout'),null);},20000);
-  window[id]=function(data){clearTimeout(timer);window[id]=null;var s=document.getElementById(id);if(s)s.remove();cb(null,data);};
+  window[id]=function(data){
+    clearTimeout(timer);window[id]=null;var s=document.getElementById(id);if(s)s.remove();
+    if (data && data.ok===false && data.error==='NAO_AUTENTICADO'){ try{sessionStorage.removeItem(SK);}catch(e){} window.location.replace('login.html'); return; }
+    cb(null,data);
+  };
   var qs=Object.keys(params).map(function(k){var v=params[k];if(typeof v==='object')v=JSON.stringify(v);return k+'='+encodeURIComponent(v);}).join('&');
   var s=document.createElement('script');s.id=id;
   s.onerror=function(){clearTimeout(timer);window[id]=null;s.remove();cb(new Error('Falha ao conectar.'),null);};
@@ -573,7 +581,7 @@ function initLogin(){
       btn.disabled=false;spin.style.display='none';
       if(e||!res){err.textContent='Erro de conexão.';err.style.display='block';return;}
       if(!res.ok){err.textContent=res.error||'Usuário ou senha incorretos.';err.style.display='block';return;}
-      sSess({u:res.usuario});
+      sSess({usuario:res.usuario, podeAtualizar:!!res.podeAtualizar, token:res.token, ts:Date.now()});
       document.getElementById('lpage').style.display='none';
       document.getElementById('app').style.display='block';
       loadData();

@@ -145,9 +145,15 @@ function fR(v){return 'R$ '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits
 function fPct(v){return (v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';}
 function n(v){var x=parseFloat(String(v||0).replace(',','.'));return isNaN(x)?0:x;}
 function jsonpCall(params,cb){
+  var _sess=getSession();
+  params=Object.assign({},params,{token:_sess?_sess.token:''});
   var id='_cb'+Date.now()+Math.floor(Math.random()*9999);
   var timer=setTimeout(function(){window[id]=null;var s=document.getElementById(id);if(s)s.remove();cb(new Error('timeout'),null);},20000);
-  window[id]=function(data){clearTimeout(timer);window[id]=null;var s=document.getElementById(id);if(s)s.remove();cb(null,data);};
+  window[id]=function(data){
+    clearTimeout(timer);window[id]=null;var s=document.getElementById(id);if(s)s.remove();
+    if(data&&data.ok===false&&data.error==='NAO_AUTENTICADO'){try{sessionStorage.removeItem(SESSION_KEY);}catch(e){}window.location.replace('login.html');return;}
+    cb(null,data);
+  };
   var qs=Object.keys(params).map(function(k){return k+'='+encodeURIComponent(params[k]);}).join('&');
   var s=document.createElement('script');s.id=id;
   s.onerror=function(){clearTimeout(timer);window[id]=null;s.remove();cb(new Error('Falha.'),null);};
