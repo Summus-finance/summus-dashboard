@@ -257,7 +257,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
 <!-- APP -->
 <div class="root" id="root">
   <div class="top">
-    <div><h1>Acompanhamento de Metas</h1><p>Progresso diário em relação às metas do mês</p></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <a href="painel.html" title="Voltar ao painel" style="display:inline-flex;align-items:center;flex-shrink:0"><img class="top-logo" id="logo-top" src="" alt="Summus"></a>
+      <div><h1>Acompanhamento de Metas</h1><p>Progresso diário em relação às metas do mês</p></div>
+    </div>
     <div class="top-r">
       <div id="empresa-filtro" style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:3px">
         <button type="button" class="emp-chip" data-emp="sec" onclick="toggleEmpresa('sec')" style="border:none;background:transparent;color:#fff;font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;transition:background .2s">SEC</button>
@@ -268,7 +271,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t1
       
       
       <a href="painel.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:7px 14px;font-size:13px;color:#fff;text-decoration:none;font-family:inherit;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.28)'" onmouseout="this.style.background='rgba(255,255,255,.18)'"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="15 18 9 12 15 6"/></svg>Painel</a> <button class="tbtn" onclick="logout()"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair</button>
-      <img class="top-logo" id="logo-top" src="" alt="Summus">
     </div>
   </div>
   <div class="dbar">
