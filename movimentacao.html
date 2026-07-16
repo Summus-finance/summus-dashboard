@@ -645,14 +645,19 @@ document.addEventListener('click', function(ev){
 function invAtualizarLabelInvestidor(){
   var lbl=document.getElementById('inv-f-investidor-label');
   if(!lbl)return;
-  if(INV_SEL_INVESTIDORES.length===0) lbl.textContent='Todos';
+  var total=document.querySelectorAll('#inv-f-investidor-opcoes input[type="checkbox"]').length;
+  if(INV_SEL_INVESTIDORES.length===0 || (total>0 && INV_SEL_INVESTIDORES.length===total)) lbl.textContent='Todos';
   else if(INV_SEL_INVESTIDORES.length===1) lbl.textContent=INV_SEL_INVESTIDORES[0];
   else lbl.textContent=INV_SEL_INVESTIDORES.length+' selecionados';
 }
 function invToggleTodosInvestidores(chk){
+  var opcoes=document.querySelectorAll('#inv-f-investidor-opcoes input[type="checkbox"]');
   if(chk.checked){
     INV_SEL_INVESTIDORES=[];
-    document.querySelectorAll('#inv-f-investidor-opcoes input[type="checkbox"]').forEach(function(o){o.checked=false;});
+    opcoes.forEach(function(o){o.checked=true; INV_SEL_INVESTIDORES.push(o.value);});
+  } else {
+    INV_SEL_INVESTIDORES=[];
+    opcoes.forEach(function(o){o.checked=false;});
   }
   invAtualizarLabelInvestidor();
   invAplicarFiltros();
@@ -663,8 +668,9 @@ function invInvestidorCheckChanged(cb){
   } else {
     INV_SEL_INVESTIDORES=INV_SEL_INVESTIDORES.filter(function(v){return v!==cb.value;});
   }
+  var opcoes=document.querySelectorAll('#inv-f-investidor-opcoes input[type="checkbox"]');
   var todos=document.getElementById('inv-f-investidor-todos');
-  if(todos)todos.checked = INV_SEL_INVESTIDORES.length===0;
+  if(todos)todos.checked = (opcoes.length>0 && INV_SEL_INVESTIDORES.length===opcoes.length);
   invAtualizarLabelInvestidor();
   invAplicarFiltros();
 }
@@ -806,23 +812,26 @@ function invPopularFiltros(){
   if(opcoesEl){
     // Mantém apenas seleções que ainda existem nos dados atuais
     INV_SEL_INVESTIDORES = INV_SEL_INVESTIDORES.filter(function(n){return invKeys.indexOf(n)>=0;});
+    var todosAtivo = INV_SEL_INVESTIDORES.length===0; // nenhuma seleção prévia = "Todos" marcado
     opcoesEl.innerHTML = invKeys.map(function(nome){
-      var checked = INV_SEL_INVESTIDORES.indexOf(nome)>=0 ? 'checked' : '';
+      var checked = (todosAtivo || INV_SEL_INVESTIDORES.indexOf(nome)>=0) ? 'checked' : '';
       var nomeAttr = nome.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
       return '<label style="display:flex;align-items:center;gap:8px;padding:5px 8px;font-size:13px;cursor:pointer;border-radius:5px">'+
         '<input type="checkbox" value="'+nomeAttr+'" '+checked+' onchange="invInvestidorCheckChanged(this)"> '+nomeAttr+
       '</label>';
     }).join('');
+    if(todosAtivo) INV_SEL_INVESTIDORES = invKeys.slice();
     var todosChk=document.getElementById('inv-f-investidor-todos');
-    if(todosChk)todosChk.checked = INV_SEL_INVESTIDORES.length===0;
+    if(todosChk)todosChk.checked = true;
     invAtualizarLabelInvestidor();
   }
 }
 
 function invLimparFiltros(){
   ['inv-f-mes','inv-f-ano','inv-f-empresa'].forEach(function(id){document.getElementById(id).value='';});
+  var opcoes=document.querySelectorAll('#inv-f-investidor-opcoes input[type="checkbox"]');
   INV_SEL_INVESTIDORES=[];
-  document.querySelectorAll('#inv-f-investidor-opcoes input[type="checkbox"]').forEach(function(o){o.checked=false;});
+  opcoes.forEach(function(o){o.checked=true; INV_SEL_INVESTIDORES.push(o.value);});
   var todosChk=document.getElementById('inv-f-investidor-todos');
   if(todosChk)todosChk.checked=true;
   invAtualizarLabelInvestidor();
