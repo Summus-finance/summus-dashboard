@@ -350,7 +350,7 @@ function initLogin(){
       btn.disabled=false;spin.style.display='none';
       if(e||!res){err.textContent='Erro de conexão. Verifique se o Apps Script está publicado corretamente.';err.style.display='block';return;}
       if(!res.ok){err.textContent=res.error||'Usuário ou senha incorretos.';err.style.display='block';return;}
-      setSession({usuario:res.usuario, podeAtualizar:!!res.podeAtualizar, token:res.token, ts:Date.now()});showApp();
+      setSession({usuario:res.usuario, podeAtualizar:!!res.podeAtualizar, acessaInvestidores:!!res.acessaInvestidores, acessaDespesas:!!res.acessaDespesas, token:res.token, ts:Date.now()});showApp();
     });
   }
   btn.addEventListener('click',doLogin);
@@ -577,7 +577,7 @@ function syncProg(){
 }
 
 function item(lbl,real,mn,ms,extraHtml){var rn=parseN(real),pct=mn>0?Math.min(Math.round(rn/mn*100),100):0,cls,pcls,plbl;if(pct>=100){cls='b-g';pcls='p-g';plbl=pct+'% ✓';}else if(pct>=60){cls='b-y';pcls='p-y';plbl=pct+'%';}else{cls='b-r';pcls='p-r';plbl=pct+'%';}var falta=mn-rn,fstr=falta>0?'Falta: '+fmtN(falta):'✓ Meta atingida!';return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+(extraHtml||'')+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">de</span><span class="v-meta">'+fmtMeta(ms)+'</span></div><span class="v-rest">'+fstr+'</span></div></div>';}
-function itemD(lbl,real,lim_n,ls,showEye){var rn=parseN(real),rawPct=lim_n>0?(rn/lim_n*100):0,rawPctStr=rawPct.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}),pct=Math.min(rawPct,100),cls,pcls,plbl;if(rawPct<=100){cls='b-g';pcls='p-g';plbl=rawPctStr+'% usado';}else{cls='b-r';pcls='p-r';plbl=rawPctStr+'% ⚠';}var rest=lim_n-rn,rstr=rest>0?'Disponível: '+fmtN(rest):'⚠ Limite ultrapassado! '+fmtN(Math.abs(rest));var eyeBtn=showEye?'<button onclick="openTitulosPagos()" title="Ver detalhamento das despesas" style="background:none;border:none;cursor:pointer;padding:0;margin-left:6px;vertical-align:middle;color:#8fa5bb;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>':'';return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+eyeBtn+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">limite</span><span class="v-meta">'+fmtMeta(ls)+'</span></div><span class="v-rest">'+rstr+'</span></div></div>';}
+function itemD(lbl,real,lim_n,ls,showEye){var rn=parseN(real),rawPct=lim_n>0?(rn/lim_n*100):0,rawPctStr=rawPct.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}),pct=Math.min(rawPct,100),cls,pcls,plbl;if(rawPct<=100){cls='b-g';pcls='p-g';plbl=rawPctStr+'% usado';}else{cls='b-r';pcls='p-r';plbl=rawPctStr+'% ⚠';}var rest=lim_n-rn,rstr=rest>0?'Disponível: '+fmtN(rest):'⚠ Limite ultrapassado! '+fmtN(Math.abs(rest));var _s=getSession();var podeVerDesp=showEye&&_s&&_s.acessaDespesas;var eyeBtn=podeVerDesp?'<button onclick="openTitulosPagos()" title="Ver detalhamento das despesas" style="background:none;border:none;cursor:pointer;padding:0;margin-left:6px;vertical-align:middle;color:#8fa5bb;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>':'';return'<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+eyeBtn+'</span><span class="mi-p '+pcls+'">'+plbl+'</span></div><div class="bar-w"><div class="bar '+cls+'" style="width:'+pct+'%"></div></div><div class="mi-v"><div><span class="v-real">'+fmtN(real||0)+'</span><span class="v-sep">limite</span><span class="v-meta">'+fmtMeta(ls)+'</span></div><span class="v-rest">'+rstr+'</span></div></div>';}
 // Barra de receitas (sem meta definida — só mostra o valor)
 function itemReceita(lbl,real){
   var rn=parseN(real);
@@ -1014,6 +1014,8 @@ function tpMesAno(iso){
 var TP_MESES={'01':'Janeiro','02':'Fevereiro','03':'Março','04':'Abril','05':'Maio','06':'Junho','07':'Julho','08':'Agosto','09':'Setembro','10':'Outubro','11':'Novembro','12':'Dezembro'};
 
 function openTitulosPagos(){
+  var _s=getSession();
+  if(!_s||!_s.acessaDespesas){alert('Você não tem permissão para acessar as Despesas Detalhadas.');return;}
   document.getElementById('tp-overlay').style.display='block';
   document.getElementById('tp-box').classList.toggle('dk', dark);
   document.getElementById('tp-f-mostrar-valores').checked = TP_MOSTRAR_VALORES;

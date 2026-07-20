@@ -210,7 +210,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
       <!-- Esquerda: título + olho -->
       <h3 style="font-size:14px;display:flex;align-items:center;gap:8px;margin:0">
         Carteira de Investidores — Volume por Investidor
-        <button onclick="openInvModal()" title="Ver detalhamento mensal" style="background:none;border:none;cursor:pointer;padding:0;vertical-align:middle;color:#8fa5bb;display:inline-flex;align-items:center">
+        <button id="inv-eye-btn" onclick="openInvModal()" title="Ver detalhamento mensal" style="background:none;border:none;cursor:pointer;padding:0;vertical-align:middle;color:#8fa5bb;display:inline-flex;align-items:center">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </h3>
@@ -583,7 +583,7 @@ function initLogin(){
       btn.disabled=false;spin.style.display='none';
       if(e||!res){err.textContent='Erro de conexão.';err.style.display='block';return;}
       if(!res.ok){err.textContent=res.error||'Usuário ou senha incorretos.';err.style.display='block';return;}
-      sSess({usuario:res.usuario, podeAtualizar:!!res.podeAtualizar, token:res.token, ts:Date.now()});
+      sSess({usuario:res.usuario, podeAtualizar:!!res.podeAtualizar, acessaInvestidores:!!res.acessaInvestidores, acessaDespesas:!!res.acessaDespesas, token:res.token, ts:Date.now()});
       document.getElementById('lpage').style.display='none';
       document.getElementById('app').style.display='block';
       loadData();
@@ -612,7 +612,11 @@ function toggleRot(){rp=!rp;var b=document.getElementById('rbtn');if(rp){clearTi
     }
   }catch(e){}
   var s=gSess();
-  if(s){document.getElementById('app').style.display='block';startRot();loadData();loadInvestidores();}
+  if(s){
+    document.getElementById('app').style.display='block';startRot();loadData();loadInvestidores();
+    var eyeBtn=document.getElementById('inv-eye-btn');
+    if(eyeBtn && !s.acessaInvestidores) eyeBtn.style.display='none';
+  }
   else{window.location.replace('login.html');}
 })();
 
@@ -779,6 +783,8 @@ function renderInvBloco(){
 
 /* ── modal ── */
 function openInvModal(){
+  var s=gSess();
+  if(!s||!s.acessaInvestidores){alert('Você não tem permissão para acessar a Carteira de Investidores.');return;}
   var box=document.getElementById('inv-box');
   box.classList.toggle('dk',dark);
   document.getElementById('inv-overlay').style.display='block';

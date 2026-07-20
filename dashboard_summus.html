@@ -329,7 +329,7 @@ function initLogin(){
       btn.disabled=false;spin.style.display='none';
       if(e||!res){err.textContent='Erro de conexão. Verifique se o Apps Script está publicado e a URL está correta.';err.style.display='block';return;}
       if(!res.ok){err.textContent=res.error||'Usuário ou senha incorretos.';err.style.display='block';return;}
-      setSession({usuario:res.usuario, podeAtualizar:!!res.podeAtualizar, token:res.token, ts:Date.now()});showApp();
+      setSession({usuario:res.usuario, podeAtualizar:!!res.podeAtualizar, acessaInvestidores:!!res.acessaInvestidores, acessaDespesas:!!res.acessaDespesas, token:res.token, ts:Date.now()});showApp();
     });
   }
   btn.addEventListener('click',doLogin);
