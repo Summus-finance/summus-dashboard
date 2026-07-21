@@ -946,9 +946,9 @@ function invAplicarFiltros(){
     if(fEmp && String(r.empresa||'').trim()!==fEmp)return false;
     return true;
   });
-  invRenderKPIs();
-  invRenderGraficos();
-  invRenderTabela();
+  try{ invRenderKPIs(); }catch(errK){ console.error('Erro ao renderizar KPIs da Carteira de Investidores:', errK); }
+  try{ invRenderGraficos(); }catch(errG){ console.error('Erro ao renderizar gráficos da Carteira de Investidores:', errG); }
+  try{ invRenderTabela(); }catch(errT){ console.error('Erro ao renderizar tabela da Carteira de Investidores:', errT); }
 }
 
 function invRenderKPIs(){
@@ -1048,8 +1048,12 @@ function invRenderGraficos(){
   var mesesVals=mesesOrdenados.map(function(k){return porMes[k];});
 
   if(INV_CHARTS.evol)INV_CHARTS.evol.destroy();
+  var evolCanvas=document.getElementById('inv-c-evol');
+  var evolEmpty=document.getElementById('inv-c-evol-empty');
   if(mesesOrdenados.length>0){
-    INV_CHARTS.evol=new Chart(document.getElementById('inv-c-evol'),{
+    if(evolEmpty)evolEmpty.style.display='none';
+    if(evolCanvas)evolCanvas.style.display='block';
+    INV_CHARTS.evol=new Chart(evolCanvas,{
       type:'bar',
       data:{labels:mesesLabels,datasets:[{data:mesesVals,backgroundColor:'rgba(44,161,216,.75)',borderRadius:4,label:'Aportes'}]},
       options:{
@@ -1062,7 +1066,8 @@ function invRenderGraficos(){
       }
     });
   } else {
-    document.getElementById('inv-c-evol').parentElement.innerHTML='<div style="height:200px;display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:13px">Sem dados com data de aporte para exibir evolução mensal.</div>';
+    if(evolCanvas)evolCanvas.style.display='none';
+    if(evolEmpty)evolEmpty.style.display='flex';
   }
 }
 
@@ -1187,7 +1192,10 @@ function invOrdenar(campo){
     </div>
     <div style="background:var(--cd);border:1px solid var(--bd);border-radius:11px;padding:14px;margin-bottom:14px">
       <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">Evolução Mensal de Aportes</div>
-      <div style="height:200px"><canvas id="inv-c-evol"></canvas></div>
+      <div style="height:200px;position:relative">
+        <canvas id="inv-c-evol"></canvas>
+        <div id="inv-c-evol-empty" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;color:var(--t3);font-size:13px;text-align:center;padding:0 16px">Sem dados com data de aporte para exibir evolução mensal.</div>
+      </div>
     </div>
 
     <!-- TABELA -->
