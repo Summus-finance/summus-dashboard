@@ -357,19 +357,43 @@ function somaPar(d,campo){
 function somaCampo(d,campo){
   return d.reduce(function(s,r){return s+n(r[campo]);},0);
 }
+// Para campos onde somar as empresas pode fazer sentido ou não (ex: cedentes
+// cadastrados podem ser os mesmos clientes em SEC e ESC). Agrupa por empresa
+// (somando os meses selecionados dentro de cada empresa) e depois soma entre
+// empresas só se "somar" for true; caso contrário usa a primeira empresa
+// (em ordem alfabética) dentre as que estão no filtro atual.
+function valorPorEmpresaOuSoma(d, campo, somar){
+  var porEmpresa={};
+  d.forEach(function(r){
+    var e=r.empresa||'';
+    if(!porEmpresa[e])porEmpresa[e]={meta:0,real:0};
+    if(r[campo]){ porEmpresa[e].meta+=n(r[campo].meta); porEmpresa[e].real+=n(r[campo].realizado); }
+  });
+  var empresas=Object.keys(porEmpresa).sort();
+  if(!empresas.length)return {meta:0,real:0};
+  if(somar){
+    var meta=0,real=0;
+    empresas.forEach(function(e){meta+=porEmpresa[e].meta;real+=porEmpresa[e].real;});
+    return {meta:meta,real:real};
+  }
+  return porEmpresa[empresas[0]];
+}
 
 /* ── COMPONENTES VISUAIS (todas as barras da esquerda para a direita) ── */
 function badgeCls(pct){return pct>=100?'g':(pct>=60?'y':'r');}
 function barColor(cls){return cls==='g'?'#1d9e75':(cls==='y'?'#e0a020':'#c0392b');}
+function checkboxSomar(id, label, checked, onchangeFn){
+  return '<label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:400;color:var(--t3);cursor:pointer;white-space:nowrap"><input type="checkbox" id="'+id+'" '+(checked?'checked':'')+' onchange="'+onchangeFn+'"> '+label+'</label>';
+}
 
-function itemMeta(lbl, real, meta, fmt){
+function itemMeta(lbl, real, meta, fmt, extraHtml){
   fmt = fmt||fN;
   var pctReal = meta>0?Math.round(real/meta*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
   var cls=badgeCls(pctReal);
   var falta=meta-real;
   var faltaTxt = meta>0 ? (falta>0?('Falta: '+fmt(falta)):'✓ Meta atingida!') : '';
-  return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span>'+
+  return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+
     (meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span><span class="real">'+fmt(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fmt(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div></div>';
@@ -389,41 +413,45 @@ function itemDespesa(lbl, real, limite){
 }
 
 function itemResultado(real, meta){
-  var cls = real>=0 ? 'g' : 'r';
-  var badgeTxt = real>=0 ? 'Positivo ✓' : 'Negativo ⚠';
-  // Não existe uma coluna própria de "meta de resultado" na planilha — ela é derivada
-  // de receitas-despesa, e como a meta de receitas costuma ficar em branco, essa conta
-  // não é confiável para virar barra de progresso. Por isso mostramos só o valor,
-  // colorido por positivo/negativo, sem comparar contra uma meta.
+  var cls, badgeTxt, pct;
+  if(real<0){
+    cls='r'; badgeTxt='Negativo ⚠'; pct=0;
+  } else if(meta>0){
+    var pctReal=Math.round(real/meta*100);
+    cls=badgeCls(pctReal);
+    badgeTxt=pctReal+'%'+(pctReal>=100?' ✓':'');
+    pct=Math.min(Math.max(pctReal,0),100);
+  } else {
+    cls='g'; badgeTxt='Positivo ✓'; pct=100;
+  }
+  var falta=meta-real;
+  var faltaTxt = meta>0 ? (falta>0?('Falta: '+fM(falta)):'✓ Meta atingida!') : '';
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Resultado do mês</span><span class="mi-badge '+cls+'">'+badgeTxt+'</span></div>'+
-    '<div class="mi-v"><span class="real" style="color:'+(real<0?'#c0392b':'#1d9e75')+'">'+fM(real)+'</span></div></div>';
-}
-
-function itemSemBadge(lbl, real, meta){
-  var pctReal = meta>0?(real/meta*100):0;
-  var pct=Math.min(Math.max(pctReal,0),100);
-  var cls=badgeCls(pctReal);
-  return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span></div>'+
-    '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
-    '<div class="mi-v"><span class="real">'+fN(real)+'</span><span>meta: '+fN(meta)+'</span></div></div>';
+    (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
+    '<div class="mi-v"><span><span class="real" style="color:'+(real<0?'#c0392b':'#1d9e75')+'">'+fM(real)+'</span>'+(meta>0?'<span class="sep">meta</span>'+fM(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div></div>';
 }
 
 function itemOperado(lbl, operado, cadastrado){
   var pctReal = cadastrado>0?Math.round(operado/cadastrado*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
   var cls=badgeCls(pctReal);
+  var falta=cadastrado-operado;
+  var faltaTxt = cadastrado>0 ? (falta>0?('Falta: '+fN(falta)):'✓ Meta atingida!') : '';
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span></div>'+
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
-    '<div class="mi-v"><span class="real">'+fN(operado)+'</span><span>de '+fN(cadastrado)+' cadastrados</span></div></div>';
+    '<div class="mi-v"><span class="real">'+fN(operado)+'</span><span>de '+fN(cadastrado)+' cadastrados</span></div><div class="mi-v"><span></span><span>'+faltaTxt+'</span></div></div>';
 }
 
 function itemOpLinha(lbl, real, meta, vol){
   var pctReal = meta>0?Math.round(real/meta*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
   var cls=badgeCls(pctReal);
+  var falta=meta-real;
+  var faltaTxt = meta>0 ? (falta>0?('Falta: '+fN(falta)):'✓ Meta atingida!') : '';
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span>'+(meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%</span>':'')+'</div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
-    '<div class="mi-v"><span class="real">'+fN(real)+(meta>0?' de '+fN(meta):'')+'</span><span>Vol. '+fM(vol)+'</span></div></div>';
+    '<div class="mi-v"><span class="real">'+fN(real)+(meta>0?' de '+fN(meta):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
+    (meta>0?'<div class="mi-v"><span></span><span>'+faltaTxt+'</span></div>':'')+'</div>';
 }
 
 function itemOpTotal(rOp,rPr,rRd,mOp,mPr,mRd,vOp,vPr,vRd){
@@ -431,28 +459,44 @@ function itemOpTotal(rOp,rPr,rRd,mOp,mPr,mRd,vOp,vPr,vRd){
   var pctReal = tM>0?Math.round(tR/tM*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
   var cls=badgeCls(pctReal);
+  var falta=tM-tR;
+  var faltaTxt = tM>0 ? (falta>0?('Falta: '+fN(falta)):'✓ Meta atingida!') : '';
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Total</span>'+(tM>0?'<span class="mi-badge '+cls+'">'+pctReal+'%</span>':'')+'</div>'+
     (tM>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
-    '<div class="mi-v"><span class="real">'+fN(tR)+(tM>0?' de '+fN(tM):'')+'</span><span>Vol. Total '+fM(tV)+'</span></div></div>';
+    '<div class="mi-v"><span class="real">'+fN(tR)+(tM>0?' de '+fN(tM):'')+'</span><span>Vol. Total '+fM(tV)+'</span></div>'+
+    (tM>0?'<div class="mi-v"><span></span><span>'+faltaTxt+'</span></div>':'')+'</div>';
 }
 
 /* ── RENDER KPIs ── */
+var somarCedentes = false;
+var somarNovosCedentes = false;
+
 function renderKPIs(d){
   if(!d.length){
     document.getElementById('kdiv').innerHTML='<div class="empty">Sem lançamentos para os filtros selecionados.</div>';
     return;
   }
   var fat=somaPar(d,'faturamento'), desp=somaPar(d,'despesa'), rec=somaPar(d,'receitas');
-  var cap=somaPar(d,'captacao_investidor'), ced=somaPar(d,'cedentes');
+  var cap=somaPar(d,'captacao_investidor');
+  var ced=valorPorEmpresaOuSoma(d,'cedentes', somarCedentes);
   var totalCedOperado=somaCampo(d,'total_cedentes_operado');
-  var novosCed=somaPar(d,'novos_cedentes'), operaram=somaPar(d,'operaram_no_mes');
+  var novosCed=valorPorEmpresaOuSoma(d,'novos_cedentes', somarNovosCedentes);
+  var operaram=somaPar(d,'operaram_no_mes');
   var op=somaPar(d,'operacoes'), pr=somaPar(d,'prorrogacoes'), rd=somaPar(d,'redesconto');
   var entrev=somaPar(d,'entrevistas');
   var volOp=somaCampo(d,'volume_operacoes'), volRd=somaCampo(d,'volume_redesconto'),
       volPr=somaCampo(d,'volume_prorrogacoes'), qtdRd=somaCampo(d,'qtd_redesconto');
+  var resultadoMetaSoma = somaCampo(d,'resultado_meta');
+  var capitalBase = somaCampo(d,'capital_sob_gestao');
 
   var resultadoReal = rec.real - desp.real;
-  var resultadoMeta = rec.meta - desp.meta;
+
+  // Capital sob gestão: base informada na planilha + meta/realizado de captação + meta/realizado de resultado
+  var capitalMeta = capitalBase + cap.meta + resultadoMetaSoma;
+  var capitalReal = capitalBase + cap.real + resultadoReal;
+
+  var chkCed = checkboxSomar('chk-somar-ced', 'Somar as duas empresas', somarCedentes, "somarCedentes=this.checked;renderKPIs(mxrFilt)");
+  var chkNovos = checkboxSomar('chk-somar-novos', 'Somar as duas empresas', somarNovosCedentes, "somarNovosCedentes=this.checked;renderKPIs(mxrFilt)");
 
   document.getElementById('kdiv').innerHTML = '<div class="kgrid">' +
 
@@ -460,13 +504,13 @@ function renderKPIs(d){
       itemMeta('Faturamento', fat.real, fat.meta, fM) +
       '<div class="mi"><div class="mi-h"><span class="mi-l">Receitas do mês</span></div><div class="mi-v"><span class="real">'+fM(rec.real)+'</span></div></div>' +
       itemDespesa('Despesa do mês', desp.real, desp.meta) +
-      itemResultado(resultadoReal, resultadoMeta) +
+      itemResultado(resultadoReal, resultadoMetaSoma) +
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">👥 COMERCIAL</div><div class="kcard-b">' +
-      itemSemBadge('Total cedentes cadastrados', ced.real, ced.meta) +
+      itemMeta('Total cedentes cadastrados', ced.real, ced.meta, fN, chkCed) +
       itemOperado('Total cedentes operado', totalCedOperado, ced.real) +
-      itemMeta('Novos cedentes', novosCed.real, novosCed.meta) +
+      itemMeta('Novos cedentes', novosCed.real, novosCed.meta, fN, chkNovos) +
       itemMeta('Operaram no mês', operaram.real, operaram.meta) +
     '</div></div>' +
 
@@ -483,6 +527,11 @@ function renderKPIs(d){
 
     '<div class="kcard"><div class="kcard-h">📊 NOVOS INVESTIDORES</div><div class="kcard-b">' +
       itemMeta('Captação do mês', cap.real, cap.meta, fM) +
+    '</div></div>' +
+
+    '<div class="kcard"><div class="kcard-h">🏦 CAPITAL SOB GESTÃO</div><div class="kcard-b">' +
+      itemMeta('Capital sob gestão', capitalReal, capitalMeta, fM) +
+      '<div style="font-size:11px;color:var(--t3);margin-top:4px">Base informada: '+fM(capitalBase)+' + captação + resultado</div>' +
     '</div></div>' +
 
   '</div>';
@@ -505,11 +554,13 @@ var MXR_CAMPOS = [
   {chave:'entrevistas', label:'Entrevistas', tipo:'num', secao:'RH'}
 ];
 var MXR_CAMPOS_UNICOS = [
+  {chave:'resultado_meta', label:'Resultado do mês — Meta (R$)', secao:'Faturamento'},
   {chave:'total_cedentes_operado', label:'Total cedentes operado', secao:'Comercial'},
   {chave:'volume_operacoes', label:'Volume de operações (R$)', secao:'Operação'},
   {chave:'volume_redesconto', label:'Volume de redesconto (R$)', secao:'Operação'},
   {chave:'volume_prorrogacoes', label:'Volume de prorrogações (R$)', secao:'Operação'},
-  {chave:'qtd_redesconto', label:'Qtd. de redescontos', secao:'Operação'}
+  {chave:'qtd_redesconto', label:'Qtd. de redescontos', secao:'Operação'},
+  {chave:'capital_sob_gestao', label:'Capital sob gestão — Valor base (R$)', secao:'Capital sob Gestão'}
 ];
 
 function mxrPopularEmpresasModal(){
@@ -528,7 +579,7 @@ function montarFormularioLancar(){
   MXR_CAMPOS.forEach(function(c){ (secoes[c.secao]=secoes[c.secao]||{pares:[],unicos:[]}).pares.push(c); });
   MXR_CAMPOS_UNICOS.forEach(function(c){ (secoes[c.secao]=secoes[c.secao]||{pares:[],unicos:[]}).unicos.push(c); });
 
-  var ordem=['Faturamento','Novos Investidores','Comercial','Operação','RH'];
+  var ordem=['Faturamento','Novos Investidores','Comercial','Operação','RH','Capital sob Gestão'];
   var html='';
   ordem.forEach(function(nomeSecao){
     var s=secoes[nomeSecao]; if(!s)return;
