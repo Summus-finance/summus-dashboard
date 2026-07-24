@@ -64,8 +64,8 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 .kcard{background:var(--cd);border-radius:11px;border:1px solid var(--bd);overflow:hidden}
 .kcard-h{background:var(--br);color:#fff;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
 .kcard-b{padding:14px 16px}
-.mi{margin-bottom:16px}
-.mi:last-child{margin-bottom:0}
+.mi{padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--bd)}
+.mi:last-child{padding-bottom:0;margin-bottom:0;border-bottom:none}
 .mi-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px}
 .mi-l{font-size:13px;color:var(--t1);font-weight:600}
 .mi-badge{font-size:12px;font-weight:700;padding:2px 10px;border-radius:20px;border:1px solid;white-space:nowrap}
@@ -449,7 +449,7 @@ function itemOperado(lbl, operado, cadastrado){
   var faltaTxt = cadastrado>0 ? (falta>0?('Falta: '+fN(falta)):'✓ Meta atingida!') : '';
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span></div>'+
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
-    '<div class="mi-v"><span class="real">'+fN(operado)+'</span><span>de '+fN(cadastrado)+' cadastrados</span></div>'+
+    '<div class="mi-v"><span><span class="real">'+fN(operado)+'</span><span class="sep">de</span>'+fN(cadastrado)+' cadastrados</span></div>'+
     (cadastrado>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
 }
 
