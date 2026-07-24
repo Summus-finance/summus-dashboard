@@ -482,8 +482,12 @@ function itemOpLimite(lbl, real, limite, vol){
     (limite>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
 }
 
-function itemOpTotal(rOp,rPr,rRd,mOp,mPr,mRd,vOp,vPr,vRd){
-  var tR=rOp+rPr+rRd, tM=mOp+mPr+mRd, tV=n(vOp)+n(vPr)+n(vRd);
+// Total = Operações realizadas + Prorrogações realizadas + Redescontos realizados (numerador)
+// de Operações meta + Prorrogações realizado + Redescontos realizado (denominador).
+// Prorrogações/Redescontos usam lógica de LIMITE (itemOpLimite), então somar as metas
+// deles aqui infla o total artificialmente — por isso usamos o realizado deles, não a meta.
+function itemOpTotal(rOp,rPr,rRd,mOp,vOp,vPr,vRd){
+  var tR=rOp+rPr+rRd, tM=mOp+rPr+rRd, tV=n(vOp)+n(vPr)+n(vRd);
   var pctReal = tM>0?Math.round(tR/tM*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
   var cls=badgeCls(pctReal);
@@ -514,7 +518,7 @@ function renderKPIs(d){
   var op=somaPar(d,'operacoes'), pr=somaPar(d,'prorrogacoes'), rd=somaPar(d,'redesconto');
   var entrev=somaPar(d,'entrevistas');
   var volOp=somaCampo(d,'volume_operacoes'), volRd=somaCampo(d,'volume_redesconto'),
-      volPr=somaCampo(d,'volume_prorrogacoes'), qtdRd=somaCampo(d,'qtd_redesconto');
+      volPr=somaCampo(d,'volume_prorrogacoes');
   var resultadoMetaSoma = somaCampo(d,'resultado_meta');
   var capitalBase = somaCampo(d,'capital_sob_gestao');
 
@@ -550,7 +554,7 @@ function renderKPIs(d){
       itemOpLinha('Operações', op.real, op.meta, volOp) +
       itemOpLimite('Prorrogações', pr.real, pr.meta, volPr) +
       itemOpLimite('Redescontos', rd.real, rd.meta, volRd) +
-      itemOpTotal(op.real,pr.real,rd.real, op.meta,pr.meta,rd.meta, volOp,volPr,volRd) +
+      itemOpTotal(op.real,pr.real,rd.real, op.meta, volOp,volPr,volRd) +
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">📋 RH</div><div class="kcard-b">' +
@@ -591,7 +595,6 @@ var MXR_CAMPOS_UNICOS = [
   {chave:'volume_operacoes', label:'Volume de operações (R$)', secao:'Operação'},
   {chave:'volume_redesconto', label:'Volume de redesconto (R$)', secao:'Operação'},
   {chave:'volume_prorrogacoes', label:'Volume de prorrogações (R$)', secao:'Operação'},
-  {chave:'qtd_redesconto', label:'Qtd. de redescontos', secao:'Operação'},
   {chave:'capital_sob_gestao', label:'Capital sob gestão — Valor base (R$)', secao:'Capital sob Gestão'}
 ];
 
