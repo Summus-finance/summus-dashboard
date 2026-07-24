@@ -403,7 +403,8 @@ function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo){
   return '<div class="mi"><div class="mi-h"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+'</div>'+
     (meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
-    '<div class="mi-v"><span><span class="real">'+fmt(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fmt(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div></div>';
+    '<div class="mi-v"><span><span class="real">'+fmt(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fmt(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
 }
 
 function itemDespesa(lbl, real, limite){
@@ -416,7 +417,8 @@ function itemDespesa(lbl, real, limite){
   var restTxt = rest>0 ? ('Disponível: '+fM(rest)) : ('⚠ Limite ultrapassado! '+fM(Math.abs(rest)));
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-badge '+cls+'">'+badgeTxt+'</span></div>'+
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
-    '<div class="mi-v"><span><span class="real">'+fM(real)+'</span><span class="sep">limite</span>'+fM(limite)+'</span><span>'+restTxt+'</span></div></div>';
+    '<div class="mi-v"><span><span class="real">'+fM(real)+'</span><span class="sep">limite</span>'+fM(limite)+'</span><span>'+restTxt+'</span></div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
 }
 
 function itemResultado(real, meta){
@@ -435,7 +437,8 @@ function itemResultado(real, meta){
   var faltaTxt = meta>0 ? (falta>0?('Falta: '+fM(falta)):'✓ Meta atingida!') : '';
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Resultado do mês</span><span class="mi-badge '+cls+'">'+badgeTxt+'</span></div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
-    '<div class="mi-v"><span><span class="real" style="color:'+(real<0?'#c0392b':'#1d9e75')+'">'+fM(real)+'</span>'+(meta>0?'<span class="sep">meta</span>'+fM(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div></div>';
+    '<div class="mi-v"><span><span class="real" style="color:'+(real<0?'#c0392b':'#1d9e75')+'">'+fM(real)+'</span>'+(meta>0?'<span class="sep">meta</span>'+fM(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
 }
 
 function itemOperado(lbl, operado, cadastrado){
@@ -512,7 +515,8 @@ function renderKPIs(d){
       itemMeta('Faturamento', fat.real, fat.meta, fM) +
       '<div class="mi"><div class="mi-h"><span class="mi-l">Receitas do mês</span><span class="mi-badge" style="visibility:hidden">0%</span></div>'+
       '<div class="bar-w" style="visibility:hidden"><div class="bar" style="width:0%"></div></div>'+
-      '<div class="mi-v"><span class="real">'+fM(rec.real)+'</span></div></div>' +
+      '<div class="mi-v"><span class="real">'+fM(rec.real)+'</span></div>'+
+      '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>' +
       itemDespesa('Despesa do mês', desp.real, desp.meta) +
       itemResultado(resultadoReal, resultadoMetaSoma) +
     '</div></div>' +
