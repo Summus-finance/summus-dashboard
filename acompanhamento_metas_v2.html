@@ -510,7 +510,9 @@ function renderKPIs(d){
 
     '<div class="kcard"><div class="kcard-h">📄 FATURAMENTO</div><div class="kcard-b">' +
       itemMeta('Faturamento', fat.real, fat.meta, fM) +
-      '<div class="mi"><div class="mi-h"><span class="mi-l">Receitas do mês</span></div><div class="mi-v"><span class="real">'+fM(rec.real)+'</span></div></div>' +
+      '<div class="mi"><div class="mi-h"><span class="mi-l">Receitas do mês</span><span class="mi-badge" style="visibility:hidden">0%</span></div>'+
+      '<div class="bar-w" style="visibility:hidden"><div class="bar" style="width:0%"></div></div>'+
+      '<div class="mi-v"><span class="real">'+fM(rec.real)+'</span></div></div>' +
       itemDespesa('Despesa do mês', desp.real, desp.meta) +
       itemResultado(resultadoReal, resultadoMetaSoma) +
     '</div></div>' +
