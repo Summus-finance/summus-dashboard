@@ -386,14 +386,21 @@ function checkboxSomar(id, label, checked, onchangeFn){
   return '<label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:400;color:var(--t3);cursor:pointer;white-space:nowrap"><input type="checkbox" id="'+id+'" '+(checked?'checked':'')+' onchange="'+onchangeFn+'"> '+label+'</label>';
 }
 
-function itemMeta(lbl, real, meta, fmt, extraHtml){
+function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo){
   fmt = fmt||fN;
   var pctReal = meta>0?Math.round(real/meta*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
   var cls=badgeCls(pctReal);
   var falta=meta-real;
   var faltaTxt = meta>0 ? (falta>0?('Falta: '+fmt(falta)):'✓ Meta atingida!') : '';
-  return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+
+  if(faltaAbaixo){
+    return '<div class="mi"><div class="mi-h"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+'</div>'+
+      (meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
+      (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
+      '<div class="mi-v" style="justify-content:flex-start"><span><span class="real">'+fmt(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fmt(meta):'')+'</span></div>'+
+      (meta>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
+  }
+  return '<div class="mi"><div class="mi-h"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+'</div>'+
     (meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span><span class="real">'+fmt(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fmt(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div></div>';
@@ -439,7 +446,8 @@ function itemOperado(lbl, operado, cadastrado){
   var faltaTxt = cadastrado>0 ? (falta>0?('Falta: '+fN(falta)):'✓ Meta atingida!') : '';
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span></div>'+
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
-    '<div class="mi-v"><span class="real">'+fN(operado)+'</span><span>de '+fN(cadastrado)+' cadastrados</span></div><div class="mi-v"><span></span><span>'+faltaTxt+'</span></div></div>';
+    '<div class="mi-v"><span class="real">'+fN(operado)+'</span><span>de '+fN(cadastrado)+' cadastrados</span></div>'+
+    (cadastrado>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
 }
 
 function itemOpLinha(lbl, real, meta, vol){
@@ -451,7 +459,7 @@ function itemOpLinha(lbl, real, meta, vol){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span>'+(meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%</span>':'')+'</div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(real)+(meta>0?' de '+fN(meta):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
-    (meta>0?'<div class="mi-v"><span></span><span>'+faltaTxt+'</span></div>':'')+'</div>';
+    (meta>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
 }
 
 function itemOpTotal(rOp,rPr,rRd,mOp,mPr,mRd,vOp,vPr,vRd){
@@ -464,7 +472,7 @@ function itemOpTotal(rOp,rPr,rRd,mOp,mPr,mRd,vOp,vPr,vRd){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Total</span>'+(tM>0?'<span class="mi-badge '+cls+'">'+pctReal+'%</span>':'')+'</div>'+
     (tM>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(tR)+(tM>0?' de '+fN(tM):'')+'</span><span>Vol. Total '+fM(tV)+'</span></div>'+
-    (tM>0?'<div class="mi-v"><span></span><span>'+faltaTxt+'</span></div>':'')+'</div>';
+    (tM>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
 }
 
 /* ── RENDER KPIs ── */
@@ -508,10 +516,10 @@ function renderKPIs(d){
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">👥 COMERCIAL</div><div class="kcard-b">' +
-      itemMeta('Total cedentes cadastrados', ced.real, ced.meta, fN, chkCed) +
+      itemMeta('Total cedentes cadastrados', ced.real, ced.meta, fN, chkCed, true) +
       itemOperado('Total cedentes operado', totalCedOperado, ced.real) +
-      itemMeta('Novos cedentes', novosCed.real, novosCed.meta, fN, chkNovos) +
-      itemMeta('Operaram no mês', operaram.real, operaram.meta) +
+      itemMeta('Novos cedentes', novosCed.real, novosCed.meta, fN, chkNovos, true) +
+      itemMeta('Operaram no mês', operaram.real, operaram.meta, fN, null, true) +
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">🔄 OPERAÇÃO</div><div class="kcard-b">' +
@@ -522,7 +530,7 @@ function renderKPIs(d){
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">📋 RH</div><div class="kcard-b">' +
-      itemMeta('Entrevistas realizadas', entrev.real, entrev.meta) +
+      itemMeta('Entrevistas realizadas', entrev.real, entrev.meta, fN, null, true) +
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">📊 NOVOS INVESTIDORES</div><div class="kcard-b">' +
