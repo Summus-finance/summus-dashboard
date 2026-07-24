@@ -465,6 +465,23 @@ function itemOpLinha(lbl, real, meta, vol){
     (meta>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
 }
 
+// Igual à Despesa do mês: "limite" é um teto, não uma meta a bater — ficar ABAIXO
+// do limite é bom (verde); ultrapassar é ruim (vermelho). Usado em Prorrogações
+// e Redescontos, onde o número do mês é um limite máximo desejado.
+function itemOpLimite(lbl, real, limite, vol){
+  var pctReal = limite>0?Math.round(real/limite*100):0;
+  var pct=Math.min(Math.max(pctReal,0),100);
+  var dentro = limite>0 ? (real<=limite) : true;
+  var cls = dentro?'g':'r';
+  var badgeTxt = pctReal+'%'+(dentro?'':' ⚠');
+  var falta=limite-real;
+  var faltaTxt = limite>0 ? (falta>0?('Disponível: '+fN(falta)):(falta===0?'No limite':'⚠ Limite ultrapassado em '+fN(Math.abs(falta)))) : '';
+  return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span>'+(limite>0?'<span class="mi-badge '+cls+'">'+badgeTxt+'</span>':'')+'</div>'+
+    (limite>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
+    '<div class="mi-v"><span class="real">'+fN(real)+(limite>0?' de '+fN(limite):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
+    (limite>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
+}
+
 function itemOpTotal(rOp,rPr,rRd,mOp,mPr,mRd,vOp,vPr,vRd){
   var tR=rOp+rPr+rRd, tM=mOp+mPr+mRd, tV=n(vOp)+n(vPr)+n(vRd);
   var pctReal = tM>0?Math.round(tR/tM*100):0;
@@ -514,8 +531,8 @@ function renderKPIs(d){
     '<div class="kcard"><div class="kcard-h">📄 FATURAMENTO</div><div class="kcard-b">' +
       itemMeta('Faturamento', fat.real, fat.meta, fM) +
       '<div class="mi"><div class="mi-h"><span class="mi-l">Receitas do mês</span><span class="mi-badge" style="visibility:hidden">0%</span></div>'+
-      '<div class="bar-w" style="visibility:hidden"><div class="bar" style="width:0%"></div></div>'+
       '<div class="mi-v"><span class="real">'+fM(rec.real)+'</span></div>'+
+      '<div class="bar-w" style="visibility:hidden"><div class="bar" style="width:0%"></div></div>'+
       '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>' +
       itemDespesa('Despesa do mês', desp.real, desp.meta) +
       itemResultado(resultadoReal, resultadoMetaSoma) +
@@ -530,8 +547,8 @@ function renderKPIs(d){
 
     '<div class="kcard"><div class="kcard-h">🔄 OPERAÇÃO</div><div class="kcard-b">' +
       itemOpLinha('Operações', op.real, op.meta, volOp) +
-      itemOpLinha('Prorrogações', pr.real, pr.meta, volPr) +
-      itemOpLinha('Redescontos', rd.real, rd.meta, volRd) +
+      itemOpLimite('Prorrogações', pr.real, pr.meta, volPr) +
+      itemOpLimite('Redescontos', rd.real, rd.meta, volRd) +
       itemOpTotal(op.real,pr.real,rd.real, op.meta,pr.meta,rd.meta, volOp,volPr,volRd) +
     '</div></div>' +
 
