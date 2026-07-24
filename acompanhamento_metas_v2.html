@@ -504,7 +504,8 @@ function renderKPIs(d){
     document.getElementById('kdiv').innerHTML='<div class="empty">Sem lançamentos para os filtros selecionados.</div>';
     return;
   }
-  var fat=somaPar(d,'faturamento'), desp=somaPar(d,'despesa'), rec=somaPar(d,'receitas');
+  var fat=somaPar(d,'faturamento'), desp=somaPar(d,'despesa');
+  var recReal=somaCampo(d,'receitas_realizado');
   var cap=somaPar(d,'captacao_investidor');
   var ced=valorPorEmpresaOuSoma(d,'cedentes', somarCedentes);
   var totalCedOperado=somaCampo(d,'total_cedentes_operado');
@@ -517,7 +518,10 @@ function renderKPIs(d){
   var resultadoMetaSoma = somaCampo(d,'resultado_meta');
   var capitalBase = somaCampo(d,'capital_sob_gestao');
 
-  var resultadoReal = rec.real - desp.real;
+  // Regra nova: a meta de Receitas é sempre a meta de Despesa + a meta de Resultado do mês
+  // (não existe mais coluna própria de meta de receita na planilha).
+  var recMeta = desp.meta + resultadoMetaSoma;
+  var resultadoReal = recReal - desp.real;
 
   // Capital sob gestão: base informada na planilha + meta/realizado de captação + meta/realizado de resultado
   var capitalMeta = capitalBase + cap.meta + resultadoMetaSoma;
@@ -530,10 +534,7 @@ function renderKPIs(d){
 
     '<div class="kcard"><div class="kcard-h">📄 FATURAMENTO</div><div class="kcard-b">' +
       itemMeta('Faturamento', fat.real, fat.meta, fM) +
-      '<div class="mi"><div class="mi-h"><span class="mi-l">Receitas do mês</span><span class="mi-badge" style="visibility:hidden">0%</span></div>'+
-      '<div class="mi-v"><span class="real">'+fM(rec.real)+'</span></div>'+
-      '<div class="bar-w" style="visibility:hidden"><div class="bar" style="width:0%"></div></div>'+
-      '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>' +
+      itemMeta('Receitas do mês', recReal, recMeta, fM) +
       itemDespesa('Despesa do mês', desp.real, desp.meta) +
       itemResultado(resultadoReal, resultadoMetaSoma) +
     '</div></div>' +
@@ -574,7 +575,6 @@ function renderKPIs(d){
 var MXR_CAMPOS = [
   {chave:'faturamento', label:'Faturamento', tipo:'money', secao:'Faturamento'},
   {chave:'despesa', label:'Despesa', tipo:'money', secao:'Faturamento'},
-  {chave:'receitas', label:'Receitas', tipo:'money', secao:'Faturamento'},
   {chave:'captacao_investidor', label:'Captação de investidores', tipo:'money', secao:'Novos Investidores'},
   {chave:'cedentes', label:'Cedentes cadastrados', tipo:'num', secao:'Comercial'},
   {chave:'novos_cedentes', label:'Novos cedentes', tipo:'num', secao:'Comercial'},
@@ -585,6 +585,7 @@ var MXR_CAMPOS = [
   {chave:'entrevistas', label:'Entrevistas', tipo:'num', secao:'RH'}
 ];
 var MXR_CAMPOS_UNICOS = [
+  {chave:'receitas_realizado', label:'Receitas — Realizado (R$)', secao:'Faturamento'},
   {chave:'resultado_meta', label:'Resultado do mês — Meta (R$)', secao:'Faturamento'},
   {chave:'total_cedentes_operado', label:'Total cedentes operado', secao:'Comercial'},
   {chave:'volume_operacoes', label:'Volume de operações (R$)', secao:'Operação'},
