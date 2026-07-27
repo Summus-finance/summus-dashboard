@@ -249,6 +249,7 @@ function apiCall(params, cb){ _jsonp(params, cb); }
 function n(v){if(v===''||v===null||v===undefined)return 0;var x=Number(String(v).toString().replace(',','.'));return isNaN(x)?0:x;}
 function fN(v){return n(v).toLocaleString('pt-BR',{maximumFractionDigits:0});}
 function fM(v){return 'R$ '+n(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fPct(v){return n(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';}
 
 /* ── FILTROS (mesmo padrão de chips multi-seleção do painel de Movimentação) ── */
 var filOpen=false;
@@ -371,6 +372,25 @@ function somaFaturamento(d){
   });
   return {meta:meta, operacoes:op, prorrogacoes:pr, redesconto:rd, total:op+pr+rd};
 }
+// Taxa ponderada: agora vem PRONTA da planilha (não calculamos mais fat/vol).
+// Quando o filtro cobre mais de uma linha (várias empresas/meses), ponderamos
+// as taxas informadas pelo volume de cada linha, para chegar num único valor.
+function taxaPonderadaCampo(d, campoTaxa, campoVol){
+  var num=0, den=0;
+  d.forEach(function(r){
+    var vol=n(r[campoVol]);
+    var taxa=r.taxa ? n(r.taxa[campoTaxa]) : 0;
+    if(vol>0 && taxa>0){ num+=vol*taxa; den+=vol; }
+  });
+  return den>0 ? (num/den) : 0;
+}
+// Meta da taxa: média simples dos valores informados (não é ponderada por volume,
+// é só o alvo definido pela empresa para o período selecionado).
+function taxaMetaMedia(d){
+  var vals=[];
+  d.forEach(function(r){ if(r.taxa && n(r.taxa.meta)>0) vals.push(n(r.taxa.meta)); });
+  return vals.length ? (vals.reduce(function(a,b){return a+b;},0)/vals.length) : 0;
+}
 // Para campos onde somar as empresas pode fazer sentido ou não (ex: cedentes
 // cadastrados podem ser os mesmos clientes em SEC e ESC). Agrupa por empresa
 // (somando os meses selecionados dentro de cada empresa) e depois soma entre
@@ -407,11 +427,10 @@ function linhaFaltaComFat(faltaTxt, fatVal){
   return '<div class="mi-v" style="margin-top:2px"><span>'+(faltaTxt||'')+'</span><span>'+(fatVal!==undefined&&fatVal!==null?('Fat: '+fM(fatVal)):'')+'</span></div>';
 }
 // Linha própria da Tx Simples (fat/volume), alinhada à direita.
-function linhaTxSimples(fatVal, vol){
-  if(fatVal===undefined||fatVal===null) return '';
-  var tx = vol>0 ? (fatVal/vol*100) : 0;
-  var txStr = tx.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
-  return '<div class="mi-v" style="margin-top:2px"><span></span><span>Tx Simples: '+txStr+'</span></div>';
+function linhaTaxaPonderada(taxaVal){
+  if(taxaVal===undefined||taxaVal===null||taxaVal==='') return '';
+  var txStr = fPct(taxaVal);
+  return '<div class="mi-v" style="margin-top:2px"><span></span><span>Tx Ponderada: '+txStr+'</span></div>';
 }
 
 function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo){
@@ -486,7 +505,7 @@ function itemOperado(lbl, operado, cadastrado){
     '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
 }
 
-function itemOpLinha(lbl, real, meta, vol, fatVal){
+function itemOpLinha(lbl, real, meta, vol, fatVal, taxaVal){
   var pctReal = meta>0?Math.round(real/meta*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
   var cls=badgeCls(pctReal);
@@ -496,13 +515,13 @@ function itemOpLinha(lbl, real, meta, vol, fatVal){
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(real)+(meta>0?' de '+fN(meta):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatVal)+
-    linhaTxSimples(fatVal, vol)+'</div>';
+    linhaTaxaPonderada(taxaVal)+'</div>';
 }
 
 // Igual à Despesa do mês: "limite" é um teto, não uma meta a bater — ficar ABAIXO
 // do limite é bom (verde); ultrapassar é ruim (vermelho). Usado em Prorrogações
 // e Redescontos, onde o número do mês é um limite máximo desejado.
-function itemOpLimite(lbl, real, limite, vol, fatVal){
+function itemOpLimite(lbl, real, limite, vol, fatVal, taxaVal){
   var pctReal = limite>0?Math.round(real/limite*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
   var dentro = limite>0 ? (real<=limite) : true;
@@ -514,14 +533,14 @@ function itemOpLimite(lbl, real, limite, vol, fatVal){
     (limite>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(real)+(limite>0?' de '+fN(limite):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatVal)+
-    linhaTxSimples(fatVal, vol)+'</div>';
+    linhaTaxaPonderada(taxaVal)+'</div>';
 }
 
 // Total = Operações realizadas + Prorrogações realizadas + Redescontos realizados (numerador)
 // de Operações meta + Prorrogações realizado + Redescontos realizado (denominador).
 // Prorrogações/Redescontos usam lógica de LIMITE (itemOpLimite), então somar as metas
 // deles aqui infla o total artificialmente — por isso usamos o realizado deles, não a meta.
-function itemOpTotal(rOp,rPr,rRd,mOp,vOp,vPr,vRd,fatTotal){
+function itemOpTotal(rOp,rPr,rRd,mOp,vOp,vPr,vRd,fatTotal,taxaTotal){
   var tR=rOp+rPr+rRd, tM=mOp+rPr+rRd, tV=n(vOp)+n(vPr)+n(vRd);
   var pctReal = tM>0?Math.round(tR/tM*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
@@ -532,7 +551,7 @@ function itemOpTotal(rOp,rPr,rRd,mOp,vOp,vPr,vRd,fatTotal){
     (tM>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(tR)+(tM>0?' de '+fN(tM):'')+'</span><span>Vol. Total '+fM(tV)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatTotal)+
-    linhaTxSimples(fatTotal, tV)+'</div>';
+    linhaTaxaPonderada(taxaTotal)+'</div>';
 }
 
 /* ── RENDER KPIs ── */
@@ -557,6 +576,15 @@ function renderKPIs(d){
       volPr=somaCampo(d,'volume_prorrogacoes');
   var resultadoMetaSoma = somaCampo(d,'resultado_meta');
   var capitalBase = somaCampo(d,'capital_sob_gestao');
+
+  // Taxas ponderadas: vêm prontas da planilha para cada categoria; ponderamos pelo
+  // volume de cada linha quando o filtro cobre mais de um mês/empresa.
+  var txOpPond = taxaPonderadaCampo(d,'operacoes','volume_operacoes');
+  var txPrPond = taxaPonderadaCampo(d,'prorrogacoes','volume_prorrogacoes');
+  var txRdPond = taxaPonderadaCampo(d,'redesconto','volume_redesconto');
+  var txMetaMed = taxaMetaMedia(d);
+  var txTotalDen = volOp+volPr+volRd;
+  var txTotalPond = txTotalDen>0 ? ((volOp*txOpPond)+(volPr*txPrPond)+(volRd*txRdPond))/txTotalDen : 0;
 
   // Regra nova: a meta de Receitas é sempre a meta de Despesa + a meta de Resultado do mês
   // (não existe mais coluna própria de meta de receita na planilha).
@@ -587,10 +615,10 @@ function renderKPIs(d){
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">🔄 OPERAÇÃO</div><div class="kcard-b">' +
-      itemOpLinha('Operações', op.real, op.meta, volOp, fat.operacoes) +
-      itemOpLimite('Prorrogações', pr.real, pr.meta, volPr, fat.prorrogacoes) +
-      itemOpLimite('Redescontos', rd.real, rd.meta, volRd, fat.redesconto) +
-      itemOpTotal(op.real,pr.real,rd.real, op.meta, volOp,volPr,volRd, fat.total) +
+      itemOpLinha('Operações', op.real, op.meta, volOp, fat.operacoes, txOpPond) +
+      itemOpLimite('Prorrogações', pr.real, pr.meta, volPr, fat.prorrogacoes, txPrPond) +
+      itemOpLimite('Redescontos', rd.real, rd.meta, volRd, fat.redesconto, txRdPond) +
+      itemOpTotal(op.real,pr.real,rd.real, op.meta, volOp,volPr,volRd, fat.total, txTotalPond) +
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">📋 RH</div><div class="kcard-b">' +
@@ -604,6 +632,10 @@ function renderKPIs(d){
     '<div class="kcard"><div class="kcard-h">🏦 CAPITAL SOB GESTÃO</div><div class="kcard-b">' +
       itemMeta('Capital sob gestão', capitalReal, capitalMeta, fM) +
       '<div style="font-size:11px;color:var(--t3);margin-top:4px">Base informada: '+fM(capitalBase)+' + captação + resultado</div>' +
+    '</div></div>' +
+
+    '<div class="kcard"><div class="kcard-h">📈 TAXA PONDERADA</div><div class="kcard-b">' +
+      itemMeta('Taxa Ponderada Total', txTotalPond, txMetaMed, fPct) +
     '</div></div>' +
 
   '</div>';
@@ -630,6 +662,10 @@ var MXR_CAMPOS_UNICOS = [
   {chave:'faturamento_redesconto', label:'Faturamento Redesconto (R$)', secao:'Faturamento'},
   {chave:'receitas_realizado', label:'Receitas — Realizado (R$)', secao:'Faturamento'},
   {chave:'resultado_meta', label:'Resultado do mês — Meta (R$)', secao:'Faturamento'},
+  {chave:'taxa_meta', label:'Taxa — Meta (%)', secao:'Taxa'},
+  {chave:'taxa_operacoes', label:'Taxa Ponderada Operações (%)', secao:'Taxa'},
+  {chave:'taxa_prorrogacoes', label:'Taxa Ponderada Prorrogações (%)', secao:'Taxa'},
+  {chave:'taxa_redesconto', label:'Taxa Ponderada Redesconto (%)', secao:'Taxa'},
   {chave:'total_cedentes_operado', label:'Total cedentes operado', secao:'Comercial'},
   {chave:'volume_operacoes', label:'Volume de operações (R$)', secao:'Operação'},
   {chave:'volume_redesconto', label:'Volume de redesconto (R$)', secao:'Operação'},
@@ -653,7 +689,7 @@ function montarFormularioLancar(){
   MXR_CAMPOS.forEach(function(c){ (secoes[c.secao]=secoes[c.secao]||{pares:[],unicos:[]}).pares.push(c); });
   MXR_CAMPOS_UNICOS.forEach(function(c){ (secoes[c.secao]=secoes[c.secao]||{pares:[],unicos:[]}).unicos.push(c); });
 
-  var ordem=['Faturamento','Novos Investidores','Comercial','Operação','RH','Capital sob Gestão'];
+  var ordem=['Faturamento','Taxa','Novos Investidores','Comercial','Operação','RH','Capital sob Gestão'];
   var html='';
   ordem.forEach(function(nomeSecao){
     var s=secoes[nomeSecao]; if(!s)return;
@@ -699,6 +735,10 @@ function valorCampoUnico(registro, chave){
   if(chave==='faturamento_operacoes') return registro.faturamento ? registro.faturamento.operacoes : undefined;
   if(chave==='faturamento_prorrogacoes') return registro.faturamento ? registro.faturamento.prorrogacoes : undefined;
   if(chave==='faturamento_redesconto') return registro.faturamento ? registro.faturamento.redesconto : undefined;
+  if(chave==='taxa_meta') return registro.taxa ? registro.taxa.meta : undefined;
+  if(chave==='taxa_operacoes') return registro.taxa ? registro.taxa.operacoes : undefined;
+  if(chave==='taxa_prorrogacoes') return registro.taxa ? registro.taxa.prorrogacoes : undefined;
+  if(chave==='taxa_redesconto') return registro.taxa ? registro.taxa.redesconto : undefined;
   return registro[chave];
 }
 
