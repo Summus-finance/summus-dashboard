@@ -401,12 +401,17 @@ function checkboxSomar(id, label, checked, onchangeFn){
 }
 // Linhas extras (Faturamento + Tx Simples = fat/volume) exibidas abaixo do "Vol. X"
 // no card Operação. fatVal undefined = não mostra nada (mantém comportamento antigo).
-function linhasFatTx(fatVal, vol){
+// Linha combinada: "Falta/Disponível" à esquerda + "Fat: R$X" à direita, na MESMA linha.
+function linhaFaltaComFat(faltaTxt, fatVal){
+  if(!faltaTxt && fatVal===undefined) return '';
+  return '<div class="mi-v" style="margin-top:2px"><span>'+(faltaTxt||'')+'</span><span>'+(fatVal!==undefined&&fatVal!==null?('Fat: '+fM(fatVal)):'')+'</span></div>';
+}
+// Linha própria da Tx Simples (fat/volume), alinhada à direita.
+function linhaTxSimples(fatVal, vol){
   if(fatVal===undefined||fatVal===null) return '';
   var tx = vol>0 ? (fatVal/vol*100) : 0;
   var txStr = tx.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
-  return '<div style="text-align:right;font-size:12px;color:var(--t3);margin-top:2px">Faturamento: '+fM(fatVal)+'</div>'+
-         '<div style="text-align:right;font-size:12px;color:var(--t3);margin-top:2px">Tx Simples: '+txStr+'</div>';
+  return '<div class="mi-v" style="margin-top:2px"><span></span><span>Tx Simples: '+txStr+'</span></div>';
 }
 
 function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo){
@@ -421,12 +426,14 @@ function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo){
       (meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
       (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
       '<div class="mi-v" style="justify-content:flex-start"><span><span class="real">'+fmt(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fmt(meta):'')+'</span></div>'+
-      (meta>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
+      (meta>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+
+      '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
   }
   return '<div class="mi"><div class="mi-h"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+'</div>'+
     (meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span><span class="real">'+fmt(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fmt(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
 }
 
@@ -441,6 +448,7 @@ function itemDespesa(lbl, real, limite){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-badge '+cls+'">'+badgeTxt+'</span></div>'+
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
     '<div class="mi-v"><span><span class="real">'+fM(real)+'</span><span class="sep">limite</span>'+fM(limite)+'</span><span>'+restTxt+'</span></div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
 }
 
@@ -461,6 +469,7 @@ function itemResultado(real, meta){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Resultado do mês</span><span class="mi-badge '+cls+'">'+badgeTxt+'</span></div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span><span class="real" style="color:'+(real<0?'#c0392b':'#1d9e75')+'">'+fM(real)+'</span>'+(meta>0?'<span class="sep">meta</span>'+fM(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
 }
 
@@ -473,7 +482,8 @@ function itemOperado(lbl, operado, cadastrado){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span></div>'+
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
     '<div class="mi-v"><span><span class="real">'+fN(operado)+'</span><span class="sep">de</span>'+fN(cadastrado)+' cadastrados</span></div>'+
-    (cadastrado>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
+    (cadastrado>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
 }
 
 function itemOpLinha(lbl, real, meta, vol, fatVal){
@@ -485,8 +495,8 @@ function itemOpLinha(lbl, real, meta, vol, fatVal){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span>'+(meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%</span>':'')+'</div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(real)+(meta>0?' de '+fN(meta):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
-    (meta>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+
-    linhasFatTx(fatVal, vol)+'</div>';
+    linhaFaltaComFat(faltaTxt, fatVal)+
+    linhaTxSimples(fatVal, vol)+'</div>';
 }
 
 // Igual à Despesa do mês: "limite" é um teto, não uma meta a bater — ficar ABAIXO
@@ -503,8 +513,8 @@ function itemOpLimite(lbl, real, limite, vol, fatVal){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span>'+(limite>0?'<span class="mi-badge '+cls+'">'+badgeTxt+'</span>':'')+'</div>'+
     (limite>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(real)+(limite>0?' de '+fN(limite):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
-    (limite>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+
-    linhasFatTx(fatVal, vol)+'</div>';
+    linhaFaltaComFat(faltaTxt, fatVal)+
+    linhaTxSimples(fatVal, vol)+'</div>';
 }
 
 // Total = Operações realizadas + Prorrogações realizadas + Redescontos realizados (numerador)
@@ -521,8 +531,8 @@ function itemOpTotal(rOp,rPr,rRd,mOp,vOp,vPr,vRd,fatTotal){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Total</span>'+(tM>0?'<span class="mi-badge '+cls+'">'+pctReal+'%</span>':'')+'</div>'+
     (tM>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(tR)+(tM>0?' de '+fN(tM):'')+'</span><span>Vol. Total '+fM(tV)+'</span></div>'+
-    (tM>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+
-    linhasFatTx(fatTotal, tV)+'</div>';
+    linhaFaltaComFat(faltaTxt, fatTotal)+
+    linhaTxSimples(fatTotal, tV)+'</div>';
 }
 
 /* ── RENDER KPIs ── */
