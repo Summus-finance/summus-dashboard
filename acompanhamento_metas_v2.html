@@ -357,6 +357,20 @@ function somaPar(d,campo){
 function somaCampo(d,campo){
   return d.reduce(function(s,r){return s+n(r[campo]);},0);
 }
+// Faturamento agora é meta + 3 categorias de realizado (operações, prorrogações, redesconto).
+// O "Faturamento" do card principal é a soma das 3 categorias.
+function somaFaturamento(d){
+  var meta=0, op=0, pr=0, rd=0;
+  d.forEach(function(r){
+    if(r.faturamento){
+      meta+=n(r.faturamento.meta);
+      op+=n(r.faturamento.operacoes);
+      pr+=n(r.faturamento.prorrogacoes);
+      rd+=n(r.faturamento.redesconto);
+    }
+  });
+  return {meta:meta, operacoes:op, prorrogacoes:pr, redesconto:rd, total:op+pr+rd};
+}
 // Para campos onde somar as empresas pode fazer sentido ou não (ex: cedentes
 // cadastrados podem ser os mesmos clientes em SEC e ESC). Agrupa por empresa
 // (somando os meses selecionados dentro de cada empresa) e depois soma entre
@@ -384,6 +398,15 @@ function badgeCls(pct){return pct>=100?'g':(pct>=60?'y':'r');}
 function barColor(cls){return cls==='g'?'#1d9e75':(cls==='y'?'#e0a020':'#c0392b');}
 function checkboxSomar(id, label, checked, onchangeFn){
   return '<label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:400;color:var(--t3);cursor:pointer;white-space:nowrap"><input type="checkbox" id="'+id+'" '+(checked?'checked':'')+' onchange="'+onchangeFn+'"> '+label+'</label>';
+}
+// Linhas extras (Faturamento + Tx Simples = fat/volume) exibidas abaixo do "Vol. X"
+// no card Operação. fatVal undefined = não mostra nada (mantém comportamento antigo).
+function linhasFatTx(fatVal, vol){
+  if(fatVal===undefined||fatVal===null) return '';
+  var tx = vol>0 ? (fatVal/vol*100) : 0;
+  var txStr = tx.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+  return '<div style="text-align:right;font-size:12px;color:var(--t3);margin-top:2px">Faturamento: '+fM(fatVal)+'</div>'+
+         '<div style="text-align:right;font-size:12px;color:var(--t3);margin-top:2px">Tx Simples: '+txStr+'</div>';
 }
 
 function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo){
@@ -453,7 +476,7 @@ function itemOperado(lbl, operado, cadastrado){
     (cadastrado>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
 }
 
-function itemOpLinha(lbl, real, meta, vol){
+function itemOpLinha(lbl, real, meta, vol, fatVal){
   var pctReal = meta>0?Math.round(real/meta*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
   var cls=badgeCls(pctReal);
@@ -462,13 +485,14 @@ function itemOpLinha(lbl, real, meta, vol){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span>'+(meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%</span>':'')+'</div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(real)+(meta>0?' de '+fN(meta):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
-    (meta>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
+    (meta>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+
+    linhasFatTx(fatVal, vol)+'</div>';
 }
 
 // Igual à Despesa do mês: "limite" é um teto, não uma meta a bater — ficar ABAIXO
 // do limite é bom (verde); ultrapassar é ruim (vermelho). Usado em Prorrogações
 // e Redescontos, onde o número do mês é um limite máximo desejado.
-function itemOpLimite(lbl, real, limite, vol){
+function itemOpLimite(lbl, real, limite, vol, fatVal){
   var pctReal = limite>0?Math.round(real/limite*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
   var dentro = limite>0 ? (real<=limite) : true;
@@ -479,14 +503,15 @@ function itemOpLimite(lbl, real, limite, vol){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span>'+(limite>0?'<span class="mi-badge '+cls+'">'+badgeTxt+'</span>':'')+'</div>'+
     (limite>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(real)+(limite>0?' de '+fN(limite):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
-    (limite>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
+    (limite>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+
+    linhasFatTx(fatVal, vol)+'</div>';
 }
 
 // Total = Operações realizadas + Prorrogações realizadas + Redescontos realizados (numerador)
 // de Operações meta + Prorrogações realizado + Redescontos realizado (denominador).
 // Prorrogações/Redescontos usam lógica de LIMITE (itemOpLimite), então somar as metas
 // deles aqui infla o total artificialmente — por isso usamos o realizado deles, não a meta.
-function itemOpTotal(rOp,rPr,rRd,mOp,vOp,vPr,vRd){
+function itemOpTotal(rOp,rPr,rRd,mOp,vOp,vPr,vRd,fatTotal){
   var tR=rOp+rPr+rRd, tM=mOp+rPr+rRd, tV=n(vOp)+n(vPr)+n(vRd);
   var pctReal = tM>0?Math.round(tR/tM*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
@@ -496,7 +521,8 @@ function itemOpTotal(rOp,rPr,rRd,mOp,vOp,vPr,vRd){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Total</span>'+(tM>0?'<span class="mi-badge '+cls+'">'+pctReal+'%</span>':'')+'</div>'+
     (tM>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(tR)+(tM>0?' de '+fN(tM):'')+'</span><span>Vol. Total '+fM(tV)+'</span></div>'+
-    (tM>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+'</div>';
+    (tM>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+
+    linhasFatTx(fatTotal, tV)+'</div>';
 }
 
 /* ── RENDER KPIs ── */
@@ -508,7 +534,7 @@ function renderKPIs(d){
     document.getElementById('kdiv').innerHTML='<div class="empty">Sem lançamentos para os filtros selecionados.</div>';
     return;
   }
-  var fat=somaPar(d,'faturamento'), desp=somaPar(d,'despesa');
+  var fat=somaFaturamento(d), desp=somaPar(d,'despesa');
   var recReal=somaCampo(d,'receitas_realizado');
   var cap=somaPar(d,'captacao_investidor');
   var ced=valorPorEmpresaOuSoma(d,'cedentes', somarCedentes);
@@ -537,7 +563,7 @@ function renderKPIs(d){
   document.getElementById('kdiv').innerHTML = '<div class="kgrid">' +
 
     '<div class="kcard"><div class="kcard-h">📄 FATURAMENTO</div><div class="kcard-b">' +
-      itemMeta('Faturamento', fat.real, fat.meta, fM) +
+      itemMeta('Faturamento', fat.total, fat.meta, fM) +
       itemMeta('Receitas do mês', recReal, recMeta, fM) +
       itemDespesa('Despesa do mês', desp.real, desp.meta) +
       itemResultado(resultadoReal, resultadoMetaSoma) +
@@ -551,10 +577,10 @@ function renderKPIs(d){
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">🔄 OPERAÇÃO</div><div class="kcard-b">' +
-      itemOpLinha('Operações', op.real, op.meta, volOp) +
-      itemOpLimite('Prorrogações', pr.real, pr.meta, volPr) +
-      itemOpLimite('Redescontos', rd.real, rd.meta, volRd) +
-      itemOpTotal(op.real,pr.real,rd.real, op.meta, volOp,volPr,volRd) +
+      itemOpLinha('Operações', op.real, op.meta, volOp, fat.operacoes) +
+      itemOpLimite('Prorrogações', pr.real, pr.meta, volPr, fat.prorrogacoes) +
+      itemOpLimite('Redescontos', rd.real, rd.meta, volRd, fat.redesconto) +
+      itemOpTotal(op.real,pr.real,rd.real, op.meta, volOp,volPr,volRd, fat.total) +
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">📋 RH</div><div class="kcard-b">' +
@@ -577,7 +603,6 @@ function renderKPIs(d){
    LANÇAR VALORES — modal com todos os campos da aba Meta_X_Realizado
 ═══════════════════════════════════════════════════════════ */
 var MXR_CAMPOS = [
-  {chave:'faturamento', label:'Faturamento', tipo:'money', secao:'Faturamento'},
   {chave:'despesa', label:'Despesa', tipo:'money', secao:'Faturamento'},
   {chave:'captacao_investidor', label:'Captação de investidores', tipo:'money', secao:'Novos Investidores'},
   {chave:'cedentes', label:'Cedentes cadastrados', tipo:'num', secao:'Comercial'},
@@ -589,6 +614,10 @@ var MXR_CAMPOS = [
   {chave:'entrevistas', label:'Entrevistas', tipo:'num', secao:'RH'}
 ];
 var MXR_CAMPOS_UNICOS = [
+  {chave:'faturamento_meta', label:'Faturamento — Meta (R$)', secao:'Faturamento'},
+  {chave:'faturamento_operacoes', label:'Faturamento Operações (R$)', secao:'Faturamento'},
+  {chave:'faturamento_prorrogacoes', label:'Faturamento Prorrogações (R$)', secao:'Faturamento'},
+  {chave:'faturamento_redesconto', label:'Faturamento Redesconto (R$)', secao:'Faturamento'},
   {chave:'receitas_realizado', label:'Receitas — Realizado (R$)', secao:'Faturamento'},
   {chave:'resultado_meta', label:'Resultado do mês — Meta (R$)', secao:'Faturamento'},
   {chave:'total_cedentes_operado', label:'Total cedentes operado', secao:'Comercial'},
@@ -652,6 +681,17 @@ function abrirModalLancar(){
 function fecharModalLancar(){document.getElementById('mo-overlay').style.display='none';}
 function moRecarregarAlvo(){ mxrRecarregarValoresNoForm(); }
 
+// Os 4 campos de faturamento (meta + 3 categorias) ficam aninhados em
+// registro.faturamento, diferente dos demais campos únicos que são soltos.
+function valorCampoUnico(registro, chave){
+  if(!registro) return undefined;
+  if(chave==='faturamento_meta') return registro.faturamento ? registro.faturamento.meta : undefined;
+  if(chave==='faturamento_operacoes') return registro.faturamento ? registro.faturamento.operacoes : undefined;
+  if(chave==='faturamento_prorrogacoes') return registro.faturamento ? registro.faturamento.prorrogacoes : undefined;
+  if(chave==='faturamento_redesconto') return registro.faturamento ? registro.faturamento.redesconto : undefined;
+  return registro[chave];
+}
+
 function mxrRecarregarValoresNoForm(){
   var empresa=document.getElementById('mo-empresa').value;
   var mesNum=document.getElementById('mo-mes').value;
@@ -673,7 +713,8 @@ function mxrRecarregarValoresNoForm(){
   });
   MXR_CAMPOS_UNICOS.forEach(function(c){
     var el=document.getElementById('mo-f-'+c.chave);
-    if(el)el.value = (registro && registro[c.chave]!==undefined && registro[c.chave]!=='') ? registro[c.chave] : '';
+    var v = valorCampoUnico(registro, c.chave);
+    if(el)el.value = (v!==undefined && v!==null && v!=='') ? v : '';
   });
 }
 
