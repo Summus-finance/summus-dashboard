@@ -427,33 +427,41 @@ function linhaFaltaComFat(faltaTxt, fatVal){
   return '<div class="mi-v" style="margin-top:2px"><span>'+(faltaTxt||'')+'</span><span>'+(fatVal!==undefined&&fatVal!==null?('Fat: '+fM(fatVal)):'')+'</span></div>';
 }
 // Linha própria da Tx Simples (fat/volume), alinhada à direita.
+// Tx Simples: calculada por nós (fat/vol) — diferente da Tx Ponderada, que vem
+// pronta da planilha. Mostrar as duas juntas ajuda a comparar uma com a outra.
+function linhaTaxaSimples(fatVal, vol, label){
+  if(fatVal===undefined||fatVal===null) return '';
+  label = label || 'Tx Simples';
+  var tx = vol>0 ? (fatVal/vol*100) : 0;
+  return '<div class="mi-v" style="margin-top:2px"><span></span><span>'+label+': '+fPct(tx)+'</span></div>';
+}
 function linhaTaxaPonderada(taxaVal){
   if(taxaVal===undefined||taxaVal===null||taxaVal==='') return '';
   var txStr = fPct(taxaVal);
   return '<div class="mi-v" style="margin-top:2px"><span></span><span>Tx Ponderada: '+txStr+'</span></div>';
 }
 
-function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo){
+function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo, compacto){
   fmt = fmt||fN;
   var pctReal = meta>0?Math.round(real/meta*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
   var cls=badgeCls(pctReal);
   var falta=meta-real;
   var faltaTxt = meta>0 ? (falta>0?('Falta: '+fmt(falta)):'✓ Meta atingida!') : '';
+  var espacador = '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>';
   if(faltaAbaixo){
     return '<div class="mi"><div class="mi-h"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+'</div>'+
       (meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
       (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
       '<div class="mi-v" style="justify-content:flex-start"><span><span class="real">'+fmt(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fmt(meta):'')+'</span></div>'+
       (meta>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+
-      '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
+      (compacto?'':(espacador+espacador))+'</div>';
   }
   return '<div class="mi"><div class="mi-h"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+'</div>'+
     (meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span><span class="real">'+fmt(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fmt(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
+    (compacto?'':(espacador+espacador+espacador))+'</div>';
 }
 
 function itemDespesa(lbl, real, limite){
@@ -467,6 +475,7 @@ function itemDespesa(lbl, real, limite){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-badge '+cls+'">'+badgeTxt+'</span></div>'+
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
     '<div class="mi-v"><span><span class="real">'+fM(real)+'</span><span class="sep">limite</span>'+fM(limite)+'</span><span>'+restTxt+'</span></div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
 }
@@ -489,6 +498,7 @@ function itemResultado(real, meta){
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span><span class="real" style="color:'+(real<0?'#c0392b':'#1d9e75')+'">'+fM(real)+'</span>'+(meta>0?'<span class="sep">meta</span>'+fM(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div>'+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
 }
 
@@ -502,6 +512,7 @@ function itemOperado(lbl, operado, cadastrado){
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
     '<div class="mi-v"><span><span class="real">'+fN(operado)+'</span><span class="sep">de</span>'+fN(cadastrado)+' cadastrados</span></div>'+
     (cadastrado>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
 }
 
@@ -515,6 +526,7 @@ function itemOpLinha(lbl, real, meta, vol, fatVal, taxaVal){
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(real)+(meta>0?' de '+fN(meta):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatVal)+
+    linhaTaxaSimples(fatVal, vol)+
     linhaTaxaPonderada(taxaVal)+'</div>';
 }
 
@@ -533,6 +545,7 @@ function itemOpLimite(lbl, real, limite, vol, fatVal, taxaVal){
     (limite>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(real)+(limite>0?' de '+fN(limite):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatVal)+
+    linhaTaxaSimples(fatVal, vol)+
     linhaTaxaPonderada(taxaVal)+'</div>';
 }
 
@@ -551,6 +564,7 @@ function itemOpTotal(rOp,rPr,rRd,mOp,vOp,vPr,vRd,fatTotal,taxaTotal){
     (tM>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(tR)+(tM>0?' de '+fN(tM):'')+'</span><span>Vol. Total '+fM(tV)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatTotal)+
+    linhaTaxaSimples(fatTotal, tV, 'Tx Simples Pon')+
     linhaTaxaPonderada(taxaTotal)+'</div>';
 }
 
@@ -622,20 +636,20 @@ function renderKPIs(d){
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">📋 RH</div><div class="kcard-b">' +
-      itemMeta('Entrevistas realizadas', entrev.real, entrev.meta, fN, null, true) +
+      itemMeta('Entrevistas realizadas', entrev.real, entrev.meta, fN, null, true, true) +
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">📊 NOVOS INVESTIDORES</div><div class="kcard-b">' +
-      itemMeta('Captação do mês', cap.real, cap.meta, fM) +
+      itemMeta('Captação do mês', cap.real, cap.meta, fM, null, false, true) +
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">🏦 CAPITAL SOB GESTÃO</div><div class="kcard-b">' +
-      itemMeta('Capital sob gestão', capitalReal, capitalMeta, fM) +
+      itemMeta('Capital sob gestão', capitalReal, capitalMeta, fM, null, false, true) +
       '<div style="font-size:11px;color:var(--t3);margin-top:4px">Base informada: '+fM(capitalBase)+' + captação + resultado</div>' +
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">📈 TAXA PONDERADA</div><div class="kcard-b">' +
-      itemMeta('Taxa Ponderada Total', txTotalPond, txMetaMed, fPct) +
+      itemMeta('Taxa Ponderada Total', txTotalPond, txMetaMed, fPct, null, false, true) +
     '</div></div>' +
 
   '</div>';
