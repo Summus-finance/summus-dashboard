@@ -487,6 +487,49 @@ function itemPdd(valorReal, capitalBase, metaPct){
   '</div>';
 }
 
+// Margem do Resultado: Resultado ÷ Faturamento — quanto do faturamento virou lucro.
+function itemMargem(margemPct){
+  var cor = margemPct>=0 ? '#1d9e75' : '#c0392b';
+  return '<div class="mi"><div class="mi-h"><span class="mi-l">Margem do Resultado</span></div>'+
+    '<div class="mi-v"><span class="real" style="color:'+cor+'">'+fPct(margemPct)+'</span></div>'+
+    '<div style="font-size:11px;color:var(--t3);margin-top:2px">Resultado do mês ÷ Faturamento</div>'+
+  '</div>';
+}
+
+// Ticket Médio: Volume Total operado ÷ Quantidade total de operações realizadas
+// (Operações + Prorrogações + Redescontos), métrica clássica de negócio de recebíveis.
+function itemTicketMedio(valor){
+  return '<div class="mi"><div class="mi-h"><span class="mi-l">Ticket Médio por Operação</span></div>'+
+    '<div class="mi-v"><span class="real">'+fM(valor)+'</span></div>'+
+    '<div style="font-size:11px;color:var(--t3);margin-top:2px">Volume Total ÷ Qtd. de Operações Realizadas</div>'+
+  '</div>';
+}
+
+// Composição do Faturamento: de onde vem o faturamento, em % e R$ por categoria.
+function itemComposicaoFaturamento(fatOp, fatPr, fatRd){
+  var total = fatOp+fatPr+fatRd;
+  var pOp = total>0?(fatOp/total*100):0;
+  var pPr = total>0?(fatPr/total*100):0;
+  var pRd = total>0?(fatRd/total*100):0;
+  var barSegs = '<div style="display:flex;height:9px;border-radius:99px;overflow:hidden;background:var(--bg);margin-top:6px">'+
+    (pOp>0?'<div style="width:'+pOp+'%;background:#2CA1D8"></div>':'')+
+    (pPr>0?'<div style="width:'+pPr+'%;background:#1d9e75"></div>':'')+
+    (pRd>0?'<div style="width:'+pRd+'%;background:#e0a020"></div>':'')+
+  '</div>';
+  function linha(cor,label,pct,valor){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;margin-top:6px">'+
+      '<span style="display:flex;align-items:center;gap:6px;color:var(--t2)"><span style="width:8px;height:8px;border-radius:50%;background:'+cor+';display:inline-block;flex-shrink:0"></span>'+label+'</span>'+
+      '<span style="color:var(--t1);font-weight:600">'+fPct(pct)+' <span style="color:var(--t3);font-weight:400">('+fM(valor)+')</span></span>'+
+    '</div>';
+  }
+  return '<div class="mi"><div class="mi-h"><span class="mi-l">Composição do Faturamento</span></div>'+
+    barSegs+
+    linha('#2CA1D8','Operações',pOp,fatOp)+
+    linha('#1d9e75','Prorrogações',pPr,fatPr)+
+    linha('#e0a020','Redesconto',pRd,fatRd)+
+  '</div>';
+}
+
 function itemResultado(real, meta){
   var cls, badgeTxt, pct;
   if(real<0){
@@ -609,6 +652,12 @@ function renderKPIs(d){
     return vals.length ? (vals.reduce(function(a,b){return a+b;},0)/vals.length) : 0;
   })();
 
+  // Margem do Resultado, Ticket Médio e Composição do Faturamento usam o mesmo
+  // "fat" e volumes já calculados acima — sem inventar nenhuma base nova.
+  var qtdTotalOp = op.real + pr.real + rd.real;
+  var volTotalOp = volOp + volPr + volRd;
+  var ticketMedio = qtdTotalOp>0 ? (volTotalOp/qtdTotalOp) : 0;
+
   // Taxas ponderadas: vêm prontas da planilha para cada categoria; ponderamos pelo
   // volume de cada linha quando o filtro cobre mais de um mês/empresa.
   var txOpPond = taxaPonderadaCampo(d,'operacoes','volume_operacoes');
@@ -622,6 +671,7 @@ function renderKPIs(d){
   // (não existe mais coluna própria de meta de receita na planilha).
   var recMeta = desp.meta + resultadoMetaSoma;
   var resultadoReal = recReal - desp.real;
+  var margemPct = fat.total>0 ? (resultadoReal/fat.total*100) : 0;
 
   // Capital sob gestão: base informada na planilha + meta/realizado de captação + meta/realizado de resultado
   var capitalMeta = capitalBase + cap.meta + resultadoMetaSoma;
@@ -672,6 +722,12 @@ function renderKPIs(d){
 
     '<div class="kcard"><div class="kcard-h">⚠️ PDD</div><div class="kcard-b">' +
       itemPdd(pddValorSoma, capitalReal, pddMetaMed) +
+    '</div></div>' +
+
+    '<div class="kcard"><div class="kcard-h">📊 INDICADORES</div><div class="kcard-b">' +
+      itemMargem(margemPct) +
+      itemTicketMedio(ticketMedio) +
+      itemComposicaoFaturamento(fat.operacoes, fat.prorrogacoes, fat.redesconto) +
     '</div></div>' +
 
   '</div>';
