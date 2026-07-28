@@ -581,6 +581,17 @@ function renderKPIs(d){
   var resultadoMetaSoma = somaCampo(d,'resultado_meta');
   var capitalBase = somaCampo(d,'capital_sob_gestao');
 
+  // PDD: meta é um percentual-alvo, valor é o R$ efetivamente provisionado.
+  // Como não temos uma base definida para transformar "valor" em percentual
+  // comparável à meta (ex: valor ÷ capital sob gestão?), mostramos os dois
+  // separados por enquanto, sem inventar uma conta.
+  var pddValorSoma = d.reduce(function(s,r){return s + (r.pdd ? n(r.pdd.valor) : 0);},0);
+  var pddMetaMed = (function(){
+    var vals=[];
+    d.forEach(function(r){ if(r.pdd && n(r.pdd.meta)>0) vals.push(n(r.pdd.meta)); });
+    return vals.length ? (vals.reduce(function(a,b){return a+b;},0)/vals.length) : 0;
+  })();
+
   // Taxas ponderadas: vêm prontas da planilha para cada categoria; ponderamos pelo
   // volume de cada linha quando o filtro cobre mais de um mês/empresa.
   var txOpPond = taxaPonderadaCampo(d,'operacoes','volume_operacoes');
@@ -642,6 +653,11 @@ function renderKPIs(d){
       itemMeta('Taxa Ponderada Total', txTotalPond, txMetaMed, fPct, null, false, true) +
     '</div></div>' +
 
+    '<div class="kcard"><div class="kcard-h">⚠️ PDD</div><div class="kcard-b">' +
+      '<div class="mi"><div class="mi-h"><span class="mi-l">Valor de PDD</span></div><div class="mi-v"><span class="real">'+fM(pddValorSoma)+'</span></div></div>' +
+      '<div class="mi" style="margin-top:10px"><div class="mi-h"><span class="mi-l">Meta (%)</span></div><div class="mi-v"><span class="real">'+fPct(pddMetaMed)+'</span></div></div>' +
+    '</div></div>' +
+
   '</div>';
 }
 
@@ -671,6 +687,8 @@ var MXR_CAMPOS_UNICOS = [
   {chave:'taxa_prorrogacoes', label:'Taxa Ponderada Prorrogações (%)', secao:'Taxa'},
   {chave:'taxa_redesconto', label:'Taxa Ponderada Redesconto (%)', secao:'Taxa'},
   {chave:'total_cedentes_operado', label:'Total cedentes operado', secao:'Comercial'},
+  {chave:'pdd_meta', label:'PDD — Meta (%)', secao:'PDD'},
+  {chave:'pdd_valor', label:'PDD — Valor (R$)', secao:'PDD'},
   {chave:'volume_operacoes', label:'Volume de operações (R$)', secao:'Operação'},
   {chave:'volume_redesconto', label:'Volume de redesconto (R$)', secao:'Operação'},
   {chave:'volume_prorrogacoes', label:'Volume de prorrogações (R$)', secao:'Operação'},
@@ -693,7 +711,7 @@ function montarFormularioLancar(){
   MXR_CAMPOS.forEach(function(c){ (secoes[c.secao]=secoes[c.secao]||{pares:[],unicos:[]}).pares.push(c); });
   MXR_CAMPOS_UNICOS.forEach(function(c){ (secoes[c.secao]=secoes[c.secao]||{pares:[],unicos:[]}).unicos.push(c); });
 
-  var ordem=['Faturamento','Taxa','Novos Investidores','Comercial','Operação','RH','Capital sob Gestão'];
+  var ordem=['Faturamento','Taxa','Novos Investidores','Comercial','PDD','Operação','RH','Capital sob Gestão'];
   var html='';
   ordem.forEach(function(nomeSecao){
     var s=secoes[nomeSecao]; if(!s)return;
@@ -743,6 +761,8 @@ function valorCampoUnico(registro, chave){
   if(chave==='taxa_operacoes') return registro.taxa ? registro.taxa.operacoes : undefined;
   if(chave==='taxa_prorrogacoes') return registro.taxa ? registro.taxa.prorrogacoes : undefined;
   if(chave==='taxa_redesconto') return registro.taxa ? registro.taxa.redesconto : undefined;
+  if(chave==='pdd_meta') return registro.pdd ? registro.pdd.meta : undefined;
+  if(chave==='pdd_valor') return registro.pdd ? registro.pdd.valor : undefined;
   return registro[chave];
 }
 
