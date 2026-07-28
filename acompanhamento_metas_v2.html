@@ -466,8 +466,25 @@ function itemDespesa(lbl, real, limite){
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
     '<div class="mi-v"><span><span class="real">'+fM(real)+'</span><span class="sep">limite</span>'+fM(limite)+'</span><span>'+restTxt+'</span></div>'+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
+}
+
+// PDD: o valor em R$ vira % do Capital sob Gestão, e essa % é comparada com a
+// meta (também %). Igual à Despesa do mês: abaixo do limite é bom (verde).
+function itemPdd(valorReal, capitalBase, metaPct){
+  var pctReal = capitalBase>0 ? (valorReal/capitalBase*100) : 0;
+  var pct = metaPct>0 ? Math.min(Math.max((pctReal/metaPct*100),0),100) : 0;
+  var dentro = metaPct>0 ? (pctReal<=metaPct) : true;
+  var cls = dentro?'g':'r';
+  var badgeTxt = fPct(pctReal)+(dentro?' usado':' ⚠');
+  var diff = metaPct-pctReal;
+  var diffTxt = metaPct>0 ? (diff>0?('Disponível: '+fPct(diff)):('⚠ Limite ultrapassado em '+fPct(Math.abs(diff)))) : '';
+  return '<div class="mi"><div class="mi-h"><span class="mi-l">PDD sobre Capital sob Gestão</span>'+(metaPct>0?'<span class="mi-badge '+cls+'">'+badgeTxt+'</span>':'')+'</div>'+
+    (metaPct>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
+    '<div class="mi-v"><span><span class="real">'+fM(valorReal)+'</span>'+(metaPct>0?'<span class="sep">limite</span>'+fPct(metaPct):'')+'</span></div>'+
+    (metaPct>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+diffTxt+'</div>':'')+
+    '<div style="font-size:11px;color:var(--t3);margin-top:4px">Equivale a '+fPct(pctReal)+' do capital sob gestão ('+fM(capitalBase)+')</div>'+
+  '</div>';
 }
 
 function itemResultado(real, meta){
@@ -654,8 +671,7 @@ function renderKPIs(d){
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">⚠️ PDD</div><div class="kcard-b">' +
-      '<div class="mi"><div class="mi-h"><span class="mi-l">Valor de PDD</span></div><div class="mi-v"><span class="real">'+fM(pddValorSoma)+'</span></div></div>' +
-      '<div class="mi" style="margin-top:10px"><div class="mi-h"><span class="mi-l">Meta (%)</span></div><div class="mi-v"><span class="real">'+fPct(pddMetaMed)+'</span></div></div>' +
+      itemPdd(pddValorSoma, capitalReal, pddMetaMed) +
     '</div></div>' +
 
   '</div>';
