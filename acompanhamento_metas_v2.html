@@ -852,8 +852,9 @@ function desformatarValorCampo(v, formato){
 }
 function formatarInputAoSair(el){
   var formato = el.getAttribute('data-formato');
-  var bruto = desformatarValorCampo(el.value, formato);
-  el.value = bruto==='' ? '' : formatarValorCampo(bruto, formato);
+  var brutoStr = desformatarValorCampo(el.value, formato);
+  if(brutoStr===''){ el.value=''; return; }
+  el.value = formatarValorCampo(parseFloat(brutoStr), formato); // passa NÚMERO, não string
 }
 
 function mxrPopularEmpresasModal(){
