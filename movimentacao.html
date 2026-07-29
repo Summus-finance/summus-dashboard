@@ -616,7 +616,7 @@ function initLogin(){
 
 /* ROTACAO */
 var rp=false,rt=null,rs=Date.now();
-function startRot(){rt=setTimeout(function(){if(!rp)window.location.href='painel.html';},120000);}
+function startRot(){rt=setTimeout(function(){if(!rp)window.location.href='acompanhamento_metas.html';},120000);}
 function toggleRot(){rp=!rp;var b=document.getElementById('rbtn');if(rp){clearTimeout(rt);b.textContent='▶';b.style.background='#8fa5bb';}else{b.textContent='⏸';b.style.background='#2CA1D8';rs=Date.now();startRot();}}
 (function tick(){if(!rp)document.getElementById('rbar').style.width=Math.min((Date.now()-rs)/120000*100,100)+'%';requestAnimationFrame(tick);})();
 

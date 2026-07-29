@@ -57,23 +57,6 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 .kgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
 @media(max-width:1100px){.kgrid{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.kgrid{grid-template-columns:1fr}}
-@media(max-width:640px){
-  .top{flex-wrap:wrap;gap:8px;padding:10px 14px}
-  .top h1{font-size:17px}
-  .top p{font-size:11px}
-  .top-logo{height:32px}
-  .top-r{width:100%;justify-content:flex-end;flex-wrap:wrap}
-  .u-info{display:none}
-  .fp{padding-left:0;padding-right:0}
-  .fh{padding:10px 12px}
-  .fb{padding:0 12px 12px}
-  .fr{gap:10px}
-  .fg{min-width:0;flex:1 1 100%}
-  .fa{flex-wrap:wrap}
-  .fa .btn{flex:1 1 auto;justify-content:center}
-  .kgrid{gap:10px}
-  .kcard-b{padding:12px}
-}
 .kcard{background:var(--cd);border-radius:11px;border:1px solid var(--bd);overflow:hidden}
 .kcard-h{background:var(--br);color:#fff;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
 .kcard-b{padding:14px 16px}
@@ -115,26 +98,30 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 .mo-msg.ok{display:block;background:#e3f5e9;color:#1d9e75;border:1px solid #78c890}
 .mo-msg.err{display:block;background:#fce8e8;color:#8b1a1a;border:1px solid #e09090}
 @media(max-width:600px){.mo-grid,.mo-grid.single{grid-template-columns:1fr}}
-/* MODAL DESPESAS DETALHADAS */
-.tp-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:9999;padding:16px;overflow-y:auto}
-.tp-box{background:var(--cd);border-radius:14px;max-width:1050px;margin:0 auto;padding:22px 26px 26px;box-shadow:0 10px 50px rgba(0,0,0,.35)}
-.tp-filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;padding:12px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--bd)}
-.tp-filtros label{font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px}
-.tp-filtros select{border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);min-width:130px}
-.tp-chk{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2);cursor:pointer;white-space:nowrap}
-.tp-chk input{accent-color:var(--br);width:14px;height:14px}
-.tp-table-wrap{background:var(--cd);border:1px solid var(--bd);border-radius:11px;overflow:hidden}
-.tp-table-scroll{max-height:420px;overflow-y:auto;overflow-x:auto}
-.tp-table-scroll table{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
-.tp-table-scroll thead{position:sticky;top:0;background:#2CA1D8;color:#fff;z-index:1}
-.tp-table-scroll th{text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap}
+
+/* RESPONSIVO — telas pequenas (celular/tablet) */
+@media(max-width:900px){
+  body{padding:0}
+  .kgrid{gap:10px}
+}
 @media(max-width:768px){
-  .tp-box{padding:16px 14px 20px!important}
-  .tp-filtros select{min-width:0;flex:1 1 45%}
+  .top{flex-direction:column;align-items:flex-start;gap:10px;padding:10px 14px}
+  .top-r{width:100%;justify-content:flex-start}
+  .top-logo{height:36px}
+  .top h1{font-size:18px}
+  .top p{font-size:11px}
+  .fr{flex-direction:column;gap:12px}
+  .fg{min-width:0}
+  .fa{gap:6px}
+  .mo-overlay{padding:8px!important}
+  .mo-box{padding:16px 14px 20px!important;max-width:100%!important}
 }
 @media(max-width:480px){
-  .tp-overlay{padding:0}
-  .tp-box{border-radius:0!important;min-height:100vh}
+  .kgrid{grid-template-columns:1fr!important}
+  .top-r{gap:6px}
+  .tbtn,.btn{font-size:11px;padding:6px 10px}
+  .mo-box{border-radius:10px}
+  .mo-head h2{font-size:16px}
 }
 </style>
 <script>
@@ -189,6 +176,63 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
   <div id="errdiv"></div>
   <div id="kdiv"><div class="empty">Carregando...</div></div>
 
+</div>
+
+<!-- ══ MODAL DESPESAS DETALHADAS ══ -->
+<div id="tp-overlay" class="mo-overlay">
+  <div class="mo-box" style="max-width:1000px">
+    <div class="mo-head">
+      <div>
+        <h2>Despesas Detalhadas</h2>
+        <p>Títulos pagos/quitados — detalhamento do limite de despesa do mês</p>
+      </div>
+      <button class="mo-close" onclick="closeTitulosPagos()">&times;</button>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;padding:12px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--bd)">
+      <div class="fg" style="min-width:120px"><label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase">Mês</label>
+        <select id="tp-f-mes" onchange="tpAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);width:100%"></select>
+      </div>
+      <div class="fg" style="min-width:110px"><label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase">Ano</label>
+        <select id="tp-f-ano" onchange="tpAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);width:100%"></select>
+      </div>
+      <div class="fg" style="min-width:150px"><label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase">Empresa</label>
+        <select id="tp-f-empresa" onchange="tpAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);width:100%"></select>
+      </div>
+      <div class="fg" style="min-width:150px"><label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase">Categoria</label>
+        <select id="tp-f-categoria" onchange="tpAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);width:100%"></select>
+      </div>
+      <div class="fg" style="min-width:170px"><label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase">Fornecedor</label>
+        <select id="tp-f-fornecedor" onchange="tpAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);width:100%"></select>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2);cursor:pointer;white-space:nowrap">
+        <input type="checkbox" id="tp-f-mostrar-valores" onchange="tpToggleMostrarValores()"> Mostrar valores
+      </label>
+      <button onclick="tpLimparFiltros()" style="background:var(--cd);border:1px solid var(--bd);border-radius:7px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2);margin-left:auto">Limpar</button>
+    </div>
+
+    <div style="background:var(--cd);border:1px solid var(--bd);border-radius:11px;overflow:hidden">
+      <div style="max-height:420px;overflow-y:auto;overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px">
+          <thead style="position:sticky;top:0;background:#2CA1D8;color:#fff;z-index:1">
+            <tr>
+              <th onclick="tpOrdenar('data')" style="text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">DATA <span id="tp-sort-data"></span></th>
+              <th onclick="tpOrdenar('fornecedor')" style="text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">FORNECEDOR <span id="tp-sort-fornecedor"></span></th>
+              <th onclick="tpOrdenar('valor')" style="text-align:right;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">VALOR <span id="tp-sort-valor"></span></th>
+              <th onclick="tpOrdenar('categoria')" style="text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">CATEGORIA <span id="tp-sort-categoria"></span></th>
+              <th style="text-align:left;padding:9px 12px;font-weight:700;white-space:nowrap">OBS.</th>
+            </tr>
+          </thead>
+          <tbody id="tp-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="text-align:right;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd)">
+      <span style="font-size:12px;color:var(--t3)">Total filtrado: </span>
+      <span id="tp-total" style="font-size:14px;font-weight:700;color:var(--t1)">R$ 0,00</span>
+    </div>
+  </div>
 </div>
 
 <!-- ══ MODAL LANÇAR VALORES ══ -->
@@ -276,7 +320,6 @@ function apiCall(params, cb){ _jsonp(params, cb); }
 
 /* ── UTIL NUMÉRICO ── */
 function n(v){if(v===''||v===null||v===undefined)return 0;var x=Number(String(v).toString().replace(',','.'));return isNaN(x)?0:x;}
-function invEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fN(v){return n(v).toLocaleString('pt-BR',{maximumFractionDigits:0});}
 function fM(v){return 'R$ '+n(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fPct(v){return n(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';}
@@ -526,7 +569,7 @@ function itemFaturamentoPrincipal(real, meta, fatMu, fatJa, fatDe){
   '</div>';
 }
 
-function itemDespesa(lbl, real, limite, comOlho){
+function itemDespesa(lbl, real, limite, eyeBtn){
   var pctReal = limite>0?(real/limite*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
   var pctStr=pctReal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -534,10 +577,7 @@ function itemDespesa(lbl, real, limite, comOlho){
   var badgeTxt = pctStr+'%'+(pctReal<=100?' usado':' ⚠');
   var rest=limite-real;
   var restTxt = rest>0 ? ('Disponível: '+fM(rest)) : ('⚠ Limite ultrapassado! '+fM(Math.abs(rest)));
-  var s = getSession();
-  var olho = (comOlho && s && s.acessaDespesas) ?
-    '<button onclick="openTitulosPagos()" title="Ver detalhamento das despesas" style="background:none;border:none;cursor:pointer;padding:0;margin-left:6px;vertical-align:middle;color:#8fa5bb;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>' : '';
-  return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+olho+'</span><span class="mi-badge '+cls+'">'+badgeTxt+'</span></div>'+
+  return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+(eyeBtn||'')+'</span><span class="mi-badge '+cls+'">'+badgeTxt+'</span></div>'+
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
     '<div class="mi-v"><span><span class="real">'+fM(real)+'</span><span class="sep">limite</span>'+fM(limite)+'</span><span>'+restTxt+'</span></div>'+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
@@ -764,7 +804,7 @@ function renderKPIs(d){
     '<div class="kcard"><div class="kcard-h">📄 FATURAMENTO</div><div class="kcard-b">' +
       itemFaturamentoPrincipal(fat.total, fat.meta, fat.multas, fat.juros_atraso, fat.descontos) +
       itemMeta('Receitas do mês', recReal, recMeta, fM) +
-      itemDespesa('Despesa do mês', desp.real, desp.meta, true) +
+      itemDespesa('Despesa do mês', desp.real, desp.meta, tpEyeBtnHtml()) +
       itemResultado(resultadoReal, resultadoMetaSoma) +
     '</div></div>' +
 
@@ -811,6 +851,164 @@ function renderKPIs(d){
 
   '</div>';
 }
+
+/* ═══════════════════════════════════════════════════════════
+   DESPESAS DETALHADAS — modal (getTitulosPagos), mesma lógica e
+   permissão (acessaDespesas) que já existia na tela antiga.
+═══════════════════════════════════════════════════════════ */
+var TP_DATA=[];        // dados crus vindos do Apps Script
+var TP_FILTRADO=[];    // após aplicar filtros
+var TP_SORT={campo:'data', dir:'desc'};
+var TP_LOADED=false;
+var TP_MOSTRAR_VALORES=true;
+try{ var _v=localStorage.getItem('summus_tp_mostrar_valores'); if(_v!==null) TP_MOSTRAR_VALORES = _v==='1'; }catch(e){}
+var TP_MESES_ABR = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
+
+// Só mostra o olho para quem tem a permissão (coluna G da aba Usuarios).
+function tpEyeBtnHtml(){
+  var s=getSession();
+  if(!s || !s.acessaDespesas) return '';
+  return '<button onclick="event.stopPropagation();openTitulosPagos()" title="Ver despesas detalhadas" style="background:none;border:none;cursor:pointer;padding:0;margin-left:6px;vertical-align:middle;color:#8fa5bb;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>';
+}
+
+function tpMesAno(dataISO){
+  if(!dataISO) return {mes:0,ano:0};
+  var m=String(dataISO).match(/^(\d{4})-(\d{2})/);
+  if(m) return {mes:parseInt(m[2]),ano:parseInt(m[1])};
+  return {mes:0,ano:0};
+}
+function tpFmtData(iso){
+  if(!iso) return '—';
+  var m=String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return m[3]+'/'+m[2]+'/'+m[1];
+  return String(iso);
+}
+
+function openTitulosPagos(){
+  var s=getSession();
+  if(!s || !s.acessaDespesas){ alert('Você não tem permissão para acessar as Despesas Detalhadas.'); return; }
+  document.getElementById('tp-overlay').style.display='block';
+  document.getElementById('tp-f-mostrar-valores').checked = TP_MOSTRAR_VALORES;
+  if(!TP_LOADED){ tpCarregarDados(); } else { tpAplicarFiltros(); }
+}
+function closeTitulosPagos(){ document.getElementById('tp-overlay').style.display='none'; }
+
+function tpCarregarDados(){
+  document.getElementById('tp-tbody').innerHTML='<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--t3)">Carregando...</td></tr>';
+  apiCall({action:'getTitulosPagos'}, function(err,res){
+    if(err||!res){
+      document.getElementById('tp-tbody').innerHTML='<tr><td colspan="5" style="padding:16px;text-align:center;color:#a32d2d">Erro de conexão.</td></tr>';
+      return;
+    }
+    if(!res.ok){
+      document.getElementById('tp-tbody').innerHTML='<tr><td colspan="5" style="padding:16px;text-align:center;color:#a32d2d">Erro: '+res.error+'</td></tr>';
+      return;
+    }
+    TP_DATA = res.data||[];
+    TP_LOADED = true;
+    tpPopularFiltros();
+    tpAplicarFiltros();
+  });
+}
+
+function tpPopularFiltros(){
+  var meses={},anos={},empresas={},categorias={},fornecedores={};
+  TP_DATA.forEach(function(r){
+    var ma=tpMesAno(r.data);
+    if(ma.mes)meses[ma.mes]=true;
+    if(ma.ano)anos[ma.ano]=true;
+    if(r.empresa)empresas[String(r.empresa).trim()]=true;
+    if(r.categoria)categorias[String(r.categoria).trim()]=true;
+    if(r.fornecedor)fornecedores[String(r.fornecedor).trim()]=true;
+  });
+  function fill(id, keys, labelFn, placeholder){
+    var sel=document.getElementById(id);
+    var atual=sel.value;
+    sel.innerHTML='<option value="">'+placeholder+'</option>'+
+      keys.map(function(k){return '<option value="'+k+'">'+(labelFn?labelFn(k):k)+'</option>';}).join('');
+    if(keys.indexOf(atual)>=0)sel.value=atual;
+  }
+  fill('tp-f-mes', Object.keys(meses).map(Number).sort(function(a,b){return a-b;}), function(k){return TP_MESES_ABR[k]||k;}, 'Todos os meses');
+  fill('tp-f-ano', Object.keys(anos).map(Number).sort(function(a,b){return b-a;}), null, 'Todos os anos');
+  fill('tp-f-empresa', Object.keys(empresas).sort(), null, 'Todas as empresas');
+  fill('tp-f-categoria', Object.keys(categorias).sort(), null, 'Todas as categorias');
+  fill('tp-f-fornecedor', Object.keys(fornecedores).sort(), null, 'Todos os fornecedores');
+}
+
+function tpToggleMostrarValores(){
+  TP_MOSTRAR_VALORES = document.getElementById('tp-f-mostrar-valores').checked;
+  try{ localStorage.setItem('summus_tp_mostrar_valores', TP_MOSTRAR_VALORES?'1':'0'); }catch(e){}
+  tpRenderTabela();
+}
+
+function tpLimparFiltros(){
+  ['tp-f-mes','tp-f-ano','tp-f-empresa','tp-f-categoria','tp-f-fornecedor'].forEach(function(id){document.getElementById(id).value='';});
+  tpAplicarFiltros();
+}
+
+function tpAplicarFiltros(){
+  var fMes=document.getElementById('tp-f-mes').value;
+  var fAno=document.getElementById('tp-f-ano').value;
+  var fEmp=document.getElementById('tp-f-empresa').value;
+  var fCat=document.getElementById('tp-f-categoria').value;
+  var fForn=document.getElementById('tp-f-fornecedor').value;
+  TP_FILTRADO = TP_DATA.filter(function(r){
+    var ma=tpMesAno(r.data);
+    if(fMes && String(ma.mes)!==String(fMes)) return false;
+    if(fAno && String(ma.ano)!==String(fAno)) return false;
+    if(fEmp && String(r.empresa||'').trim()!==fEmp) return false;
+    if(fCat && String(r.categoria||'').trim()!==fCat) return false;
+    if(fForn && String(r.fornecedor||'').trim()!==fForn) return false;
+    return true;
+  });
+  tpRenderTabela();
+}
+
+function tpOrdenar(campo){
+  if(TP_SORT.campo===campo){ TP_SORT.dir = TP_SORT.dir==='asc'?'desc':'asc'; }
+  else { TP_SORT.campo=campo; TP_SORT.dir = campo==='valor'?'desc':'asc'; }
+  tpRenderTabela();
+}
+
+function tpRenderTabela(){
+  var total = TP_FILTRADO.reduce(function(s,r){return s+n(r.valor);},0);
+  document.getElementById('tp-total').textContent = TP_MOSTRAR_VALORES ? fM(total) : '••••••';
+
+  ['data','fornecedor','valor','categoria'].forEach(function(c){
+    var el=document.getElementById('tp-sort-'+c);
+    if(el) el.textContent = TP_SORT.campo===c ? (TP_SORT.dir==='asc'?'▲':'▼') : '';
+  });
+
+  if(!TP_FILTRADO.length){
+    document.getElementById('tp-tbody').innerHTML='<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--t3)">Nenhum registro para os filtros selecionados</td></tr>';
+    return;
+  }
+
+  var campo=TP_SORT.campo, dir=TP_SORT.dir;
+  var ord = TP_FILTRADO.slice().sort(function(a,b){
+    var va = campo==='valor' ? n(a[campo]) : String(a[campo]||'').toLowerCase();
+    var vb = campo==='valor' ? n(b[campo]) : String(b[campo]||'').toLowerCase();
+    if(va<vb) return dir==='asc'?-1:1;
+    if(va>vb) return dir==='asc'?1:-1;
+    return 0;
+  });
+
+  document.getElementById('tp-tbody').innerHTML = ord.map(function(r,i){
+    var bg = i%2===0 ? 'var(--cd)' : 'var(--bg)';
+    var valorTxt = TP_MOSTRAR_VALORES ? fM(r.valor) : '••••••';
+    return '<tr style="background:'+bg+'">'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);white-space:nowrap">'+tpFmtData(r.data)+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd)">'+invEscTp(r.fornecedor||'—')+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);text-align:right;font-weight:600;white-space:nowrap">'+valorTxt+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);color:var(--t2)">'+invEscTp(r.categoria||'—')+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);color:var(--t3)">'+invEscTp(r.obs||'')+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+// Escapa HTML pra evitar que nome de fornecedor/categoria com caracteres
+// especiais quebre a tabela (mesma proteção já usada em outras telas).
+function invEscTp(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* ═══════════════════════════════════════════════════════════
    LANÇAR VALORES — modal com todos os campos da aba Meta_X_Realizado
@@ -1044,158 +1242,7 @@ function salvarLancamento(){
   });
 }
 
-/* ═══════════════════════════════════════════════════════════
-   DESPESAS DETALHADAS — modal com filtros e tabela (títulos pagos)
-═══════════════════════════════════════════════════════════ */
-var TP_DATA = [];
-var TP_FILT = [];
-var TP_LOADED = false;
-var TP_MOSTRAR_VALORES = true;
-var TP_SORT = {campo:'data', dir:'desc'};
-
-function tpGetMesAno(iso){
-  if(!iso) return {mes:0, ano:0};
-  var m = String(iso).match(/^(\d{4})-(\d{2})/);
-  if(m) return {ano:parseInt(m[1]), mes:parseInt(m[2])};
-  return {mes:0, ano:0};
-}
-function tpFmtData(iso){
-  if(!iso) return '—';
-  var m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m) return m[3]+'/'+m[2]+'/'+m[1];
-  return iso;
-}
-function tpFmtValor(v){
-  return TP_MOSTRAR_VALORES ? fM(v) : '••••••';
-}
-
-function openTitulosPagos(){
-  var s = getSession();
-  if(!s || !s.acessaDespesas){ alert('Você não tem permissão para acessar as Despesas Detalhadas.'); return; }
-  document.getElementById('tp-overlay').style.display = 'block';
-  if(!TP_LOADED){ tpCarregarDados(); } else { tpAplicarFiltros(); }
-}
-function closeTitulosPagos(){
-  document.getElementById('tp-overlay').style.display = 'none';
-}
-
-function tpCarregarDados(){
-  document.getElementById('tp-tbody').innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--t3)">Carregando...</td></tr>';
-  apiCall({action:'getTitulosPagos'}, function(err, res){
-    if(err || !res){
-      document.getElementById('tp-tbody').innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:#a32d2d">Erro de conexão: '+(err?err.message:'sem resposta')+'</td></tr>';
-      return;
-    }
-    if(!res.ok){
-      document.getElementById('tp-tbody').innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:#a32d2d">Erro: '+res.error+'</td></tr>';
-      return;
-    }
-    TP_DATA = res.data || [];
-    TP_LOADED = true;
-    tpPopularFiltros();
-    tpAplicarFiltros();
-  });
-}
-
-function tpPopularFiltros(){
-  var meses={}, anos={}, empresas={}, categorias={};
-  TP_DATA.forEach(function(r){
-    var ma = tpGetMesAno(r.data);
-    if(ma.mes) meses[ma.mes]=true;
-    if(ma.ano) anos[ma.ano]=true;
-    var emp = String(r.empresa||'').trim(); if(emp) empresas[emp]=true;
-    var cat = String(r.categoria||'').trim(); if(cat) categorias[cat]=true;
-  });
-  function fill(id, keys, labelFn, placeholder){
-    var sel = document.getElementById(id);
-    var cur = sel.value;
-    sel.innerHTML = '<option value="">'+placeholder+'</option>'+
-      keys.map(function(k){return '<option value="'+k+'">'+(labelFn?labelFn(k):k)+'</option>';}).join('');
-    if(keys.indexOf(cur)>=0 || keys.map(String).indexOf(cur)>=0) sel.value = cur;
-  }
-  fill('tp-f-mes', Object.keys(meses).map(Number).sort(function(a,b){return a-b;}), function(k){return MESES_PT_FULL_CAP[k]||k;}, 'Todos os meses');
-  fill('tp-f-ano', Object.keys(anos).map(Number).sort(function(a,b){return b-a;}), null, 'Todos os anos');
-  fill('tp-f-empresa', Object.keys(empresas).sort(), null, 'Todas');
-  fill('tp-f-categoria', Object.keys(categorias).sort(), null, 'Todas');
-}
-var MESES_PT_FULL_CAP = {1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
-
-function tpLimparFiltros(){
-  ['tp-f-mes','tp-f-ano','tp-f-empresa','tp-f-categoria'].forEach(function(id){
-    var el=document.getElementById(id); if(el) el.value='';
-  });
-  tpAplicarFiltros();
-}
-
-function tpAplicarFiltros(){
-  var fMes = document.getElementById('tp-f-mes').value;
-  var fAno = document.getElementById('tp-f-ano').value;
-  var fEmp = document.getElementById('tp-f-empresa').value;
-  var fCat = document.getElementById('tp-f-categoria').value;
-  TP_FILT = TP_DATA.filter(function(r){
-    var ma = tpGetMesAno(r.data);
-    if(fMes && String(ma.mes)!==String(fMes)) return false;
-    if(fAno && String(ma.ano)!==String(fAno)) return false;
-    if(fEmp && String(r.empresa||'').trim()!==fEmp) return false;
-    if(fCat && String(r.categoria||'').trim()!==fCat) return false;
-    return true;
-  });
-  tpRenderResumo();
-  tpRenderTabela();
-}
-
-function tpRenderResumo(){
-  var total = TP_FILT.reduce(function(s,r){return s+n(r.valor);},0);
-  document.getElementById('tp-total').textContent = TP_MOSTRAR_VALORES ? fM(total) : '••••••';
-  document.getElementById('tp-qtd').textContent = TP_FILT.length;
-}
-
-function tpOrdenar(campo){
-  if(TP_SORT.campo===campo){ TP_SORT.dir = TP_SORT.dir==='asc'?'desc':'asc'; }
-  else { TP_SORT.campo=campo; TP_SORT.dir = campo==='valor'?'desc':'asc'; }
-  tpRenderTabela();
-}
-
-function tpRenderTabela(){
-  var tbody = document.getElementById('tp-tbody');
-  ['data','fornecedor','categoria','empresa','valor'].forEach(function(c){
-    var el=document.getElementById('tp-sort-'+c);
-    if(el) el.textContent = TP_SORT.campo===c ? (TP_SORT.dir==='asc'?'▲':'▼') : '';
-  });
-
-  if(!TP_FILT.length){
-    tbody.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--t3)">Nenhum título para os filtros selecionados</td></tr>';
-    return;
-  }
-
-  var campo=TP_SORT.campo, dir=TP_SORT.dir;
-  var ord = TP_FILT.slice().sort(function(a,b){
-    var va = campo==='valor' ? n(a[campo]) : String(a[campo]||'').toLowerCase();
-    var vb = campo==='valor' ? n(b[campo]) : String(b[campo]||'').toLowerCase();
-    if(va<vb) return dir==='asc'?-1:1;
-    if(va>vb) return dir==='asc'?1:-1;
-    return 0;
-  });
-
-  tbody.innerHTML = ord.map(function(r,i){
-    var bg = i%2===0 ? 'var(--cd)' : 'var(--bg)';
-    try{
-      return '<tr style="background:'+bg+'">'+
-        '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);white-space:nowrap">'+tpFmtData(r.data)+'</td>'+
-        '<td style="padding:8px 12px;border-bottom:1px solid var(--bd)">'+invEsc(r.fornecedor||'—')+'</td>'+
-        '<td style="padding:8px 12px;border-bottom:1px solid var(--bd)">'+invEsc(r.categoria||'—')+'</td>'+
-        '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);color:var(--t2)">'+invEsc(r.empresa||'—')+'</td>'+
-        '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);color:var(--t3);font-size:12px">'+invEsc(r.obs||'')+'</td>'+
-        '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);text-align:right;font-weight:600;white-space:nowrap">'+tpFmtValor(r.valor)+'</td>'+
-      '</tr>';
-    }catch(errRow){
-      console.error('Erro ao renderizar linha de Despesas Detalhadas:', errRow, r);
-      return '<tr style="background:'+bg+'"><td colspan="6" style="padding:8px 12px;border-bottom:1px solid var(--bd);color:#a32d2d">Erro ao exibir este registro</td></tr>';
-    }
-  }).join('');
-}
-
-
+/* ── INIT ── */
 function iniciarApp(){
   var s=getSession();
   document.getElementById('u-nome').textContent=s?s.usuario:'';
@@ -1211,48 +1258,4 @@ function iniciarApp(){
   iniciarApp();
 })();
 </script>
-<!-- ══ MODAL DESPESAS DETALHADAS ══ -->
-<div id="tp-overlay" class="tp-overlay">
-  <div id="tp-box" class="tp-box">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
-      <div>
-        <h2 style="font-size:18px;font-weight:700;color:var(--t1);margin:0">Despesas Detalhadas</h2>
-        <p style="font-size:12px;color:var(--t3);margin:3px 0 0">Títulos pagos e quitados — filtre por período, empresa e categoria</p>
-      </div>
-      <button onclick="closeTitulosPagos()" style="background:none;border:none;font-size:26px;cursor:pointer;color:var(--t3);padding:0;line-height:1">&times;</button>
-    </div>
-
-    <div class="tp-filtros">
-      <div><label>MÊS</label><select id="tp-f-mes" onchange="tpAplicarFiltros()"></select></div>
-      <div><label>ANO</label><select id="tp-f-ano" onchange="tpAplicarFiltros()"></select></div>
-      <div><label>EMPRESA</label><select id="tp-f-empresa" onchange="tpAplicarFiltros()"></select></div>
-      <div><label>CATEGORIA</label><select id="tp-f-categoria" onchange="tpAplicarFiltros()"></select></div>
-      <label class="tp-chk"><input type="checkbox" id="tp-f-mostrar-valores" checked onchange="TP_MOSTRAR_VALORES=this.checked;tpAplicarFiltros()"> Mostrar valores</label>
-      <div style="margin-left:auto"><button class="btn sec" onclick="tpLimparFiltros()">Limpar</button></div>
-    </div>
-
-    <div style="text-align:right;margin-bottom:10px;font-size:12px;color:var(--t3)">
-      <span id="tp-qtd">0</span> título(s) — Total filtrado: <span id="tp-total" style="font-size:14px;font-weight:700;color:var(--t1)">R$ 0,00</span>
-    </div>
-
-    <div class="tp-table-wrap">
-      <div class="tp-table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th onclick="tpOrdenar('data')">DATA <span id="tp-sort-data"></span></th>
-              <th onclick="tpOrdenar('fornecedor')">FORNECEDOR <span id="tp-sort-fornecedor"></span></th>
-              <th onclick="tpOrdenar('categoria')">CATEGORIA <span id="tp-sort-categoria"></span></th>
-              <th onclick="tpOrdenar('empresa')">EMPRESA <span id="tp-sort-empresa"></span></th>
-              <th>OBS</th>
-              <th onclick="tpOrdenar('valor')" style="text-align:right">VALOR <span id="tp-sort-valor"></span></th>
-            </tr>
-          </thead>
-          <tbody id="tp-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
 </body></html>
