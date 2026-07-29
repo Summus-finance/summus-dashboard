@@ -351,16 +351,23 @@ function somaCampo(d,campo){
 // Faturamento agora é meta + 3 categorias de realizado (operações, prorrogações, redesconto).
 // O "Faturamento" do card principal é a soma das 3 categorias.
 function somaFaturamento(d){
-  var meta=0, op=0, pr=0, rd=0;
+  var meta=0, op=0, pr=0, rd=0, mu=0, ja=0, de=0;
   d.forEach(function(r){
     if(r.faturamento){
       meta+=n(r.faturamento.meta);
       op+=n(r.faturamento.operacoes);
       pr+=n(r.faturamento.prorrogacoes);
       rd+=n(r.faturamento.redesconto);
+      mu+=n(r.faturamento.multas);
+      ja+=n(r.faturamento.juros_atraso);
+      de+=n(r.faturamento.descontos);
     }
   });
-  return {meta:meta, operacoes:op, prorrogacoes:pr, redesconto:rd, total:op+pr+rd};
+  return {
+    meta:meta, operacoes:op, prorrogacoes:pr, redesconto:rd,
+    multas:mu, juros_atraso:ja, descontos:de,
+    total:op+pr+rd+mu+ja+de
+  };
 }
 // Taxa ponderada: agora vem PRONTA da planilha (não calculamos mais fat/vol).
 // Quando o filtro cobre mais de uma linha (várias empresas/meses), ponderamos
@@ -506,20 +513,21 @@ function itemTicketMedio(valor){
 }
 
 // Composição do Faturamento: de onde vem o faturamento, em % e R$ por categoria.
-function itemComposicaoFaturamento(fatOp, fatPr, fatRd){
-  var total = fatOp+fatPr+fatRd;
-  var pOp = total>0?(fatOp/total*100):0;
-  var pPr = total>0?(fatPr/total*100):0;
-  var pRd = total>0?(fatRd/total*100):0;
+function itemComposicaoFaturamento(fatOp, fatPr, fatRd, fatMu, fatJa, fatDe){
+  var total = fatOp+fatPr+fatRd+fatMu+fatJa+fatDe;
+  function pct(v){ return total!==0 ? (v/total*100) : 0; }
+  var pOp=pct(fatOp), pPr=pct(fatPr), pRd=pct(fatRd), pMu=pct(fatMu), pJa=pct(fatJa), pDe=pct(fatDe);
+  // Barra visual: só as 3 categorias principais (multas/juros costumam ser
+  // pequenos e descontos pode ser negativo — melhor não colocar na barra).
   var barSegs = '<div style="display:flex;height:9px;border-radius:99px;overflow:hidden;background:var(--bg);margin-top:6px">'+
     (pOp>0?'<div style="width:'+pOp+'%;background:#2CA1D8"></div>':'')+
     (pPr>0?'<div style="width:'+pPr+'%;background:#1d9e75"></div>':'')+
     (pRd>0?'<div style="width:'+pRd+'%;background:#e0a020"></div>':'')+
   '</div>';
-  function linha(cor,label,pct,valor){
+  function linha(cor,label,pctVal,valor){
     return '<div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;margin-top:6px">'+
       '<span style="display:flex;align-items:center;gap:6px;color:var(--t2)"><span style="width:8px;height:8px;border-radius:50%;background:'+cor+';display:inline-block;flex-shrink:0"></span>'+label+'</span>'+
-      '<span style="color:var(--t1);font-weight:600">'+fPct(pct)+' <span style="color:var(--t3);font-weight:400">('+fM(valor)+')</span></span>'+
+      '<span style="color:var(--t1);font-weight:600">'+fPct(pctVal)+' <span style="color:var(--t3);font-weight:400">('+fM(valor)+')</span></span>'+
     '</div>';
   }
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Composição do Faturamento</span></div>'+
@@ -527,6 +535,9 @@ function itemComposicaoFaturamento(fatOp, fatPr, fatRd){
     linha('#2CA1D8','Operações',pOp,fatOp)+
     linha('#1d9e75','Prorrogações',pPr,fatPr)+
     linha('#e0a020','Redesconto',pRd,fatRd)+
+    (fatMu?linha('#8e44ad','Multas',pMu,fatMu):'')+
+    (fatJa?linha('#c0392b','Juros de Atraso',pJa,fatJa):'')+
+    (fatDe?linha('#7a8a99','Descontos',pDe,fatDe):'')+
   '</div>';
 }
 
@@ -727,7 +738,7 @@ function renderKPIs(d){
     '<div class="kcard"><div class="kcard-h">📊 INDICADORES</div><div class="kcard-b">' +
       itemMargem(margemPct) +
       itemTicketMedio(ticketMedio) +
-      itemComposicaoFaturamento(fat.operacoes, fat.prorrogacoes, fat.redesconto) +
+      itemComposicaoFaturamento(fat.operacoes, fat.prorrogacoes, fat.redesconto, fat.multas, fat.juros_atraso, fat.descontos) +
     '</div></div>' +
 
   '</div>';
@@ -752,6 +763,9 @@ var MXR_CAMPOS_UNICOS = [
   {chave:'faturamento_operacoes', label:'Faturamento Operações (R$)', secao:'Faturamento'},
   {chave:'faturamento_prorrogacoes', label:'Faturamento Prorrogações (R$)', secao:'Faturamento'},
   {chave:'faturamento_redesconto', label:'Faturamento Redesconto (R$)', secao:'Faturamento'},
+  {chave:'faturamento_multas', label:'Faturamento Multas (R$)', secao:'Faturamento'},
+  {chave:'faturamento_juros_atraso', label:'Faturamento Juros de Atraso (R$)', secao:'Faturamento'},
+  {chave:'faturamento_descontos', label:'Faturamento Descontos (R$, use negativo)', secao:'Faturamento'},
   {chave:'receitas_realizado', label:'Receitas — Realizado (R$)', secao:'Faturamento'},
   {chave:'resultado_meta', label:'Resultado do mês — Meta (R$)', secao:'Faturamento'},
   {chave:'taxa_meta', label:'Taxa — Meta (%)', secao:'Taxa'},
@@ -829,6 +843,9 @@ function valorCampoUnico(registro, chave){
   if(chave==='faturamento_operacoes') return registro.faturamento ? registro.faturamento.operacoes : undefined;
   if(chave==='faturamento_prorrogacoes') return registro.faturamento ? registro.faturamento.prorrogacoes : undefined;
   if(chave==='faturamento_redesconto') return registro.faturamento ? registro.faturamento.redesconto : undefined;
+  if(chave==='faturamento_multas') return registro.faturamento ? registro.faturamento.multas : undefined;
+  if(chave==='faturamento_juros_atraso') return registro.faturamento ? registro.faturamento.juros_atraso : undefined;
+  if(chave==='faturamento_descontos') return registro.faturamento ? registro.faturamento.descontos : undefined;
   if(chave==='taxa_meta') return registro.taxa ? registro.taxa.meta : undefined;
   if(chave==='taxa_operacoes') return registro.taxa ? registro.taxa.operacoes : undefined;
   if(chave==='taxa_prorrogacoes') return registro.taxa ? registro.taxa.prorrogacoes : undefined;
