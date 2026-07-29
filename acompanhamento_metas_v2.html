@@ -89,7 +89,8 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 .mo-sec h3{font-size:12px;font-weight:700;color:var(--br);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bd)}
 .mo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .mo-grid.single{grid-template-columns:1fr 1fr 1fr}
-.mo-f label{font-size:11px;font-weight:700;color:var(--t2);display:block;margin-bottom:4px}
+.mo-grid-flex{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px 14px}
+.mo-f label{font-size:11px;font-weight:700;display:block;margin-bottom:4px}
 .mo-f input{width:100%;border:1px solid var(--bd);border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1)}
 .mo-f input:focus{outline:none;border-color:var(--br)}
 .mo-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;padding-top:14px;border-top:1px solid var(--bd)}
@@ -772,39 +773,88 @@ function renderKPIs(d){
 /* ═══════════════════════════════════════════════════════════
    LANÇAR VALORES — modal com todos os campos da aba Meta_X_Realizado
 ═══════════════════════════════════════════════════════════ */
-var MXR_CAMPOS = [
-  {chave:'despesa', label:'Despesa', tipo:'money', secao:'Faturamento'},
-  {chave:'captacao_investidor', label:'Captação de investidores', tipo:'money', secao:'Novos Investidores'},
-  {chave:'cedentes', label:'Cedentes cadastrados', tipo:'num', secao:'Comercial'},
-  {chave:'novos_cedentes', label:'Novos cedentes', tipo:'num', secao:'Comercial'},
-  {chave:'operaram_no_mes', label:'Operaram no mês', tipo:'num', secao:'Comercial'},
-  {chave:'operacoes', label:'Operações', tipo:'num', secao:'Operação'},
-  {chave:'prorrogacoes', label:'Prorrogações', tipo:'num', secao:'Operação'},
-  {chave:'redesconto', label:'Redesconto', tipo:'num', secao:'Operação'},
-  {chave:'entrevistas', label:'Entrevistas', tipo:'num', secao:'RH'}
+// Lista única e ORDENADA de campos do formulário — a ordem aqui é a ordem
+// que aparece na tela. "par" gera dois campos (chave_meta e chave_realizado).
+// "unico" gera um campo só. "formato" controla a máscara: money (1.234,56),
+// num (1.234, sem decimais) ou pct (só troca ponto por vírgula, sem milhar).
+var CAMPOS_FORM = [
+  // FATURAMENTO — tudo relacionado a faturamento primeiro, despesa/receita/resultado por último
+  {tipo:'unico', chave:'faturamento_meta', label:'Faturamento — Meta', secao:'Faturamento', formato:'money'},
+  {tipo:'unico', chave:'faturamento_operacoes', label:'Faturamento — Operações', secao:'Faturamento', formato:'money'},
+  {tipo:'unico', chave:'faturamento_prorrogacoes', label:'Faturamento — Prorrogações', secao:'Faturamento', formato:'money'},
+  {tipo:'unico', chave:'faturamento_redesconto', label:'Faturamento — Redesconto', secao:'Faturamento', formato:'money'},
+  {tipo:'unico', chave:'faturamento_multas', label:'Faturamento — Multas', secao:'Faturamento', formato:'money'},
+  {tipo:'unico', chave:'faturamento_juros_atraso', label:'Faturamento — Juros de Atraso', secao:'Faturamento', formato:'money'},
+  {tipo:'unico', chave:'faturamento_descontos', label:'Faturamento — Descontos (negativo)', secao:'Faturamento', formato:'money'},
+  {tipo:'par', chave:'despesa', label:'Despesa', secao:'Faturamento', formato:'money'},
+  {tipo:'unico', chave:'receitas_realizado', label:'Receitas — Realizado', secao:'Faturamento', formato:'money'},
+  {tipo:'unico', chave:'resultado_meta', label:'Resultado do mês — Meta', secao:'Faturamento', formato:'money'},
+
+  // TAXA
+  {tipo:'unico', chave:'taxa_meta', label:'Taxa — Meta (%)', secao:'Taxa', formato:'pct'},
+  {tipo:'unico', chave:'taxa_operacoes', label:'Taxa Ponderada — Operações (%)', secao:'Taxa', formato:'pct'},
+  {tipo:'unico', chave:'taxa_prorrogacoes', label:'Taxa Ponderada — Prorrogações (%)', secao:'Taxa', formato:'pct'},
+  {tipo:'unico', chave:'taxa_redesconto', label:'Taxa Ponderada — Redesconto (%)', secao:'Taxa', formato:'pct'},
+
+  // NOVOS INVESTIDORES
+  {tipo:'par', chave:'captacao_investidor', label:'Captação de investidores', secao:'Novos Investidores', formato:'money'},
+
+  // COMERCIAL — cedentes cadastrados seguido de operado (relacionados), depois novos/operaram
+  {tipo:'par', chave:'cedentes', label:'Cedentes cadastrados', secao:'Comercial', formato:'num'},
+  {tipo:'unico', chave:'total_cedentes_operado', label:'Total cedentes operado', secao:'Comercial', formato:'num'},
+  {tipo:'par', chave:'novos_cedentes', label:'Novos cedentes', secao:'Comercial', formato:'num'},
+  {tipo:'par', chave:'operaram_no_mes', label:'Operaram no mês', secao:'Comercial', formato:'num'},
+
+  // PDD
+  {tipo:'unico', chave:'pdd_meta', label:'PDD — Meta (%)', secao:'PDD', formato:'pct'},
+  {tipo:'unico', chave:'pdd_valor', label:'PDD — Valor', secao:'PDD', formato:'money'},
+
+  // OPERAÇÃO — cada categoria seguida do seu volume correspondente
+  {tipo:'par', chave:'operacoes', label:'Operações', secao:'Operação', formato:'num'},
+  {tipo:'unico', chave:'volume_operacoes', label:'Volume de Operações', secao:'Operação', formato:'money'},
+  {tipo:'par', chave:'prorrogacoes', label:'Prorrogações', secao:'Operação', formato:'num'},
+  {tipo:'unico', chave:'volume_prorrogacoes', label:'Volume de Prorrogações', secao:'Operação', formato:'money'},
+  {tipo:'par', chave:'redesconto', label:'Redesconto', secao:'Operação', formato:'num'},
+  {tipo:'unico', chave:'volume_redesconto', label:'Volume de Redesconto', secao:'Operação', formato:'money'},
+
+  // RH
+  {tipo:'par', chave:'entrevistas', label:'Entrevistas', secao:'RH', formato:'num'},
+
+  // CAPITAL SOB GESTÃO
+  {tipo:'unico', chave:'capital_sob_gestao', label:'Capital sob gestão — Valor base', secao:'Capital sob Gestão', formato:'money'}
 ];
-var MXR_CAMPOS_UNICOS = [
-  {chave:'faturamento_meta', label:'Faturamento — Meta (R$)', secao:'Faturamento'},
-  {chave:'faturamento_operacoes', label:'Faturamento Operações (R$)', secao:'Faturamento'},
-  {chave:'faturamento_prorrogacoes', label:'Faturamento Prorrogações (R$)', secao:'Faturamento'},
-  {chave:'faturamento_redesconto', label:'Faturamento Redesconto (R$)', secao:'Faturamento'},
-  {chave:'faturamento_multas', label:'Faturamento Multas (R$)', secao:'Faturamento'},
-  {chave:'faturamento_juros_atraso', label:'Faturamento Juros de Atraso (R$)', secao:'Faturamento'},
-  {chave:'faturamento_descontos', label:'Faturamento Descontos (R$, use negativo)', secao:'Faturamento'},
-  {chave:'receitas_realizado', label:'Receitas — Realizado (R$)', secao:'Faturamento'},
-  {chave:'resultado_meta', label:'Resultado do mês — Meta (R$)', secao:'Faturamento'},
-  {chave:'taxa_meta', label:'Taxa — Meta (%)', secao:'Taxa'},
-  {chave:'taxa_operacoes', label:'Taxa Ponderada Operações (%)', secao:'Taxa'},
-  {chave:'taxa_prorrogacoes', label:'Taxa Ponderada Prorrogações (%)', secao:'Taxa'},
-  {chave:'taxa_redesconto', label:'Taxa Ponderada Redesconto (%)', secao:'Taxa'},
-  {chave:'total_cedentes_operado', label:'Total cedentes operado', secao:'Comercial'},
-  {chave:'pdd_meta', label:'PDD — Meta (%)', secao:'PDD'},
-  {chave:'pdd_valor', label:'PDD — Valor (R$)', secao:'PDD'},
-  {chave:'volume_operacoes', label:'Volume de operações (R$)', secao:'Operação'},
-  {chave:'volume_redesconto', label:'Volume de redesconto (R$)', secao:'Operação'},
-  {chave:'volume_prorrogacoes', label:'Volume de prorrogações (R$)', secao:'Operação'},
-  {chave:'capital_sob_gestao', label:'Capital sob gestão — Valor base (R$)', secao:'Capital sob Gestão'}
-];
+
+var COR_META = '#1a6fa8';       // azul = meta / alvo
+var COR_REALIZADO = '#178a67';  // verde = valor real / informado
+
+// ── Formatação numérica (pt-BR: 1.234,56) ───────────────────
+function formatarValorCampo(v, formato){
+  if(v===''||v===null||v===undefined) return '';
+  var num = typeof v==='number' ? v : parseFloat(String(v).toString().trim().replace(/\./g,'').replace(',', '.'));
+  if(isNaN(num)) return '';
+  if(formato==='money') return num.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(formato==='num') return num.toLocaleString('pt-BR',{maximumFractionDigits:0});
+  return String(num).replace('.',','); // pct: sem milhar, só vírgula decimal
+}
+// Converte o texto formatado (1.234,56) de volta para número puro (1234.56)
+// antes de mandar pro servidor.
+function desformatarValorCampo(v, formato){
+  if(v===''||v===null||v===undefined) return '';
+  var s=String(v).trim();
+  if(!s) return '';
+  if(formato==='money'||formato==='num'){
+    s = s.replace(/\./g,'').replace(',', '.');
+  } else {
+    s = s.replace(',', '.');
+  }
+  var num = parseFloat(s);
+  return isNaN(num) ? '' : String(num);
+}
+function formatarInputAoSair(el){
+  var formato = el.getAttribute('data-formato');
+  var bruto = desformatarValorCampo(el.value, formato);
+  el.value = bruto==='' ? '' : formatarValorCampo(bruto, formato);
+}
 
 function mxrPopularEmpresasModal(){
   var sel=document.getElementById('mo-empresa');
@@ -817,29 +867,32 @@ function mxrPopularEmpresasModal(){
   if(keys.indexOf(atual)>=0)sel.value=atual;
 }
 
-function montarFormularioLancar(){
-  var secoes={};
-  MXR_CAMPOS.forEach(function(c){ (secoes[c.secao]=secoes[c.secao]||{pares:[],unicos:[]}).pares.push(c); });
-  MXR_CAMPOS_UNICOS.forEach(function(c){ (secoes[c.secao]=secoes[c.secao]||{pares:[],unicos:[]}).unicos.push(c); });
+function campoInputHtml(chave, labelTxt, formato, cor){
+  var placeholder = formato==='money' ? '0,00' : '0';
+  return '<div class="mo-f"><label style="color:'+cor+'">'+labelTxt+'</label>'+
+    '<input type="text" inputmode="decimal" id="mo-f-'+chave+'" data-formato="'+formato+'" onblur="formatarInputAoSair(this)" placeholder="'+placeholder+'"></div>';
+}
 
-  var ordem=['Faturamento','Taxa','Novos Investidores','Comercial','PDD','Operação','RH','Capital sob Gestão'];
+function montarFormularioLancar(){
+  var secoes={}; var ordemSecoes=[];
+  CAMPOS_FORM.forEach(function(c){
+    if(!secoes[c.secao]){ secoes[c.secao]=[]; ordemSecoes.push(c.secao); }
+    secoes[c.secao].push(c);
+  });
+
   var html='';
-  ordem.forEach(function(nomeSecao){
-    var s=secoes[nomeSecao]; if(!s)return;
-    html+='<div class="mo-sec"><h3>'+nomeSecao+'</h3><div class="mo-grid">';
-    s.pares.forEach(function(c){
-      html+='<div class="mo-f"><label>'+c.label+' — Meta</label><input type="text" inputmode="decimal" id="mo-f-'+c.chave+'_meta" placeholder="0"></div>';
-      html+='<div class="mo-f"><label>'+c.label+' — Realizado</label><input type="text" inputmode="decimal" id="mo-f-'+c.chave+'_realizado" placeholder="0"></div>';
+  ordemSecoes.forEach(function(nomeSecao){
+    html+='<div class="mo-sec"><h3>'+nomeSecao+'</h3><div class="mo-grid-flex">';
+    secoes[nomeSecao].forEach(function(c){
+      if(c.tipo==='par'){
+        html+=campoInputHtml(c.chave+'_meta', c.label+' — Meta', c.formato, COR_META);
+        html+=campoInputHtml(c.chave+'_realizado', c.label+' — Realizado', c.formato, COR_REALIZADO);
+      } else {
+        var cor = /_meta$/.test(c.chave) ? COR_META : COR_REALIZADO;
+        html+=campoInputHtml(c.chave, c.label, c.formato, cor);
+      }
     });
-    html+='</div>';
-    if(s.unicos.length){
-      html+='<div class="mo-grid single" style="margin-top:10px">';
-      s.unicos.forEach(function(c){
-        html+='<div class="mo-f"><label>'+c.label+'</label><input type="text" inputmode="decimal" id="mo-f-'+c.chave+'" placeholder="0"></div>';
-      });
-      html+='</div>';
-    }
-    html+='</div>';
+    html+='</div></div>';
   });
   document.getElementById('mo-form').innerHTML=html;
 }
@@ -860,8 +913,8 @@ function abrirModalLancar(){
 function fecharModalLancar(){document.getElementById('mo-overlay').style.display='none';}
 function moRecarregarAlvo(){ mxrRecarregarValoresNoForm(); }
 
-// Os 4 campos de faturamento (meta + 3 categorias) ficam aninhados em
-// registro.faturamento, diferente dos demais campos únicos que são soltos.
+// Alguns campos ficam aninhados no registro (faturamento.*, taxa.*, pdd.*)
+// em vez de soltos — este helper sabe onde procurar cada um.
 function valorCampoUnico(registro, chave){
   if(!registro) return undefined;
   if(chave==='faturamento_meta') return registro.faturamento ? registro.faturamento.meta : undefined;
@@ -893,16 +946,19 @@ function mxrRecarregarValoresNoForm(){
     }
   });
 
-  MXR_CAMPOS.forEach(function(c){
-    var elM=document.getElementById('mo-f-'+c.chave+'_meta');
-    var elR=document.getElementById('mo-f-'+c.chave+'_realizado');
-    if(elM)elM.value = (registro && registro[c.chave] && registro[c.chave].meta!==undefined && registro[c.chave].meta!=='') ? registro[c.chave].meta : '';
-    if(elR)elR.value = (registro && registro[c.chave] && registro[c.chave].realizado!==undefined && registro[c.chave].realizado!=='') ? registro[c.chave].realizado : '';
-  });
-  MXR_CAMPOS_UNICOS.forEach(function(c){
-    var el=document.getElementById('mo-f-'+c.chave);
-    var v = valorCampoUnico(registro, c.chave);
-    if(el)el.value = (v!==undefined && v!==null && v!=='') ? v : '';
+  CAMPOS_FORM.forEach(function(c){
+    if(c.tipo==='par'){
+      var elM=document.getElementById('mo-f-'+c.chave+'_meta');
+      var elR=document.getElementById('mo-f-'+c.chave+'_realizado');
+      var vM = registro && registro[c.chave] ? registro[c.chave].meta : undefined;
+      var vR = registro && registro[c.chave] ? registro[c.chave].realizado : undefined;
+      if(elM)elM.value = (vM!==undefined && vM!==null && vM!=='') ? formatarValorCampo(vM,c.formato) : '';
+      if(elR)elR.value = (vR!==undefined && vR!==null && vR!=='') ? formatarValorCampo(vR,c.formato) : '';
+    } else {
+      var el=document.getElementById('mo-f-'+c.chave);
+      var v = valorCampoUnico(registro, c.chave);
+      if(el)el.value = (v!==undefined && v!==null && v!=='') ? formatarValorCampo(v,c.formato) : '';
+    }
   });
 }
 
@@ -921,15 +977,16 @@ function salvarLancamento(){
   }
 
   var valores={};
-  MXR_CAMPOS.forEach(function(c){
-    var elM=document.getElementById('mo-f-'+c.chave+'_meta');
-    var elR=document.getElementById('mo-f-'+c.chave+'_realizado');
-    if(elM && elM.value!=='')valores[c.chave+'_meta']=elM.value;
-    if(elR && elR.value!=='')valores[c.chave+'_realizado']=elR.value;
-  });
-  MXR_CAMPOS_UNICOS.forEach(function(c){
-    var el=document.getElementById('mo-f-'+c.chave);
-    if(el && el.value!=='')valores[c.chave]=el.value;
+  CAMPOS_FORM.forEach(function(c){
+    if(c.tipo==='par'){
+      var elM=document.getElementById('mo-f-'+c.chave+'_meta');
+      var elR=document.getElementById('mo-f-'+c.chave+'_realizado');
+      if(elM && elM.value!=='') valores[c.chave+'_meta'] = desformatarValorCampo(elM.value, c.formato);
+      if(elR && elR.value!=='') valores[c.chave+'_realizado'] = desformatarValorCampo(elR.value, c.formato);
+    } else {
+      var el=document.getElementById('mo-f-'+c.chave);
+      if(el && el.value!=='') valores[c.chave] = desformatarValorCampo(el.value, c.formato);
+    }
   });
 
   var btn=document.getElementById('mo-salvar');
