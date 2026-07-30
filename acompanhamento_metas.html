@@ -13,6 +13,8 @@
   }catch(e){}
 })();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--br:#2CA1D8;--bg:#eef3f8;--cd:#fff;--cd2:#f4f7fb;--bd:#cdd8e5;--t1:#16263a;--t2:#4a607a;--t3:#8fa5bb}
@@ -97,6 +99,33 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 .mo-msg{font-size:13px;margin-top:10px;display:none;padding:9px 12px;border-radius:8px}
 .mo-msg.ok{display:block;background:#e3f5e9;color:#1d9e75;border:1px solid #78c890}
 .mo-msg.err{display:block;background:#fce8e8;color:#8b1a1a;border:1px solid #e09090}
+
+/* DESPESAS DETALHADAS */
+.tp-filtros{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;padding:14px 16px;background:var(--bg);border-radius:10px;border:1px solid var(--bd)}
+.tp-filtros .fg{min-width:130px;flex:1}
+.tp-filtros .fg label{font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+.tp-filtros .fg select{width:100%;border:1px solid var(--bd);border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1)}
+.tp-chk{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2);cursor:pointer;white-space:nowrap;padding-bottom:8px}
+.tp-btn-limpar{background:var(--cd);border:1px solid var(--bd);border-radius:7px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2);white-space:nowrap}
+.tp-btn-limpar:hover{border-color:var(--br);color:var(--br)}
+.tp-total-banner{display:flex;justify-content:space-between;align-items:center;background:#fce8e8;border:1px solid #e8a5a5;border-radius:10px;padding:14px 18px;margin-bottom:14px}
+.dk .tp-total-banner{background:#3a1a1a;border-color:#6b2c2c}
+.tp-total-banner span{font-size:12px;font-weight:700;color:#8b1a1a;text-transform:uppercase;letter-spacing:.3px}
+.dk .tp-total-banner span{color:#e08a8a}
+.tp-total-banner b{font-size:22px;color:#a32d2d;font-weight:800}
+.dk .tp-total-banner b{color:#e57373}
+.tp-charts-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:800px){.tp-charts-row{grid-template-columns:1fr}}
+.tp-chart-card{background:var(--cd);border:1px solid var(--bd);border-radius:11px;padding:14px 16px}
+.tp-chart-card h3{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:10px}
+.tp-donut-wrap{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.tp-legenda{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;flex:1;min-width:180px}
+.tp-legenda-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp-legenda-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.tp-legenda-evol{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd)}
+.tp-legenda-evol .tp-legenda-item{cursor:pointer;user-select:none}
+.tp-legenda-evol .tp-legenda-item.off{opacity:.35;text-decoration:line-through}
+.tp-tabela-wrap{background:var(--cd);border:1px solid var(--bd);border-radius:11px;overflow:hidden;margin-top:12px}
 @media(max-width:600px){.mo-grid,.mo-grid.single{grid-template-columns:1fr}}
 
 /* RESPONSIVO — telas pequenas (celular/tablet) */
@@ -180,39 +209,58 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 
 <!-- ══ MODAL DESPESAS DETALHADAS ══ -->
 <div id="tp-overlay" class="mo-overlay">
-  <div class="mo-box" style="max-width:1000px">
+  <div class="mo-box" style="max-width:1280px">
     <div class="mo-head">
       <div>
         <h2>Despesas Detalhadas</h2>
-        <p>Títulos pagos/quitados — detalhamento do limite de despesa do mês</p>
+        <p>Títulos pagos e quitados — dados da planilha</p>
       </div>
       <button class="mo-close" onclick="closeTitulosPagos()">&times;</button>
     </div>
 
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;padding:12px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--bd)">
-      <div class="fg" style="min-width:120px"><label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase">Mês</label>
-        <select id="tp-f-mes" onchange="tpAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);width:100%"></select>
-      </div>
-      <div class="fg" style="min-width:110px"><label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase">Ano</label>
-        <select id="tp-f-ano" onchange="tpAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);width:100%"></select>
-      </div>
-      <div class="fg" style="min-width:150px"><label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase">Empresa</label>
-        <select id="tp-f-empresa" onchange="tpAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);width:100%"></select>
-      </div>
-      <div class="fg" style="min-width:150px"><label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase">Categoria</label>
-        <select id="tp-f-categoria" onchange="tpAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);width:100%"></select>
-      </div>
-      <div class="fg" style="min-width:170px"><label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase">Fornecedor</label>
-        <select id="tp-f-fornecedor" onchange="tpAplicarFiltros()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);width:100%"></select>
-      </div>
-      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2);cursor:pointer;white-space:nowrap">
-        <input type="checkbox" id="tp-f-mostrar-valores" onchange="tpToggleMostrarValores()"> Mostrar valores
-      </label>
-      <button onclick="tpLimparFiltros()" style="background:var(--cd);border:1px solid var(--bd);border-radius:7px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2);margin-left:auto">Limpar</button>
+    <div class="tp-filtros">
+      <div class="fg"><label>Mês</label><select id="tp-f-mes" onchange="tpAplicarFiltros()"></select></div>
+      <div class="fg"><label>Ano</label><select id="tp-f-ano" onchange="tpAplicarFiltros()"></select></div>
+      <div class="fg"><label>Empresa</label><select id="tp-f-empresa" onchange="tpAplicarFiltros()"></select></div>
+      <div class="fg"><label>Categoria</label><select id="tp-f-categoria" onchange="tpAplicarFiltros()"></select></div>
+      <div class="fg"><label>Fornecedor</label><select id="tp-f-fornecedor" onchange="tpAplicarFiltros()"></select></div>
+      <label class="tp-chk"><input type="checkbox" id="tp-f-mostrar-valores" onchange="tpAplicarFiltros()"> Mostrar valores no gráfico</label>
+      <button class="tp-btn-limpar" onclick="tpLimparFiltros()">Limpar filtros</button>
     </div>
 
-    <div style="background:var(--cd);border:1px solid var(--bd);border-radius:11px;overflow:hidden">
-      <div style="max-height:420px;overflow-y:auto;overflow-x:auto">
+    <div class="tp-total-banner">
+      <span>Total filtrado</span>
+      <b id="tp-total">R$ 0,00</b>
+    </div>
+
+    <div class="tp-charts-row">
+      <div class="tp-chart-card">
+        <h3>Por Categoria</h3>
+        <div class="tp-donut-wrap">
+          <div style="position:relative;width:200px;height:200px;flex-shrink:0"><canvas id="tp-c-categoria"></canvas></div>
+          <div id="tp-legenda-categoria" class="tp-legenda"></div>
+        </div>
+      </div>
+      <div class="tp-chart-card">
+        <h3>Por Fornecedor (maiores valores)</h3>
+        <div style="height:260px"><canvas id="tp-c-fornecedor"></canvas></div>
+      </div>
+    </div>
+
+    <div class="tp-chart-card" style="margin-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <h3 id="tp-evol-titulo">Evolução Mensal por Categoria (todas)</h3>
+          <p style="font-size:11px;color:var(--t3);margin-top:2px">Selecione uma categoria no filtro acima para focar em um item específico — sem seleção, mostra todas agrupadas por mês.</p>
+        </div>
+        <button class="tp-btn-limpar" id="tp-btn-desmarcar" onclick="tpDesmarcarTodasCategorias()">☐ Desmarcar todas</button>
+      </div>
+      <div style="height:220px;margin-top:8px"><canvas id="tp-c-evolucao"></canvas></div>
+      <div id="tp-legenda-evolucao" class="tp-legenda-evol"></div>
+    </div>
+
+    <div class="tp-tabela-wrap">
+      <div style="max-height:360px;overflow-y:auto;overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px">
           <thead style="position:sticky;top:0;background:#2CA1D8;color:#fff;z-index:1">
             <tr>
@@ -226,11 +274,6 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
           <tbody id="tp-tbody"></tbody>
         </table>
       </div>
-    </div>
-
-    <div style="text-align:right;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd)">
-      <span style="font-size:12px;color:var(--t3)">Total filtrado: </span>
-      <span id="tp-total" style="font-size:14px;font-weight:700;color:var(--t1)">R$ 0,00</span>
     </div>
   </div>
 </div>
@@ -434,22 +477,23 @@ function somaCampo(d,campo){
 // Faturamento agora é meta + 3 categorias de realizado (operações, prorrogações, redesconto).
 // O "Faturamento" do card principal é a soma das 3 categorias.
 function somaFaturamento(d){
-  var meta=0, op=0, pr=0, rd=0, mu=0, ja=0, de=0;
+  var meta=0, op=0, pr=0, rd=0, rf=0, mu=0, ja=0, de=0;
   d.forEach(function(r){
     if(r.faturamento){
       meta+=n(r.faturamento.meta);
       op+=n(r.faturamento.operacoes);
       pr+=n(r.faturamento.prorrogacoes);
       rd+=n(r.faturamento.redesconto);
+      rf+=n(r.faturamento.refinanciamento);
       mu+=n(r.faturamento.multas);
       ja+=n(r.faturamento.juros_atraso);
       de+=n(r.faturamento.descontos);
     }
   });
   return {
-    meta:meta, operacoes:op, prorrogacoes:pr, redesconto:rd,
+    meta:meta, operacoes:op, prorrogacoes:pr, redesconto:rd, refinanciamento:rf,
     multas:mu, juros_atraso:ja, descontos:de,
-    total:op+pr+rd+mu+ja+de
+    total:op+pr+rd+rf+mu+ja+de
   };
 }
 // Taxa ponderada: agora vem PRONTA da planilha (não calculamos mais fat/vol).
@@ -504,7 +548,7 @@ function checkboxSomar(id, label, checked, onchangeFn){
 // Linha combinada: "Falta/Disponível" à esquerda + "Fat: R$X" à direita, na MESMA linha.
 function linhaFaltaComFat(faltaTxt, fatVal){
   if(!faltaTxt && fatVal===undefined) return '';
-  return '<div class="mi-v" style="margin-top:2px"><span>'+(faltaTxt||'')+'</span><span>'+(fatVal!==undefined&&fatVal!==null?('Fat: '+fM(fatVal)):'')+'</span></div>';
+  return '<div class="mi-v" style="margin-top:2px;height:17px;line-height:17px"><span>'+(faltaTxt||'')+'</span><span>'+(fatVal!==undefined&&fatVal!==null?('Fat: '+fM(fatVal)):'')+'</span></div>';
 }
 // Linha própria da Tx Simples (fat/volume), alinhada à direita.
 // Tx Simples: calculada por nós (fat/vol) — diferente da Tx Ponderada, que vem
@@ -513,12 +557,12 @@ function linhaTaxaSimples(fatVal, vol, label){
   if(fatVal===undefined||fatVal===null) return '';
   label = label || 'Tx Simples';
   var tx = vol>0 ? (fatVal/vol*100) : 0;
-  return '<div class="mi-v" style="margin-top:2px"><span></span><span>'+label+': '+fPct(tx)+'</span></div>';
+  return '<div class="mi-v" style="margin-top:2px;height:17px;line-height:17px"><span></span><span>'+label+': '+fPct(tx)+'</span></div>';
 }
 function linhaTaxaPonderada(taxaVal){
   if(taxaVal===undefined||taxaVal===null||taxaVal==='') return '';
   var txStr = fPct(taxaVal);
-  return '<div class="mi-v" style="margin-top:2px"><span></span><span>Tx Ponderada: '+txStr+'</span></div>';
+  return '<div class="mi-v" style="margin-top:2px;height:17px;line-height:17px"><span></span><span>Tx Ponderada: '+txStr+'</span></div>';
 }
 
 function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo, compacto){
@@ -528,41 +572,42 @@ function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo, compacto){
   var cls=badgeCls(pctReal);
   var falta=meta-real;
   var faltaTxt = meta>0 ? (falta>0?('Falta: '+fmt(falta)):'✓ Meta atingida!') : '';
-  var espacador = '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>';
+  var espacador = '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>';
   if(faltaAbaixo){
     return '<div class="mi"><div class="mi-h"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+'</div>'+
       (meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
       (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
       '<div class="mi-v" style="justify-content:flex-start"><span><span class="real">'+fmt(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fmt(meta):'')+'</span></div>'+
-      (meta>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+
-      (compacto?'':(espacador+espacador))+'</div>';
+      (meta>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px;height:17px;line-height:17px">'+faltaTxt+'</div>':'')+
+      (compacto?'':(espacador+espacador+espacador))+'</div>';
   }
   return '<div class="mi"><div class="mi-h"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+'</div>'+
     (meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span><span class="real">'+fmt(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fmt(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div>'+
-    (compacto?'':(espacador+espacador+espacador))+'</div>';
+    (compacto?'':(espacador+espacador+espacador+espacador))+'</div>';
 }
 
 // Item "Faturamento" do card principal: igual ao itemMeta, mas nas 3 linhas que
 // antes eram espaçadores invisíveis, mostra Multas/Juros de Atraso/Descontos —
 // cada um com um badge coloridinho e o valor embaixo. Não aumenta a altura do
 // card porque essas 3 linhas já estavam reservadas.
-function itemFaturamentoPrincipal(real, meta, fatMu, fatJa, fatDe){
+function itemFaturamentoPrincipal(real, meta, fatRf, fatMu, fatJa, fatDe){
   var pctReal = meta>0?Math.round(real/meta*100):0;
   var pct=Math.min(Math.max(pctReal,0),100);
   var cls=badgeCls(pctReal);
   var falta=meta-real;
   var faltaTxt = meta>0 ? (falta>0?('Falta: '+fM(falta)):'✓ Meta atingida!') : '';
   function badgeLinha(label, valor, bg, borda, cor){
-    return '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px">'+
-      '<span style="font-size:10px;font-weight:700;padding:1px 9px;border-radius:20px;background:'+bg+';border:1px solid '+borda+';color:'+cor+';white-space:nowrap">'+label+'</span>'+
+    return '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;height:17px;line-height:17px">'+
+      '<span style="font-size:10px;font-weight:700;padding:0 9px;border-radius:20px;background:'+bg+';border:1px solid '+borda+';color:'+cor+';white-space:nowrap;line-height:15px">'+label+'</span>'+
       '<span style="font-size:12px;color:var(--t1);font-weight:600">'+fM(valor)+'</span>'+
     '</div>';
   }
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Faturamento</span>'+(meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span><span class="real">'+fM(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fM(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div>'+
+    badgeLinha('REFINANCIAMENTO', fatRf, '#e3f4fb', '#9ecfe6', '#1a6f8f')+
     badgeLinha('MULTAS', fatMu, '#f3eafe', '#c9a8ea', '#8e44ad')+
     badgeLinha('JUROS ATRASO', fatJa, '#fce8e8', '#e09090', '#a32d2d')+
     badgeLinha('DESCONTOS', fatDe, '#eef2f5', '#c3ccd3', '#57697a')+
@@ -580,8 +625,10 @@ function itemDespesa(lbl, real, limite, eyeBtn){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+(eyeBtn||'')+'</span><span class="mi-badge '+cls+'">'+badgeTxt+'</span></div>'+
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
     '<div class="mi-v"><span><span class="real">'+fM(real)+'</span><span class="sep">limite</span>'+fM(limite)+'</span><span>'+restTxt+'</span></div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
 }
 
 // PDD: o valor em R$ vira % do Capital sob Gestão, e essa % é comparada com a
@@ -621,11 +668,11 @@ function itemTicketMedio(valor){
 }
 
 // Composição do Faturamento: de onde vem o faturamento, em % e R$ por categoria.
-function itemComposicaoFaturamento(fatOp, fatPr, fatRd, fatMu, fatJa, fatDe){
-  var total = fatOp+fatPr+fatRd+fatMu+fatJa+fatDe;
+function itemComposicaoFaturamento(fatOp, fatPr, fatRd, fatRf, fatMu, fatJa, fatDe){
+  var total = fatOp+fatPr+fatRd+fatRf+fatMu+fatJa+fatDe;
   function pct(v){ return total!==0 ? (v/total*100) : 0; }
-  var pOp=pct(fatOp), pPr=pct(fatPr), pRd=pct(fatRd), pMu=pct(fatMu), pJa=pct(fatJa), pDe=pct(fatDe);
-  // Barra visual: só as 3 categorias principais (multas/juros costumam ser
+  var pOp=pct(fatOp), pPr=pct(fatPr), pRd=pct(fatRd), pRf=pct(fatRf), pMu=pct(fatMu), pJa=pct(fatJa), pDe=pct(fatDe);
+  // Barra visual: só as 3 categorias principais (multas/juros/refinanciamento costumam ser
   // pequenos e descontos pode ser negativo — melhor não colocar na barra).
   var barSegs = '<div style="display:flex;height:9px;border-radius:99px;overflow:hidden;background:var(--bg);margin-top:6px">'+
     (pOp>0?'<div style="width:'+pOp+'%;background:#2CA1D8"></div>':'')+
@@ -643,6 +690,7 @@ function itemComposicaoFaturamento(fatOp, fatPr, fatRd, fatMu, fatJa, fatDe){
     linha('#2CA1D8','Operações',pOp,fatOp)+
     linha('#1d9e75','Prorrogações',pPr,fatPr)+
     linha('#e0a020','Redesconto',pRd,fatRd)+
+    (fatRf?linha('#1a6f8f','Refinanciamento',pRf,fatRf):'')+
     (fatMu?linha('#8e44ad','Multas',pMu,fatMu):'')+
     (fatJa?linha('#c0392b','Juros de Atraso',pJa,fatJa):'')+
     (fatDe?linha('#7a8a99','Descontos',pDe,fatDe):'')+
@@ -666,9 +714,10 @@ function itemResultado(real, meta){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Resultado do mês</span><span class="mi-badge '+cls+'">'+badgeTxt+'</span></div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span><span class="real" style="color:'+(real<0?'#c0392b':'#1d9e75')+'">'+fM(real)+'</span>'+(meta>0?'<span class="sep">meta</span>'+fM(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
 }
 
 function itemOperado(lbl, operado, cadastrado){
@@ -680,9 +729,10 @@ function itemOperado(lbl, operado, cadastrado){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span></div>'+
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
     '<div class="mi-v"><span><span class="real">'+fN(operado)+'</span><span class="sep">de</span>'+fN(cadastrado)+' cadastrados</span></div>'+
-    (cadastrado>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+faltaTxt+'</div>':'')+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden">.</div></div>';
+    (cadastrado>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px;height:17px;line-height:17px">'+faltaTxt+'</div>':'')+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
 }
 
 function itemOpLinha(lbl, real, meta, vol, fatVal, taxaVal){
@@ -696,7 +746,8 @@ function itemOpLinha(lbl, real, meta, vol, fatVal, taxaVal){
     '<div class="mi-v"><span class="real">'+fN(real)+(meta>0?' de '+fN(meta):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatVal)+
     linhaTaxaSimples(fatVal, vol)+
-    linhaTaxaPonderada(taxaVal)+'</div>';
+    linhaTaxaPonderada(taxaVal)+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
 }
 
 // Igual à Despesa do mês: "limite" é um teto, não uma meta a bater — ficar ABAIXO
@@ -715,7 +766,8 @@ function itemOpLimite(lbl, real, limite, vol, fatVal, taxaVal){
     '<div class="mi-v"><span class="real">'+fN(real)+(limite>0?' limite '+fN(limite):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatVal)+
     linhaTaxaSimples(fatVal, vol)+
-    linhaTaxaPonderada(taxaVal)+'</div>';
+    linhaTaxaPonderada(taxaVal)+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
 }
 
 // Total = Operações realizadas + Prorrogações realizadas + Redescontos realizados (numerador)
@@ -734,7 +786,8 @@ function itemOpTotal(rOp,rPr,rRd,mOp,vOp,vPr,vRd,fatTotal,taxaTotal){
     '<div class="mi-v"><span class="real">'+fN(tR)+(tM>0?' de '+fN(tM):'')+'</span><span>Vol. Total '+fM(tV)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatTotal)+
     linhaTaxaSimples(fatTotal, tV, 'Tx Simples Pon')+
-    linhaTaxaPonderada(taxaTotal)+'</div>';
+    linhaTaxaPonderada(taxaTotal)+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
 }
 
 /* ── RENDER KPIs ── */
@@ -802,7 +855,7 @@ function renderKPIs(d){
   document.getElementById('kdiv').innerHTML = '<div class="kgrid">' +
 
     '<div class="kcard"><div class="kcard-h">📄 FATURAMENTO</div><div class="kcard-b">' +
-      itemFaturamentoPrincipal(fat.total, fat.meta, fat.multas, fat.juros_atraso, fat.descontos) +
+      itemFaturamentoPrincipal(fat.total, fat.meta, fat.refinanciamento, fat.multas, fat.juros_atraso, fat.descontos) +
       itemMeta('Receitas do mês', recReal, recMeta, fM) +
       itemDespesa('Despesa do mês', desp.real, desp.meta, tpEyeBtnHtml()) +
       itemResultado(resultadoReal, resultadoMetaSoma) +
@@ -846,7 +899,7 @@ function renderKPIs(d){
     '<div class="kcard"><div class="kcard-h">📊 INDICADORES</div><div class="kcard-b">' +
       itemMargem(margemPct) +
       itemTicketMedio(ticketMedio) +
-      itemComposicaoFaturamento(fat.operacoes, fat.prorrogacoes, fat.redesconto, fat.multas, fat.juros_atraso, fat.descontos) +
+      itemComposicaoFaturamento(fat.operacoes, fat.prorrogacoes, fat.redesconto, fat.refinanciamento, fat.multas, fat.juros_atraso, fat.descontos) +
     '</div></div>' +
 
   '</div>';
@@ -860,9 +913,11 @@ var TP_DATA=[];        // dados crus vindos do Apps Script
 var TP_FILTRADO=[];    // após aplicar filtros
 var TP_SORT={campo:'data', dir:'desc'};
 var TP_LOADED=false;
-var TP_MOSTRAR_VALORES=true;
-try{ var _v=localStorage.getItem('summus_tp_mostrar_valores'); if(_v!==null) TP_MOSTRAR_VALORES = _v==='1'; }catch(e){}
+var TP_CHARTS={};
+var TP_CATEGORIAS_OFF={}; // categorias "desmarcadas" no gráfico de evolução
 var TP_MESES_ABR = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
+var TP_PALETA = ['#2CA1D8','#1d9e75','#e0a020','#c0392b','#8e44ad','#16a085','#e67e22','#2c3e50','#27ae60','#d35400','#2980b9','#c0392b','#7f8c8d','#f39c12','#9b59b6','#1abc9c','#34495e','#e74c3c','#3498db','#95a5a6'];
+function tpCor(i){ return TP_PALETA[i % TP_PALETA.length]; }
 
 // Só mostra o olho para quem tem a permissão (coluna G da aba Usuarios).
 function tpEyeBtnHtml(){
@@ -888,7 +943,6 @@ function openTitulosPagos(){
   var s=getSession();
   if(!s || !s.acessaDespesas){ alert('Você não tem permissão para acessar as Despesas Detalhadas.'); return; }
   document.getElementById('tp-overlay').style.display='block';
-  document.getElementById('tp-f-mostrar-valores').checked = TP_MOSTRAR_VALORES;
   if(!TP_LOADED){ tpCarregarDados(); } else { tpAplicarFiltros(); }
 }
 function closeTitulosPagos(){ document.getElementById('tp-overlay').style.display='none'; }
@@ -906,6 +960,7 @@ function tpCarregarDados(){
     }
     TP_DATA = res.data||[];
     TP_LOADED = true;
+    TP_CATEGORIAS_OFF = {};
     tpPopularFiltros();
     tpAplicarFiltros();
   });
@@ -928,17 +983,11 @@ function tpPopularFiltros(){
       keys.map(function(k){return '<option value="'+k+'">'+(labelFn?labelFn(k):k)+'</option>';}).join('');
     if(keys.indexOf(atual)>=0)sel.value=atual;
   }
-  fill('tp-f-mes', Object.keys(meses).map(Number).sort(function(a,b){return a-b;}), function(k){return TP_MESES_ABR[k]||k;}, 'Todos os meses');
-  fill('tp-f-ano', Object.keys(anos).map(Number).sort(function(a,b){return b-a;}), null, 'Todos os anos');
-  fill('tp-f-empresa', Object.keys(empresas).sort(), null, 'Todas as empresas');
-  fill('tp-f-categoria', Object.keys(categorias).sort(), null, 'Todas as categorias');
-  fill('tp-f-fornecedor', Object.keys(fornecedores).sort(), null, 'Todos os fornecedores');
-}
-
-function tpToggleMostrarValores(){
-  TP_MOSTRAR_VALORES = document.getElementById('tp-f-mostrar-valores').checked;
-  try{ localStorage.setItem('summus_tp_mostrar_valores', TP_MOSTRAR_VALORES?'1':'0'); }catch(e){}
-  tpRenderTabela();
+  fill('tp-f-mes', Object.keys(meses).map(Number).sort(function(a,b){return a-b;}), function(k){return TP_MESES_ABR[k]||k;}, 'Todos');
+  fill('tp-f-ano', Object.keys(anos).map(Number).sort(function(a,b){return b-a;}), null, 'Todos');
+  fill('tp-f-empresa', Object.keys(empresas).sort(), null, 'Todas');
+  fill('tp-f-categoria', Object.keys(categorias).sort(), null, 'Todas');
+  fill('tp-f-fornecedor', Object.keys(fornecedores).sort(), null, 'Todos');
 }
 
 function tpLimparFiltros(){
@@ -962,6 +1011,7 @@ function tpAplicarFiltros(){
     return true;
   });
   tpRenderTabela();
+  tpRenderGraficos();
 }
 
 function tpOrdenar(campo){
@@ -972,7 +1022,7 @@ function tpOrdenar(campo){
 
 function tpRenderTabela(){
   var total = TP_FILTRADO.reduce(function(s,r){return s+n(r.valor);},0);
-  document.getElementById('tp-total').textContent = TP_MOSTRAR_VALORES ? fM(total) : '••••••';
+  document.getElementById('tp-total').textContent = fM(total);
 
   ['data','fornecedor','valor','categoria'].forEach(function(c){
     var el=document.getElementById('tp-sort-'+c);
@@ -995,11 +1045,10 @@ function tpRenderTabela(){
 
   document.getElementById('tp-tbody').innerHTML = ord.map(function(r,i){
     var bg = i%2===0 ? 'var(--cd)' : 'var(--bg)';
-    var valorTxt = TP_MOSTRAR_VALORES ? fM(r.valor) : '••••••';
     return '<tr style="background:'+bg+'">'+
       '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);white-space:nowrap">'+tpFmtData(r.data)+'</td>'+
       '<td style="padding:8px 12px;border-bottom:1px solid var(--bd)">'+invEscTp(r.fornecedor||'—')+'</td>'+
-      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);text-align:right;font-weight:600;white-space:nowrap">'+valorTxt+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);text-align:right;font-weight:600;white-space:nowrap">'+fM(r.valor)+'</td>'+
       '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);color:var(--t2)">'+invEscTp(r.categoria||'—')+'</td>'+
       '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);color:var(--t3)">'+invEscTp(r.obs||'')+'</td>'+
     '</tr>';
@@ -1009,6 +1058,166 @@ function tpRenderTabela(){
 // Escapa HTML pra evitar que nome de fornecedor/categoria com caracteres
 // especiais quebre a tabela (mesma proteção já usada em outras telas).
 function invEscTp(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ── GRÁFICOS ── */
+function tpRenderGraficos(){
+  if(typeof Chart==='undefined') return; // biblioteca ainda carregando ou bloqueada
+  var mostrarValores = document.getElementById('tp-f-mostrar-valores').checked;
+  var tc = dark ? '#7a98b8' : '#4a607a';
+  var gc = dark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.06)';
+
+  tpRenderDonutCategoria(mostrarValores, tc);
+  tpRenderBarraFornecedor(mostrarValores, tc, gc);
+  tpRenderEvolucao(mostrarValores, tc, gc);
+}
+
+function tpRenderDonutCategoria(mostrarValores, tc){
+  var porCat={};
+  TP_FILTRADO.forEach(function(r){
+    var c=String(r.categoria||'Sem categoria').trim()||'Sem categoria';
+    porCat[c]=(porCat[c]||0)+n(r.valor);
+  });
+  var cats=Object.keys(porCat).sort(function(a,b){return porCat[b]-porCat[a];});
+  var vals=cats.map(function(c){return porCat[c];});
+  var cores=cats.map(function(c,i){return tpCor(i);});
+
+  if(TP_CHARTS.categoria) TP_CHARTS.categoria.destroy();
+  var ctx=document.getElementById('tp-c-categoria');
+  if(cats.length){
+    TP_CHARTS.categoria=new Chart(ctx,{
+      type:'doughnut',
+      data:{labels:cats,datasets:[{data:vals,backgroundColor:cores,borderWidth:1,borderColor:dark?'#162235':'#fff'}]},
+      options:{
+        responsive:true,maintainAspectRatio:false,cutout:'62%',
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:function(c){return ' '+c.label+': '+fM(c.raw);}}},
+          datalabels: mostrarValores ? {
+            color:'#fff',font:{size:9,weight:'bold'},
+            formatter:function(v,ctxD){ var t=vals.reduce(function(s,x){return s+x;},0); return t>0?((v/t*100).toFixed(0)+'%'):''; }
+          } : {display:false}
+        }
+      },
+      plugins: (typeof ChartDataLabels!=='undefined') ? [ChartDataLabels] : []
+    });
+  }
+  var leg=document.getElementById('tp-legenda-categoria');
+  leg.innerHTML = cats.map(function(c,i){
+    return '<div class="tp-legenda-item"><span class="tp-legenda-dot" style="background:'+tpCor(i)+'"></span>'+invEscTp(c)+'</div>';
+  }).join('');
+}
+
+function tpRenderBarraFornecedor(mostrarValores, tc, gc){
+  var porForn={};
+  TP_FILTRADO.forEach(function(r){
+    var f=String(r.fornecedor||'Não informado').trim()||'Não informado';
+    porForn[f]=(porForn[f]||0)+n(r.valor);
+  });
+  var forns=Object.keys(porForn).sort(function(a,b){return porForn[b]-porForn[a];}).slice(0,12);
+  var vals=forns.map(function(f){return porForn[f];});
+
+  if(TP_CHARTS.fornecedor) TP_CHARTS.fornecedor.destroy();
+  var ctx=document.getElementById('tp-c-fornecedor');
+  TP_CHARTS.fornecedor=new Chart(ctx,{
+    type:'bar',
+    data:{labels:forns,datasets:[{data:vals,backgroundColor:'rgba(44,161,216,.75)',borderRadius:3}]},
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(c){return ' '+fM(c.raw);}}},
+        datalabels: mostrarValores ? {
+          color:tc,anchor:'end',align:'right',font:{size:9},
+          formatter:function(v){return fM(v);}
+        } : {display:false}
+      },
+      scales:{
+        x:{ticks:{color:tc,font:{size:9},callback:function(v){return fM(v);}},grid:{color:gc}},
+        y:{ticks:{color:tc,font:{size:10}},grid:{display:false}}
+      }
+    },
+    plugins: (typeof ChartDataLabels!=='undefined') ? [ChartDataLabels] : []
+  });
+}
+
+function tpRenderEvolucao(mostrarValores, tc, gc){
+  // Agrupa por mes/ano (chave ordenável) e por categoria
+  var porMesCat={}; // {mesAnoKey: {categoria: soma}}
+  var mesesSet={};
+  TP_FILTRADO.forEach(function(r){
+    var ma=tpMesAno(r.data);
+    if(!ma.ano) return;
+    var key=ma.ano+'-'+String(ma.mes).padStart(2,'0');
+    mesesSet[key]=ma;
+    var c=String(r.categoria||'Sem categoria').trim()||'Sem categoria';
+    if(!porMesCat[key]) porMesCat[key]={};
+    porMesCat[key][c]=(porMesCat[key][c]||0)+n(r.valor);
+  });
+  var mesesOrdenados=Object.keys(mesesSet).sort();
+  var mesesLabels=mesesOrdenados.map(function(k){var ma=mesesSet[k];return (TP_MESES_ABR[ma.mes]||ma.mes)+'/'+String(ma.ano).slice(-2);});
+
+  var todasCategorias={};
+  TP_FILTRADO.forEach(function(r){ var c=String(r.categoria||'Sem categoria').trim()||'Sem categoria'; todasCategorias[c]=true; });
+  var categorias=Object.keys(todasCategorias).sort();
+
+  var titulo=document.getElementById('tp-evol-titulo');
+  var fCat=document.getElementById('tp-f-categoria').value;
+  titulo.textContent = 'Evolução Mensal por Categoria ('+(fCat?invEscTp(fCat):'todas')+')';
+
+  var datasets = categorias.map(function(c,i){
+    return {
+      label:c,
+      data:mesesOrdenados.map(function(k){return (porMesCat[k]&&porMesCat[k][c])||0;}),
+      backgroundColor:tpCor(i),
+      hidden: !!TP_CATEGORIAS_OFF[c]
+    };
+  });
+
+  if(TP_CHARTS.evolucao) TP_CHARTS.evolucao.destroy();
+  var ctx=document.getElementById('tp-c-evolucao');
+  if(mesesOrdenados.length && categorias.length){
+    TP_CHARTS.evolucao=new Chart(ctx,{
+      type:'bar',
+      data:{labels:mesesLabels,datasets:datasets},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:function(c){return ' '+c.dataset.label+': '+fM(c.raw);}}},
+          datalabels: mostrarValores ? {
+            color:tc,anchor:'end',align:'top',font:{size:8},
+            formatter:function(v){ return v>0?fM(v):''; }
+          } : {display:false}
+        },
+        scales:{
+          x:{ticks:{color:tc,font:{size:10}},grid:{display:false}},
+          y:{ticks:{color:tc,font:{size:9},callback:function(v){return fM(v);}},grid:{color:gc}}
+        }
+      },
+      plugins: (typeof ChartDataLabels!=='undefined') ? [ChartDataLabels] : []
+    });
+  }
+
+  var leg=document.getElementById('tp-legenda-evolucao');
+  leg.innerHTML = categorias.map(function(c,i){
+    var off = !!TP_CATEGORIAS_OFF[c];
+    return '<div class="tp-legenda-item'+(off?' off':'')+'" onclick="tpToggleCategoriaEvolucao(\''+c.replace(/'/g,"\\'")+'\')"><span class="tp-legenda-dot" style="background:'+tpCor(i)+'"></span>'+invEscTp(c)+'</div>';
+  }).join('');
+}
+
+function tpToggleCategoriaEvolucao(categoria){
+  TP_CATEGORIAS_OFF[categoria] = !TP_CATEGORIAS_OFF[categoria];
+  tpRenderGraficos();
+}
+
+function tpDesmarcarTodasCategorias(){
+  var todasCategorias={};
+  TP_FILTRADO.forEach(function(r){ var c=String(r.categoria||'Sem categoria').trim()||'Sem categoria'; todasCategorias[c]=true; });
+  var algumaLigada = Object.keys(todasCategorias).some(function(c){ return !TP_CATEGORIAS_OFF[c]; });
+  Object.keys(todasCategorias).forEach(function(c){ TP_CATEGORIAS_OFF[c] = algumaLigada; });
+  document.getElementById('tp-btn-desmarcar').textContent = algumaLigada ? '☑ Marcar todas' : '☐ Desmarcar todas';
+  tpRenderGraficos();
+}
 
 /* ═══════════════════════════════════════════════════════════
    LANÇAR VALORES — modal com todos os campos da aba Meta_X_Realizado
@@ -1023,6 +1232,7 @@ var CAMPOS_FORM = [
   {tipo:'unico', chave:'faturamento_operacoes', label:'Faturamento — Operações', secao:'Faturamento', formato:'money'},
   {tipo:'unico', chave:'faturamento_prorrogacoes', label:'Faturamento — Prorrogações', secao:'Faturamento', formato:'money'},
   {tipo:'unico', chave:'faturamento_redesconto', label:'Faturamento — Redesconto', secao:'Faturamento', formato:'money'},
+  {tipo:'unico', chave:'faturamento_refinanciamento', label:'Faturamento — Refinanciamento', secao:'Faturamento', formato:'money'},
   {tipo:'unico', chave:'faturamento_multas', label:'Faturamento — Multas', secao:'Faturamento', formato:'money'},
   {tipo:'unico', chave:'faturamento_juros_atraso', label:'Faturamento — Juros de Atraso', secao:'Faturamento', formato:'money'},
   {tipo:'unico', chave:'faturamento_descontos', label:'Faturamento — Descontos (negativo)', secao:'Faturamento', formato:'money'},
@@ -1162,6 +1372,7 @@ function valorCampoUnico(registro, chave){
   if(chave==='faturamento_operacoes') return registro.faturamento ? registro.faturamento.operacoes : undefined;
   if(chave==='faturamento_prorrogacoes') return registro.faturamento ? registro.faturamento.prorrogacoes : undefined;
   if(chave==='faturamento_redesconto') return registro.faturamento ? registro.faturamento.redesconto : undefined;
+  if(chave==='faturamento_refinanciamento') return registro.faturamento ? registro.faturamento.refinanciamento : undefined;
   if(chave==='faturamento_multas') return registro.faturamento ? registro.faturamento.multas : undefined;
   if(chave==='faturamento_juros_atraso') return registro.faturamento ? registro.faturamento.juros_atraso : undefined;
   if(chave==='faturamento_descontos') return registro.faturamento ? registro.faturamento.descontos : undefined;
