@@ -72,7 +72,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 .mi-badge.r{color:#a32d2d;background:#fce8e8;border-color:#e09090}
 .bar-w{height:9px;background:var(--bg);border-radius:99px;overflow:hidden;margin-bottom:6px}
 .bar{height:100%;border-radius:99px;transition:width .4s}
-.mi-v{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--t3);gap:8px;flex-wrap:wrap}
+.mi-v{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--t2);gap:8px;flex-wrap:wrap}
 .mi-v .real{font-size:15px;font-weight:700;color:var(--t1)}
 .mi-v .sep{margin:0 5px}
 .empty{text-align:center;padding:40px;color:var(--t3);font-size:14px}
@@ -578,7 +578,7 @@ function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo, compacto){
       (meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
       (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
       '<div class="mi-v" style="justify-content:flex-start"><span><span class="real">'+fmt(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fmt(meta):'')+'</span></div>'+
-      (meta>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px;height:17px;line-height:17px">'+faltaTxt+'</div>':'')+
+      (meta>0?'<div style="font-size:13px;color:var(--t2);margin-top:2px;height:17px;line-height:17px">'+faltaTxt+'</div>':'')+
       (compacto?'':(espacador+espacador+espacador))+'</div>';
   }
   return '<div class="mi"><div class="mi-h"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+'</div>'+
@@ -644,7 +644,7 @@ function itemPdd(valorReal, capitalBase, metaPct){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">PDD sobre Capital sob Gestão</span>'+(metaPct>0?'<span class="mi-badge '+cls+'">'+badgeTxt+'</span>':'')+'</div>'+
     (metaPct>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span><span class="real">'+fM(valorReal)+'</span>'+(metaPct>0?'<span class="sep">limite</span>'+fPct(metaPct):'')+'</span></div>'+
-    (metaPct>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+diffTxt+'</div>':'')+
+    (metaPct>0?'<div style="font-size:13px;color:var(--t2);margin-top:2px">'+diffTxt+'</div>':'')+
     '<div style="font-size:11px;color:var(--t3);margin-top:4px">Equivale a '+fPct(pctReal)+' do capital sob gestão ('+fM(capitalBase)+')</div>'+
   '</div>';
 }
@@ -680,9 +680,9 @@ function itemComposicaoFaturamento(fatOp, fatPr, fatRd, fatRf, fatMu, fatJa, fat
     (pRd>0?'<div style="width:'+pRd+'%;background:#e0a020"></div>':'')+
   '</div>';
   function linha(cor,label,pctVal,valor){
-    return '<div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;margin-top:6px">'+
+    return '<div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-top:6px">'+
       '<span style="display:flex;align-items:center;gap:6px;color:var(--t2)"><span style="width:8px;height:8px;border-radius:50%;background:'+cor+';display:inline-block;flex-shrink:0"></span>'+label+'</span>'+
-      '<span style="color:var(--t1);font-weight:600">'+fPct(pctVal)+' <span style="color:var(--t3);font-weight:400">('+fM(valor)+')</span></span>'+
+      '<span style="color:var(--t1);font-weight:600">'+fPct(pctVal)+' <span style="color:var(--t2);font-weight:400">('+fM(valor)+')</span></span>'+
     '</div>';
   }
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Composição do Faturamento</span></div>'+
@@ -729,7 +729,7 @@ function itemOperado(lbl, operado, cadastrado){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span></div>'+
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
     '<div class="mi-v"><span><span class="real">'+fN(operado)+'</span><span class="sep">de</span>'+fN(cadastrado)+' cadastrados</span></div>'+
-    (cadastrado>0?'<div style="font-size:12px;color:var(--t3);margin-top:2px;height:17px;line-height:17px">'+faltaTxt+'</div>':'')+
+    (cadastrado>0?'<div style="font-size:13px;color:var(--t2);margin-top:2px;height:17px;line-height:17px">'+faltaTxt+'</div>':'')+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
