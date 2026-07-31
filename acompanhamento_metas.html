@@ -319,15 +319,6 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 
     <div id="mo-form"></div>
 
-    <div class="mo-sec">
-      <h3>Capital sob Gestão</h3>
-      <p style="font-size:11px;color:var(--t3);margin:-4px 0 8px">Saldo que a empresa tinha no INÍCIO do mês selecionado acima (aba própria — histórico, não some entre meses).</p>
-      <div class="mo-grid-flex">
-        <div class="mo-f"><label style="color:#178a67">Capital no início do mês</label><input type="text" inputmode="decimal" id="mo-f-csg-valor" data-formato="money" onblur="formatarInputAoSair(this)" placeholder="0,00"></div>
-        <div class="mo-f"><label style="color:#57697a">Devolução de capital (negativo)</label><input type="text" inputmode="decimal" id="mo-f-csg-devolucao" data-formato="money" onblur="formatarInputAoSair(this)" placeholder="0,00"></div>
-      </div>
-    </div>
-
     <div class="mo-msg" id="mo-msg"></div>
     <div class="mo-foot">
       <button class="btn sec" onclick="fecharModalLancar()">Cancelar</button>
@@ -341,7 +332,7 @@ var SU = "https://script.google.com/macros/s/AKfycbytBLSuf758v_8TCG0ilhmKgDNVunA
 var SK = "summus_auth";
 var dark = false;
 var mxrData = [];   // dados crus vindos do servidor
-var CSG_DATA = [];  // Capital sob Gestão (aba própria, histórico por mês/empresa)
+var INV_MOV_DATA = [];  // Movimentos de capital: aporte / devolução / capital empresa (aba investidor)
 var mxrFilt = [];   // após filtros
 var sE = {}, sA = {}, sM = {}; // seleções de filtro: empresa, ano, mes
 var MABR = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -470,10 +461,11 @@ function carregarDados(){
     updSum();
     mxrPopularEmpresasModal();
 
-    // Capital sob Gestão agora vem de uma aba própria (histórico por mês/empresa).
-    apiCall({action:'getCapitalSobGestao'}, function(err2,res2){
-      if(!err2 && res2 && res2.ok){ CSG_DATA = res2.data||[]; }
-      else { CSG_DATA = []; }
+    // Capital sob Gestão agora é calculado a partir dos aportes/devoluções/
+    // capital empresa lançados na aba "investidor" (não precisa mais de aba própria).
+    apiCall({action:'getMovimentosCapital'}, function(err2,res2){
+      if(!err2 && res2 && res2.ok){ INV_MOV_DATA = res2.data||[]; }
+      else { INV_MOV_DATA = []; }
       aplicarFiltros();
     });
   });
@@ -572,15 +564,43 @@ function mxrLinhasMaisRecentesPorEmpresa(d){
 // Para a aba Capital_Sob_Gestao: filtra pelas mesmas empresas/meses/anos
 // selecionados no painel de filtros, depois pega a linha mais recente de
 // cada empresa.
-function csgLinhasMaisRecentesPorEmpresa(){
-  var eK=Object.keys(sE), aK=Object.keys(sA), mK=Object.keys(sM);
-  var filtrado = CSG_DATA.filter(function(r){
-    if(eK.length && eK.indexOf(r.empresa)<0) return false;
-    if(aK.length && aK.indexOf(String(r.ano))<0) return false;
-    if(mK.length && mK.indexOf(String(mesTextoParaNumero(r.mes)))<0) return false;
-    return true;
+// Normaliza nome de empresa pra comparar entre fontes diferentes: a aba
+// "investidor" usa "summus - esc" (com espaços), o resto do app usa
+// "summus-esc" (sem espaços). Isso resolve a diferença.
+function normEmpresa(s){ return String(s||'').toLowerCase().replace(/\s+/g,''); }
+
+// true se dataISO (YYYY-MM-DD) for ANTES do dia 1 de ano/mes.
+function dataAntesDe(dataISO, ano, mes){
+  if(!dataISO) return false;
+  var m=String(dataISO).match(/^(\d{4})-(\d{2})/);
+  if(!m) return false;
+  var anoD=parseInt(m[1],10), mesD=parseInt(m[2],10);
+  if(anoD<ano) return true;
+  if(anoD>ano) return false;
+  return mesD<mes;
+}
+// true se dataISO cair dentro do intervalo [anoMin/mesMin .. anoMax/mesMax] (inclusive).
+function dataDentroDoPeriodo(dataISO, anoMin, mesMin, anoMax, mesMax){
+  if(!dataISO) return false;
+  var m=String(dataISO).match(/^(\d{4})-(\d{2})/);
+  if(!m) return false;
+  var anoD=parseInt(m[1],10), mesD=parseInt(m[2],10);
+  var chave=anoD*100+mesD, chaveMin=anoMin*100+mesMin, chaveMax=anoMax*100+mesMax;
+  return chave>=chaveMin && chave<=chaveMax;
+}
+// Descobre o primeiro e o último mês/ano realmente presentes nos registros
+// já filtrados (d) — é isso que define "o período selecionado" pro cálculo
+// do Capital sob Gestão, não importa se foi 1 mês ou vários.
+function periodoDoFiltro(d){
+  var minChave=null, maxChave=null, min=null, max=null;
+  d.forEach(function(r){
+    var mesNum=mesTextoParaNumero(r.mes);
+    if(!mesNum || !r.ano) return;
+    var chave=Number(r.ano)*100+mesNum;
+    if(minChave===null || chave<minChave){ minChave=chave; min={ano:Number(r.ano),mes:mesNum}; }
+    if(maxChave===null || chave>maxChave){ maxChave=chave; max={ano:Number(r.ano),mes:mesNum}; }
   });
-  return linhaMaisRecentePorEmpresa(filtrado, 'mes', 'ano', 'empresa');
+  return {min:min, max:max};
 }
 
 // Para campos onde somar as empresas pode fazer sentido ou não (ex: cedentes
@@ -880,36 +900,70 @@ function renderKPIs(d){
       volPr=somaCampo(d,'volume_prorrogacoes');
   var resultadoMetaSoma = somaCampo(d,'resultado_meta');
 
-  // Capital sob Gestão agora vem da aba própria "Capital_Sob_Gestao" (histórico).
-  // Para cada empresa, pega o mês mais recente DENTRO DO FILTRO atual, e soma
-  // captação/resultado só DAQUELE mês específico (nunca dos outros meses
-  // selecionados também, senão conta duas vezes o que já está embutido no saldo).
-  var csgLinhas = csgLinhasMaisRecentesPorEmpresa();
-  var capitalReal = 0, capitalMeta = 0, capitalPorEmpresa = {}, capitalBaseInfo = [];
-  csgLinhas.forEach(function(csg){
-    // devolucao_capital já vem NEGATIVA na planilha (dinheiro saindo) — por
-    // isso somamos, não subtraímos: o efeito na prática é reduzir a base.
-    var base = n(csg.capital_inicio_mes) + n(csg.devolucao_capital);
-    var reg = mxrBuscarRegistro(csg.mes, csg.ano, csg.empresa);
-    var captacaoReal = reg && reg.captacao_investidor ? n(reg.captacao_investidor.realizado) : 0;
-    var captacaoMeta = reg && reg.captacao_investidor ? n(reg.captacao_investidor.meta) : 0;
-    var resultadoRealMes = reg ? (n(reg.receitas_realizado) - (reg.despesa?n(reg.despesa.realizado):0)) : 0;
-    var resultadoMetaMes = reg ? n(reg.resultado_meta) : 0;
-    var capReal = base + captacaoReal + resultadoRealMes;
-    capitalReal += capReal;
-    capitalMeta += base + captacaoMeta + resultadoMetaMes;
-    capitalPorEmpresa[csg.empresa] = capReal;
-    capitalBaseInfo.push(csg.empresa+' ('+MABR[mesTextoParaNumero(csg.mes)-1]+'/'+csg.ano+')');
-  });
+  // Capital sob Gestão agora é calculado a partir dos APORTES/DEVOLUÇÕES/
+  // CAPITAL EMPRESA lançados na própria aba "investidor" (não precisa mais de
+  // aba separada). Regra combinada com o usuário:
+  //  base = (aportes com data ANTES do primeiro mês do filtro)
+  //       - (devoluções com data ANTES do primeiro mês do filtro)
+  //       + (capital empresa, sempre, sem filtro de data)
+  //  capital = base + captação do período + resultado do período - devolução do período
+  // Tudo calculado por empresa e depois somado (respeitando o filtro de empresa).
+  var periodo = periodoDoFiltro(d);
+  var empresasNoFiltro = {};
+  d.forEach(function(r){ if(r.empresa) empresasNoFiltro[normEmpresa(r.empresa)]=true; });
 
-  // PDD é saldo acumulado igual Capital sob Gestão: pega o mês mais recente
-  // por empresa (dentro do filtro), soma o valor entre empresas, e pondera a
+  var capitalReal = 0, capitalMeta = 0, capitalPorEmpresa = {}, capitalBaseInfo = [];
+  if(periodo.min){
+    var baseAcumuladaPorEmpresa={}, devolucaoPeriodoPorEmpresa={};
+    Object.keys(empresasNoFiltro).forEach(function(e){ baseAcumuladaPorEmpresa[e]=0; devolucaoPeriodoPorEmpresa[e]=0; });
+
+    INV_MOV_DATA.forEach(function(m){
+      var eNorm = normEmpresa(m.empresa);
+      if(!empresasNoFiltro[eNorm]) return;
+      if(m.tipo==='capital empresa'){
+        baseAcumuladaPorEmpresa[eNorm] += n(m.valor); // sempre entra, sem filtro de data
+      } else if(m.tipo==='aporte'){
+        if(dataAntesDe(m.data, periodo.min.ano, periodo.min.mes)) baseAcumuladaPorEmpresa[eNorm] += n(m.valor);
+      } else if(m.tipo==='devolução' || m.tipo==='devolucao'){
+        var v = Math.abs(n(m.valor)); // trata como magnitude, a subtração é sempre explícita no cálculo
+        if(dataAntesDe(m.data, periodo.min.ano, periodo.min.mes)){
+          baseAcumuladaPorEmpresa[eNorm] -= v;
+        } else if(periodo.max && dataDentroDoPeriodo(m.data, periodo.min.ano, periodo.min.mes, periodo.max.ano, periodo.max.mes)){
+          devolucaoPeriodoPorEmpresa[eNorm] += v;
+        }
+      }
+    });
+
+    // Captação/resultado do período, por empresa (pra alimentar o Capital por
+    // empresa, usado depois pra ponderar a meta de PDD).
+    var captacaoPorEmpresaReal={}, captacaoPorEmpresaMeta={}, resultadoPorEmpresaReal={}, resultadoPorEmpresaMeta={};
+    d.forEach(function(r){
+      var eNorm=normEmpresa(r.empresa);
+      captacaoPorEmpresaReal[eNorm]=(captacaoPorEmpresaReal[eNorm]||0)+(r.captacao_investidor?n(r.captacao_investidor.realizado):0);
+      captacaoPorEmpresaMeta[eNorm]=(captacaoPorEmpresaMeta[eNorm]||0)+(r.captacao_investidor?n(r.captacao_investidor.meta):0);
+      resultadoPorEmpresaReal[eNorm]=(resultadoPorEmpresaReal[eNorm]||0)+(n(r.receitas_realizado)-(r.despesa?n(r.despesa.realizado):0));
+      resultadoPorEmpresaMeta[eNorm]=(resultadoPorEmpresaMeta[eNorm]||0)+n(r.resultado_meta);
+    });
+
+    Object.keys(empresasNoFiltro).forEach(function(eNorm){
+      var base=baseAcumuladaPorEmpresa[eNorm]||0;
+      var capReal = base + (captacaoPorEmpresaReal[eNorm]||0) + (resultadoPorEmpresaReal[eNorm]||0) - (devolucaoPeriodoPorEmpresa[eNorm]||0);
+      var capMeta = base + (captacaoPorEmpresaMeta[eNorm]||0) + (resultadoPorEmpresaMeta[eNorm]||0);
+      capitalReal += capReal;
+      capitalMeta += capMeta;
+      capitalPorEmpresa[eNorm] = capReal;
+    });
+    capitalBaseInfo.push('Base até '+MABR[periodo.min.mes-1]+'/'+periodo.min.ano+(periodo.max&&periodo.max.mes!==periodo.min.mes?' — período até '+MABR[periodo.max.mes-1]+'/'+periodo.max.ano:''));
+  }
+
+  // PDD é saldo acumulado, não flui mês a mês: pega o mês mais recente por
+  // empresa (dentro do filtro), soma o valor entre empresas, e pondera a
   // meta pelo capital de cada empresa (não faz sentido somar % entre empresas).
   var pddLinhas = mxrLinhasMaisRecentesPorEmpresa(d);
   var pddValorSoma = pddLinhas.reduce(function(s,r){return s+(r.pdd?n(r.pdd.valor):0);},0);
   var pddMetaNum=0, pddMetaDen=0;
   pddLinhas.forEach(function(r){
-    var peso = capitalPorEmpresa[r.empresa] || 0;
+    var peso = capitalPorEmpresa[normEmpresa(r.empresa)] || 0;
     var meta = r.pdd?n(r.pdd.meta):0;
     if(peso>0 && meta>0){ pddMetaNum+=peso*meta; pddMetaDen+=peso; }
   });
@@ -972,7 +1026,7 @@ function renderKPIs(d){
 
     '<div class="kcard"><div class="kcard-h">🏦 CAPITAL SOB GESTÃO'+csgEyeBtnHtml()+'</div><div class="kcard-b">' +
       itemMeta('Capital sob gestão', capitalReal, capitalMeta, fM, null, false, true) +
-      '<div style="font-size:11px;color:var(--t3);margin-top:4px">Base: '+(capitalBaseInfo.length?capitalBaseInfo.join(' · '):'sem lançamento')+' + captação e resultado do mês</div>' +
+      '<div style="font-size:11px;color:var(--t3);margin-top:4px">'+(capitalBaseInfo.length?capitalBaseInfo.join(' · '):'Sem lançamento na aba investidor')+' + captação e resultado do período − devoluções do período</div>' +
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">📈 TAXA PONDERADA</div><div class="kcard-b">' +
@@ -1165,7 +1219,8 @@ function tpRenderTabela(){
 function invEscTp(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* ═══════════════════════════════════════════════════════════
-   GRÁFICO DE EVOLUÇÃO — Capital sob Gestão (aba Capital_Sob_Gestao)
+   GRÁFICO DE EVOLUÇÃO — Capital sob Gestão (calculado a partir dos
+   aportes/devoluções/capital empresa lançados na aba investidor)
 ═══════════════════════════════════════════════════════════ */
 var CSG_CHART=null;
 function openCapitalGrafico(){
@@ -1175,42 +1230,62 @@ function openCapitalGrafico(){
 function closeCapitalGrafico(){ document.getElementById('csg-overlay').style.display='none'; }
 
 function csgRenderGrafico(){
-  if(!CSG_DATA.length){
+  if(!INV_MOV_DATA.length){
+    document.getElementById('csg-vazio').style.display='block';
+    document.getElementById('csg-legenda').innerHTML='';
+    if(CSG_CHART){ CSG_CHART.destroy(); CSG_CHART=null; }
+    return;
+  }
+  if(typeof Chart==='undefined') return;
+
+  var tc = dark ? '#7a98b8' : '#4a607a';
+  var gc = dark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.06)';
+
+  // Base fixa por empresa: soma de todas as linhas "capital empresa" (sem data).
+  var baseFixaPorEmpresa={}, empresasSet={};
+  INV_MOV_DATA.forEach(function(m){
+    var e=String(m.empresa||'').trim();
+    if(!e) return;
+    empresasSet[e]=true;
+    if(m.tipo==='capital empresa') baseFixaPorEmpresa[e]=(baseFixaPorEmpresa[e]||0)+n(m.valor);
+  });
+
+  // Aportes e devoluções, em ordem cronológica.
+  var movs=INV_MOV_DATA.filter(function(m){ return m.data && (m.tipo==='aporte'||m.tipo==='devolução'||m.tipo==='devolucao'); });
+  movs.sort(function(a,b){ return String(a.data).localeCompare(String(b.data)); });
+
+  var chavesSet={};
+  movs.forEach(function(m){
+    var mm=String(m.data).match(/^(\d{4})-(\d{2})/);
+    if(mm) chavesSet[mm[1]+'-'+mm[2]]={ano:parseInt(mm[1],10),mes:parseInt(mm[2],10)};
+  });
+  var chavesOrdenadas=Object.keys(chavesSet).sort();
+  if(!chavesOrdenadas.length){
     document.getElementById('csg-vazio').style.display='block';
     document.getElementById('csg-legenda').innerHTML='';
     if(CSG_CHART){ CSG_CHART.destroy(); CSG_CHART=null; }
     return;
   }
   document.getElementById('csg-vazio').style.display='none';
-  if(typeof Chart==='undefined') return;
-
-  var tc = dark ? '#7a98b8' : '#4a607a';
-  var gc = dark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.06)';
-
-  // Agrupa por mes/ano (chave ordenável) e por empresa
-  var porChaveEmpresa={}; // {chave: {empresa: valor}}
-  var chavesSet={};
-  var empresasSet={};
-  CSG_DATA.forEach(function(r){
-    var mesNum=mesTextoParaNumero(r.mes);
-    if(!mesNum || !r.ano) return;
-    var chave=String(r.ano)+'-'+String(mesNum).padStart(2,'0');
-    chavesSet[chave]={ano:r.ano,mes:mesNum};
-    empresasSet[r.empresa]=true;
-    if(!porChaveEmpresa[chave]) porChaveEmpresa[chave]={};
-    porChaveEmpresa[chave][r.empresa]=n(r.capital_inicio_mes)+n(r.devolucao_capital);
-  });
-  var chavesOrdenadas=Object.keys(chavesSet).sort();
-  var labels=chavesOrdenadas.map(function(k){var c=chavesSet[k];return MABR[c.mes-1]+'/'+String(c.ano).slice(-2);});
+  var labels=chavesOrdenadas.map(function(k){var c=chavesSet[k]; return MABR[c.mes-1]+'/'+String(c.ano).slice(-2);});
   var empresas=Object.keys(empresasSet).sort();
 
+  // Saldo acumulado mês a mês, por empresa (capital empresa + aportes - devoluções até o fim de cada mês).
   var datasets=empresas.map(function(e,i){
-    return {
-      label:e,
-      data:chavesOrdenadas.map(function(k){ return (porChaveEmpresa[k]&&porChaveEmpresa[k][e]!==undefined) ? porChaveEmpresa[k][e] : null; }),
-      backgroundColor:tpCor(i),
-      borderRadius:3
-    };
+    var movsEmpresa=movs.filter(function(m){ return String(m.empresa||'').trim()===e; });
+    var acumulado=baseFixaPorEmpresa[e]||0, mIdx=0;
+    var dataArr=chavesOrdenadas.map(function(chave){
+      while(mIdx<movsEmpresa.length){
+        var m=movsEmpresa[mIdx];
+        var mm=String(m.data).match(/^(\d{4})-(\d{2})/);
+        var chaveMov=mm?mm[1]+'-'+mm[2]:null;
+        if(!chaveMov || chaveMov>chave) break;
+        acumulado += (m.tipo==='aporte') ? n(m.valor) : -Math.abs(n(m.valor));
+        mIdx++;
+      }
+      return acumulado;
+    });
+    return { label:e, data:dataArr, backgroundColor:tpCor(i), borderRadius:3 };
   });
 
   if(CSG_CHART) CSG_CHART.destroy();
@@ -1585,23 +1660,6 @@ function mxrRecarregarValoresNoForm(){
       if(el)el.value = (v!==undefined && v!==null && v!=='') ? formatarValorCampo(v,c.formato) : '';
     }
   });
-
-  // Capital sob Gestão vem da aba separada (Capital_Sob_Gestao), não da mesma
-  // busca acima — procura o registro correspondente por conta própria.
-  var elCsg=document.getElementById('mo-f-csg-valor');
-  var elCsgDev=document.getElementById('mo-f-csg-devolucao');
-  if(elCsg || elCsgDev){
-    var csgReg=null;
-    CSG_DATA.forEach(function(r){
-      if(r.empresa===empresa && String(r.ano)===String(ano) && String(r.mes).trim().toLowerCase()===mesTxt){
-        csgReg=r;
-      }
-    });
-    var vCsg = csgReg ? csgReg.capital_inicio_mes : undefined;
-    if(elCsg) elCsg.value = (vCsg!==undefined && vCsg!==null && vCsg!=='') ? formatarValorCampo(vCsg,'money') : '';
-    var vDev = csgReg ? csgReg.devolucao_capital : undefined;
-    if(elCsgDev) elCsgDev.value = (vDev!==undefined && vDev!==null && vDev!=='') ? formatarValorCampo(vDev,'money') : '';
-  }
 }
 
 function salvarLancamento(){
@@ -1634,36 +1692,13 @@ function salvarLancamento(){
   var btn=document.getElementById('mo-salvar');
   btn.disabled=true; btn.textContent='Salvando...';
 
-  var elCsg=document.getElementById('mo-f-csg-valor');
-  var elCsgDev=document.getElementById('mo-f-csg-devolucao');
-  var csgValorBruto = (elCsg && elCsg.value!=='') ? desformatarValorCampo(elCsg.value,'money') : '';
-  var csgDevolucaoBruto = (elCsgDev && elCsgDev.value!=='') ? desformatarValorCampo(elCsgDev.value,'money') : '';
-
   apiCall({action:'saveMetaXRealizado', mes:mesTxt, ano:ano, empresa:empresa, valores:JSON.stringify(valores)}, function(err,res){
+    btn.disabled=false; btn.textContent='Salvar';
     var msg=document.getElementById('mo-msg');
-    if(err||!res){btn.disabled=false; btn.textContent='Salvar'; msg.textContent='Erro de conexão.'; msg.className='mo-msg err'; msg.style.display='block'; return;}
-    if(!res.ok){btn.disabled=false; btn.textContent='Salvar'; msg.textContent='Erro: '+(res.error||'não foi possível salvar.'); msg.className='mo-msg err'; msg.style.display='block'; return;}
-
-    // Capital sob Gestão é uma aba separada — só salva se algum dos dois campos foi preenchido.
-    if(csgValorBruto!=='' || csgDevolucaoBruto!==''){
-      var paramsCsg={action:'saveCapitalSobGestao', mes:mesTxt, ano:ano, empresa:empresa};
-      if(csgValorBruto!=='') paramsCsg.valor=csgValorBruto;
-      if(csgDevolucaoBruto!=='') paramsCsg.devolucao=csgDevolucaoBruto;
-      apiCall(paramsCsg, function(err2,res2){
-        btn.disabled=false; btn.textContent='Salvar';
-        if(err2||!res2||!res2.ok){
-          msg.textContent='Meta_X_Realizado salvo, mas o Capital sob Gestão falhou: '+(res2?res2.error:'erro de conexão');
-          msg.className='mo-msg err'; msg.style.display='block';
-        } else {
-          msg.textContent='Salvo com sucesso!'; msg.className='mo-msg ok'; msg.style.display='block';
-        }
-        carregarDados();
-      });
-    } else {
-      btn.disabled=false; btn.textContent='Salvar';
-      msg.textContent='Salvo com sucesso!'; msg.className='mo-msg ok'; msg.style.display='block';
-      carregarDados();
-    }
+    if(err||!res){msg.textContent='Erro de conexão.'; msg.className='mo-msg err'; msg.style.display='block'; return;}
+    if(!res.ok){msg.textContent='Erro: '+(res.error||'não foi possível salvar.'); msg.className='mo-msg err'; msg.style.display='block'; return;}
+    msg.textContent='Salvo com sucesso!'; msg.className='mo-msg ok'; msg.style.display='block';
+    carregarDados();
   });
 }
 
