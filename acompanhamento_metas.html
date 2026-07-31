@@ -923,7 +923,9 @@ function renderKPIs(d){
       if(m.tipo==='capital empresa'){
         baseAcumuladaPorEmpresa[eNorm] += n(m.valor); // sempre entra, sem filtro de data
       } else if(m.tipo==='aporte'){
-        if(dataAntesDe(m.data, periodo.min.ano, periodo.min.mes)) baseAcumuladaPorEmpresa[eNorm] += n(m.valor);
+        // Sem data = aporte antigo, de antes do usuário lançar as datas —
+        // entra sempre na base, igual "capital empresa".
+        if(!m.data || dataAntesDe(m.data, periodo.min.ano, periodo.min.mes)) baseAcumuladaPorEmpresa[eNorm] += n(m.valor);
       } else if(m.tipo==='devolução' || m.tipo==='devolucao'){
         var v = Math.abs(n(m.valor)); // trata como magnitude, a subtração é sempre explícita no cálculo
         if(dataAntesDe(m.data, periodo.min.ano, periodo.min.mes)){
@@ -1241,16 +1243,19 @@ function csgRenderGrafico(){
   var tc = dark ? '#7a98b8' : '#4a607a';
   var gc = dark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.06)';
 
-  // Base fixa por empresa: soma de todas as linhas "capital empresa" (sem data).
+  // Base fixa por empresa: "capital empresa" + aportes SEM DATA (antigos, de
+  // antes do usuário começar a lançar datas) — entram sempre, não têm como
+  // aparecer numa linha do tempo.
   var baseFixaPorEmpresa={}, empresasSet={};
   INV_MOV_DATA.forEach(function(m){
     var e=String(m.empresa||'').trim();
     if(!e) return;
     empresasSet[e]=true;
     if(m.tipo==='capital empresa') baseFixaPorEmpresa[e]=(baseFixaPorEmpresa[e]||0)+n(m.valor);
+    else if(m.tipo==='aporte' && !m.data) baseFixaPorEmpresa[e]=(baseFixaPorEmpresa[e]||0)+n(m.valor);
   });
 
-  // Aportes e devoluções, em ordem cronológica.
+  // Aportes e devoluções COM data, em ordem cronológica.
   var movs=INV_MOV_DATA.filter(function(m){ return m.data && (m.tipo==='aporte'||m.tipo==='devolução'||m.tipo==='devolucao'); });
   movs.sort(function(a,b){ return String(a.data).localeCompare(String(b.data)); });
 
