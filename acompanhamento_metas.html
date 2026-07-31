@@ -947,15 +947,17 @@ function renderKPIs(d){
       resultadoPorEmpresaMeta[eNorm]=(resultadoPorEmpresaMeta[eNorm]||0)+n(r.resultado_meta);
     });
 
+    var baseTotal=0;
     Object.keys(empresasNoFiltro).forEach(function(eNorm){
       var base=baseAcumuladaPorEmpresa[eNorm]||0;
+      baseTotal += base;
       var capReal = base + (captacaoPorEmpresaReal[eNorm]||0) + (resultadoPorEmpresaReal[eNorm]||0) - (devolucaoPeriodoPorEmpresa[eNorm]||0);
       var capMeta = base + (captacaoPorEmpresaMeta[eNorm]||0) + (resultadoPorEmpresaMeta[eNorm]||0);
       capitalReal += capReal;
       capitalMeta += capMeta;
       capitalPorEmpresa[eNorm] = capReal;
     });
-    capitalBaseInfo.push('Base até '+MABR[periodo.min.mes-1]+'/'+periodo.min.ano+(periodo.max&&periodo.max.mes!==periodo.min.mes?' — período até '+MABR[periodo.max.mes-1]+'/'+periodo.max.ano:''));
+    capitalBaseInfo.push('Base até '+MABR[periodo.min.mes-1]+'/'+periodo.min.ano+(periodo.max&&periodo.max.mes!==periodo.min.mes?' — período até '+MABR[periodo.max.mes-1]+'/'+periodo.max.ano:'')+' ('+fM(baseTotal)+')');
   }
 
   // PDD é saldo acumulado, não flui mês a mês: pega o mês mais recente por
