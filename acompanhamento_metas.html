@@ -324,6 +324,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
       <p style="font-size:11px;color:var(--t3);margin:-4px 0 8px">Saldo que a empresa tinha no INÍCIO do mês selecionado acima (aba própria — histórico, não some entre meses).</p>
       <div class="mo-grid-flex">
         <div class="mo-f"><label style="color:#178a67">Capital no início do mês</label><input type="text" inputmode="decimal" id="mo-f-csg-valor" data-formato="money" onblur="formatarInputAoSair(this)" placeholder="0,00"></div>
+        <div class="mo-f"><label style="color:#57697a">Devolução de capital (negativo)</label><input type="text" inputmode="decimal" id="mo-f-csg-devolucao" data-formato="money" onblur="formatarInputAoSair(this)" placeholder="0,00"></div>
       </div>
     </div>
 
@@ -886,7 +887,9 @@ function renderKPIs(d){
   var csgLinhas = csgLinhasMaisRecentesPorEmpresa();
   var capitalReal = 0, capitalMeta = 0, capitalPorEmpresa = {}, capitalBaseInfo = [];
   csgLinhas.forEach(function(csg){
-    var base = n(csg.capital_inicio_mes);
+    // devolucao_capital já vem NEGATIVA na planilha (dinheiro saindo) — por
+    // isso somamos, não subtraímos: o efeito na prática é reduzir a base.
+    var base = n(csg.capital_inicio_mes) + n(csg.devolucao_capital);
     var reg = mxrBuscarRegistro(csg.mes, csg.ano, csg.empresa);
     var captacaoReal = reg && reg.captacao_investidor ? n(reg.captacao_investidor.realizado) : 0;
     var captacaoMeta = reg && reg.captacao_investidor ? n(reg.captacao_investidor.meta) : 0;
@@ -1195,7 +1198,7 @@ function csgRenderGrafico(){
     chavesSet[chave]={ano:r.ano,mes:mesNum};
     empresasSet[r.empresa]=true;
     if(!porChaveEmpresa[chave]) porChaveEmpresa[chave]={};
-    porChaveEmpresa[chave][r.empresa]=n(r.capital_inicio_mes);
+    porChaveEmpresa[chave][r.empresa]=n(r.capital_inicio_mes)+n(r.devolucao_capital);
   });
   var chavesOrdenadas=Object.keys(chavesSet).sort();
   var labels=chavesOrdenadas.map(function(k){var c=chavesSet[k];return MABR[c.mes-1]+'/'+String(c.ano).slice(-2);});
@@ -1586,7 +1589,8 @@ function mxrRecarregarValoresNoForm(){
   // Capital sob Gestão vem da aba separada (Capital_Sob_Gestao), não da mesma
   // busca acima — procura o registro correspondente por conta própria.
   var elCsg=document.getElementById('mo-f-csg-valor');
-  if(elCsg){
+  var elCsgDev=document.getElementById('mo-f-csg-devolucao');
+  if(elCsg || elCsgDev){
     var csgReg=null;
     CSG_DATA.forEach(function(r){
       if(r.empresa===empresa && String(r.ano)===String(ano) && String(r.mes).trim().toLowerCase()===mesTxt){
@@ -1594,7 +1598,9 @@ function mxrRecarregarValoresNoForm(){
       }
     });
     var vCsg = csgReg ? csgReg.capital_inicio_mes : undefined;
-    elCsg.value = (vCsg!==undefined && vCsg!==null && vCsg!=='') ? formatarValorCampo(vCsg,'money') : '';
+    if(elCsg) elCsg.value = (vCsg!==undefined && vCsg!==null && vCsg!=='') ? formatarValorCampo(vCsg,'money') : '';
+    var vDev = csgReg ? csgReg.devolucao_capital : undefined;
+    if(elCsgDev) elCsgDev.value = (vDev!==undefined && vDev!==null && vDev!=='') ? formatarValorCampo(vDev,'money') : '';
   }
 }
 
@@ -1629,16 +1635,21 @@ function salvarLancamento(){
   btn.disabled=true; btn.textContent='Salvando...';
 
   var elCsg=document.getElementById('mo-f-csg-valor');
+  var elCsgDev=document.getElementById('mo-f-csg-devolucao');
   var csgValorBruto = (elCsg && elCsg.value!=='') ? desformatarValorCampo(elCsg.value,'money') : '';
+  var csgDevolucaoBruto = (elCsgDev && elCsgDev.value!=='') ? desformatarValorCampo(elCsgDev.value,'money') : '';
 
   apiCall({action:'saveMetaXRealizado', mes:mesTxt, ano:ano, empresa:empresa, valores:JSON.stringify(valores)}, function(err,res){
     var msg=document.getElementById('mo-msg');
     if(err||!res){btn.disabled=false; btn.textContent='Salvar'; msg.textContent='Erro de conexão.'; msg.className='mo-msg err'; msg.style.display='block'; return;}
     if(!res.ok){btn.disabled=false; btn.textContent='Salvar'; msg.textContent='Erro: '+(res.error||'não foi possível salvar.'); msg.className='mo-msg err'; msg.style.display='block'; return;}
 
-    // Capital sob Gestão é uma aba separada — só salva se o campo foi preenchido.
-    if(csgValorBruto!==''){
-      apiCall({action:'saveCapitalSobGestao', mes:mesTxt, ano:ano, empresa:empresa, valor:csgValorBruto}, function(err2,res2){
+    // Capital sob Gestão é uma aba separada — só salva se algum dos dois campos foi preenchido.
+    if(csgValorBruto!=='' || csgDevolucaoBruto!==''){
+      var paramsCsg={action:'saveCapitalSobGestao', mes:mesTxt, ano:ano, empresa:empresa};
+      if(csgValorBruto!=='') paramsCsg.valor=csgValorBruto;
+      if(csgDevolucaoBruto!=='') paramsCsg.devolucao=csgDevolucaoBruto;
+      apiCall(paramsCsg, function(err2,res2){
         btn.disabled=false; btn.textContent='Salvar';
         if(err2||!res2||!res2.ok){
           msg.textContent='Meta_X_Realizado salvo, mas o Capital sob Gestão falhou: '+(res2?res2.error:'erro de conexão');
