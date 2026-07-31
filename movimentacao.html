@@ -813,11 +813,13 @@ function renderInvBloco(){
     if(!por[k])por[k]=0;
     por[k]+=invValorLiquido(r);
   });
-  nomes=Object.keys(por).sort(function(a,b){return por[b]-por[a];});
+  // Só entra no gráfico quem tem saldo líquido positivo (quem já teve tudo
+  // devolvido não aparece mais como "investidor ativo" aqui).
+  nomes=Object.keys(por).filter(function(k){return por[k]>0;}).sort(function(a,b){return por[b]-por[a];});
   vals=nomes.map(function(k){return por[k];});
   cores=nomes.map(function(_,i){return palette[i%palette.length];});
 
-  // Atualizar cards
+  // Atualizar cards (contagem e total refletem só quem está no gráfico)
   var totalInv=vals.reduce(function(s,v){return s+v;},0);
   var cardEl=document.getElementById('inv-total-card');
   if(cardEl)cardEl.textContent=invFmtR(totalInv);
