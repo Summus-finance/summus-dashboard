@@ -207,6 +207,38 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 
 </div>
 
+<!-- ══ MODAL INVESTIDORES DO PERÍODO ══ -->
+<div id="invp-overlay" class="mo-overlay">
+  <div class="mo-box" style="max-width:700px">
+    <div class="mo-head">
+      <div>
+        <h2>Investidores do Período</h2>
+        <p id="invp-subtitulo">Aportes dentro do período e empresas selecionados no filtro acima</p>
+      </div>
+      <button class="mo-close" onclick="closeInvestidoresPeriodo()">&times;</button>
+    </div>
+    <div style="background:var(--cd);border:1px solid var(--bd);border-radius:11px;overflow:hidden">
+      <div style="max-height:420px;overflow-y:auto;overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:480px">
+          <thead style="position:sticky;top:0;background:#2CA1D8;color:#fff;z-index:1">
+            <tr>
+              <th style="text-align:left;padding:9px 12px;font-weight:700;white-space:nowrap">NOME</th>
+              <th style="text-align:left;padding:9px 12px;font-weight:700;white-space:nowrap">DATA APORTE</th>
+              <th style="text-align:right;padding:9px 12px;font-weight:700;white-space:nowrap">TAXA</th>
+              <th style="text-align:right;padding:9px 12px;font-weight:700;white-space:nowrap">VALOR</th>
+            </tr>
+          </thead>
+          <tbody id="invp-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div style="text-align:right;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd)">
+      <span style="font-size:12px;color:var(--t3)">Total: </span>
+      <span id="invp-total" style="font-size:14px;font-weight:700;color:var(--t1)">R$ 0,00</span>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL EVOLUÇÃO DO CAPITAL SOB GESTÃO ══ -->
 <div id="csg-overlay" class="mo-overlay">
   <div class="mo-box" style="max-width:900px">
@@ -1051,7 +1083,7 @@ function renderKPIs(d){
       itemMeta('Entrevistas realizadas', entrev.real, entrev.meta, fN, null, true, true) +
     '</div></div>' +
 
-    '<div class="kcard"><div class="kcard-h">📊 NOVOS INVESTIDORES</div><div class="kcard-b">' +
+    '<div class="kcard"><div class="kcard-h">📊 INVESTIDORES'+invPeriodoEyeBtnHtml()+'</div><div class="kcard-b">' +
       itemMeta('Captação do mês', cap.real, cap.meta, fM, null, false, true) +
     '</div></div>' +
 
@@ -1101,6 +1133,93 @@ function tpEyeBtnHtml(){
 // Botão de olho do card Capital sob Gestão — abre o gráfico de evolução mensal.
 function csgEyeBtnHtml(){
   return '<button onclick="openCapitalGrafico()" title="Ver evolução do capital sob gestão" style="background:none;border:none;cursor:pointer;padding:0;margin-left:8px;vertical-align:middle;color:#fff;opacity:.85;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL "INVESTIDORES DO PERÍODO" — lista os aportes do período e
+   empresa(s) selecionados no filtro. Reaproveita a mesma ação
+   (getInvestidores) e a mesma permissão (acessaInvestidores) que já
+   protegem essa informação na tela de Movimentação.
+═══════════════════════════════════════════════════════════ */
+var INVP_DATA = null; // cache: null = ainda não carregado
+
+function invPeriodoEyeBtnHtml(){
+  var s=getSession();
+  if(!s || !s.acessaInvestidores) return '';
+  return '<button onclick="event.stopPropagation();openInvestidoresPeriodo()" title="Ver investidores do período" style="background:none;border:none;cursor:pointer;padding:0;margin-left:8px;vertical-align:middle;color:#fff;opacity:.85;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>';
+}
+
+function openInvestidoresPeriodo(){
+  var s=getSession();
+  if(!s || !s.acessaInvestidores){ alert('Você não tem permissão para ver a lista de investidores.'); return; }
+  document.getElementById('invp-overlay').style.display='block';
+  if(INVP_DATA===null){
+    document.getElementById('invp-tbody').innerHTML='<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--t3)">Carregando...</td></tr>';
+    apiCall({action:'getInvestidores'}, function(err,res){
+      if(err||!res||!res.ok){
+        INVP_DATA=[];
+        document.getElementById('invp-tbody').innerHTML='<tr><td colspan="4" style="padding:16px;text-align:center;color:#a32d2d">'+(err?'Erro de conexão.':'Erro: '+res.error)+'</td></tr>';
+        return;
+      }
+      INVP_DATA = res.data||[];
+      invpRenderTabela();
+    });
+  } else {
+    invpRenderTabela();
+  }
+}
+function closeInvestidoresPeriodo(){ document.getElementById('invp-overlay').style.display='none'; }
+
+function invpFmtData(iso){
+  if(!iso) return '—';
+  var m=String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return m[3]+'/'+m[2]+'/'+m[1];
+  return String(iso);
+}
+function invpEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function invpRenderTabela(){
+  var periodo = periodoDoFiltro(mxrFilt);
+  var empresasNoFiltro = {};
+  mxrFilt.forEach(function(r){ if(r.empresa) empresasNoFiltro[normEmpresa(r.empresa)]=true; });
+  var restringeEmpresa = Object.keys(empresasNoFiltro).length>0;
+
+  var sub=document.getElementById('invp-subtitulo');
+  if(!periodo.min){
+    sub.textContent='Selecione um período no filtro acima para ver os investidores';
+    document.getElementById('invp-tbody').innerHTML='<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--t3)">Nenhum período selecionado</td></tr>';
+    document.getElementById('invp-total').textContent=fM(0);
+    return;
+  }
+  sub.textContent='Aportes de '+MABR[periodo.min.mes-1]+'/'+periodo.min.ano+(periodo.max&&periodo.max.mes!==periodo.min.mes?' a '+MABR[periodo.max.mes-1]+'/'+periodo.max.ano:'')+' — respeitando o filtro de empresa acima';
+
+  var lista=(INVP_DATA||[]).filter(function(r){
+    var tipo=String(r.tipo||'aporte').trim().toLowerCase();
+    if(tipo!=='aporte') return false;
+    if(!r.data_aporte) return false;
+    if(restringeEmpresa && !empresasNoFiltro[normEmpresa(r.empresa)]) return false;
+    return dataDentroDoPeriodo(r.data_aporte, periodo.min.ano, periodo.min.mes, periodo.max.ano, periodo.max.mes);
+  });
+
+  if(!lista.length){
+    document.getElementById('invp-tbody').innerHTML='<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--t3)">Nenhum aporte encontrado para o período/empresa selecionados</td></tr>';
+    document.getElementById('invp-total').textContent=fM(0);
+    return;
+  }
+
+  lista.sort(function(a,b){ return String(a.data_aporte).localeCompare(String(b.data_aporte)); });
+  var total=lista.reduce(function(s,r){return s+n(r.valor);},0);
+  document.getElementById('invp-total').textContent=fM(total);
+
+  document.getElementById('invp-tbody').innerHTML=lista.map(function(r,i){
+    var bg=i%2===0?'var(--cd)':'var(--bg)';
+    return '<tr style="background:'+bg+'">'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd)">'+invpEsc(r.nome_investidor||'—')+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);white-space:nowrap">'+invpFmtData(r.data_aporte)+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap">'+(n(r.taxa)?fPct(r.taxa):'—')+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid var(--bd);text-align:right;font-weight:600;white-space:nowrap">'+fM(r.valor)+'</td>'+
+    '</tr>';
+  }).join('');
 }
 
 // Busca o registro exato de Meta_X_Realizado para um mês+ano+empresa (usado
