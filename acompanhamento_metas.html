@@ -603,6 +603,24 @@ function periodoDoFiltro(d){
   return {min:min, max:max};
 }
 
+// Captação Realizada = soma dos APORTES (aba investidor) com data dentro do
+// período selecionado, por empresa. NÃO subtrai devolução — aqui é só "quanto
+// entrou de novo dinheiro de investidor nesse período". Aporte sem data não
+// entra (não tem como saber em qual período ele caiu).
+function captacaoRealizadaPorEmpresa(periodo, empresasNoFiltro){
+  var porEmpresa={};
+  if(!periodo.min) return porEmpresa;
+  INV_MOV_DATA.forEach(function(m){
+    if(m.tipo!=='aporte' || !m.data) return;
+    var eNorm=normEmpresa(m.empresa);
+    if(!empresasNoFiltro[eNorm]) return;
+    if(dataDentroDoPeriodo(m.data, periodo.min.ano, periodo.min.mes, periodo.max.ano, periodo.max.mes)){
+      porEmpresa[eNorm]=(porEmpresa[eNorm]||0)+n(m.valor);
+    }
+  });
+  return porEmpresa;
+}
+
 // Para campos onde somar as empresas pode fazer sentido ou não (ex: cedentes
 // cadastrados podem ser os mesmos clientes em SEC e ESC). Agrupa por empresa
 // (somando os meses selecionados dentro de cada empresa) e depois soma entre
@@ -889,7 +907,6 @@ function renderKPIs(d){
   }
   var fat=somaFaturamento(d), desp=somaPar(d,'despesa');
   var recReal=somaCampo(d,'receitas_realizado');
-  var cap=somaPar(d,'captacao_investidor');
   var ced=valorPorEmpresaOuSoma(d,'cedentes', somarCedentes);
   var totalCedOperado=somaCampo(d,'total_cedentes_operado');
   var novosCed=valorPorEmpresaOuSoma(d,'novos_cedentes', somarNovosCedentes);
@@ -900,6 +917,20 @@ function renderKPIs(d){
       volPr=somaCampo(d,'volume_prorrogacoes');
   var resultadoMetaSoma = somaCampo(d,'resultado_meta');
 
+  var periodo = periodoDoFiltro(d);
+  var empresasNoFiltro = {};
+  d.forEach(function(r){ if(r.empresa) empresasNoFiltro[normEmpresa(r.empresa)]=true; });
+
+  // Captação Realizada agora vem da aba "investidor" (soma dos APORTES com
+  // data dentro do período selecionado — NÃO subtrai devolução aqui; a
+  // devolução já entra como um termo próprio, separado, na fórmula do
+  // Capital sob Gestão logo abaixo). A meta continua vindo da Meta_X_Realizado.
+  var captacaoPorEmpresaAtual = captacaoRealizadaPorEmpresa(periodo, empresasNoFiltro);
+  var cap = {
+    meta: somaCampo(d,'captacao_investidor_meta'),
+    real: Object.keys(captacaoPorEmpresaAtual).reduce(function(s,e){return s+captacaoPorEmpresaAtual[e];},0)
+  };
+
   // Capital sob Gestão agora é calculado a partir dos APORTES/DEVOLUÇÕES/
   // CAPITAL EMPRESA lançados na própria aba "investidor" (não precisa mais de
   // aba separada). Regra combinada com o usuário:
@@ -907,10 +938,6 @@ function renderKPIs(d){
   //       - (devoluções com data ANTES do primeiro mês do filtro)
   //       + (capital empresa, sempre, sem filtro de data)
   //  capital = base + captação do período + resultado do período - devolução do período
-  // Tudo calculado por empresa e depois somado (respeitando o filtro de empresa).
-  var periodo = periodoDoFiltro(d);
-  var empresasNoFiltro = {};
-  d.forEach(function(r){ if(r.empresa) empresasNoFiltro[normEmpresa(r.empresa)]=true; });
 
   var capitalReal = 0, capitalMeta = 0, capitalPorEmpresa = {}, capitalBaseInfo = [];
   if(periodo.min){
@@ -936,13 +963,13 @@ function renderKPIs(d){
       }
     });
 
-    // Captação/resultado do período, por empresa (pra alimentar o Capital por
-    // empresa, usado depois pra ponderar a meta de PDD).
-    var captacaoPorEmpresaReal={}, captacaoPorEmpresaMeta={}, resultadoPorEmpresaReal={}, resultadoPorEmpresaMeta={};
+    // Captação do período por empresa: reaproveita o que já calculamos acima
+    // pro card "Captação do mês" — mesma fonte, mesma regra, sem duplicar.
+    var captacaoPorEmpresaReal = captacaoPorEmpresaAtual;
+    var captacaoPorEmpresaMeta={}, resultadoPorEmpresaReal={}, resultadoPorEmpresaMeta={};
     d.forEach(function(r){
       var eNorm=normEmpresa(r.empresa);
-      captacaoPorEmpresaReal[eNorm]=(captacaoPorEmpresaReal[eNorm]||0)+(r.captacao_investidor?n(r.captacao_investidor.realizado):0);
-      captacaoPorEmpresaMeta[eNorm]=(captacaoPorEmpresaMeta[eNorm]||0)+(r.captacao_investidor?n(r.captacao_investidor.meta):0);
+      captacaoPorEmpresaMeta[eNorm]=(captacaoPorEmpresaMeta[eNorm]||0)+n(r.captacao_investidor_meta);
       resultadoPorEmpresaReal[eNorm]=(resultadoPorEmpresaReal[eNorm]||0)+(n(r.receitas_realizado)-(r.despesa?n(r.despesa.realizado):0));
       resultadoPorEmpresaMeta[eNorm]=(resultadoPorEmpresaMeta[eNorm]||0)+n(r.resultado_meta);
     });
@@ -1505,7 +1532,9 @@ var CAMPOS_FORM = [
   {tipo:'unico', chave:'taxa_redesconto', label:'Taxa Ponderada — Redesconto (%)', secao:'Taxa', formato:'pct'},
 
   // NOVOS INVESTIDORES
-  {tipo:'par', chave:'captacao_investidor', label:'Captação de investidores', secao:'Novos Investidores', formato:'money'},
+  // NOVOS INVESTIDORES — só a meta; o realizado agora é calculado a partir
+  // dos aportes lançados na aba "investidor" (não é mais digitado aqui).
+  {tipo:'unico', chave:'captacao_investidor_meta', label:'Captação de investidores — Meta', secao:'Novos Investidores', formato:'money'},
 
   // COMERCIAL — cedentes cadastrados seguido de operado (relacionados), depois novos/operaram
   {tipo:'par', chave:'cedentes', label:'Cedentes cadastrados', secao:'Comercial', formato:'num'},
