@@ -314,7 +314,10 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
           <h3 id="tp-evol-titulo">Evolução Mensal por Categoria (todas)</h3>
           <p style="font-size:11px;color:var(--t3);margin-top:2px">Selecione uma categoria no filtro acima para focar em um item específico — sem seleção, mostra todas agrupadas por mês.</p>
         </div>
-        <button class="tp-btn-limpar" id="tp-btn-desmarcar" onclick="tpDesmarcarTodasCategorias()">☐ Desmarcar todas</button>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+          <span id="tp-badge-media" class="mi-badge g" style="white-space:nowrap">Média mensal: R$ 0,00</span>
+          <button class="tp-btn-limpar" id="tp-btn-desmarcar" onclick="tpDesmarcarTodasCategorias()">☐ Desmarcar todas</button>
+        </div>
       </div>
       <div style="height:220px;margin-top:8px"><canvas id="tp-c-evolucao"></canvas></div>
       <div id="tp-legenda-evolucao" class="tp-legenda-evol"></div>
@@ -1652,6 +1655,15 @@ function tpRenderEvolucao(mostrarValores, tc, gc){
   });
   var mesesOrdenados=Object.keys(mesesSet).sort();
   var mesesLabels=mesesOrdenados.map(function(k){var ma=mesesSet[k];return (TP_MESES_ABR[ma.mes]||ma.mes)+'/'+String(ma.ano).slice(-2);});
+
+  // Badge de média mensal: soma tudo que está no filtro atual (TP_FILTRADO) e
+  // divide pela quantidade de meses distintos que aparecem nesse filtro —
+  // então atualiza sozinho com qualquer combinação de filtros.
+  var totalGeral = TP_FILTRADO.reduce(function(s,r){return s+n(r.valor);},0);
+  var qtdMeses = mesesOrdenados.length;
+  var media = qtdMeses>0 ? (totalGeral/qtdMeses) : 0;
+  var badgeMedia=document.getElementById('tp-badge-media');
+  if(badgeMedia) badgeMedia.textContent = 'Média mensal: '+fM(media)+' ('+qtdMeses+(qtdMeses===1?' mês':' meses')+')';
 
   var todasCategorias={};
   TP_FILTRADO.forEach(function(r){ var c=String(r.categoria||'Sem categoria').trim()||'Sem categoria'; todasCategorias[c]=true; });
