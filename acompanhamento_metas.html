@@ -222,10 +222,10 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
         <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:480px">
           <thead style="position:sticky;top:0;background:#2CA1D8;color:#fff;z-index:1">
             <tr>
-              <th style="text-align:left;padding:9px 12px;font-weight:700;white-space:nowrap">NOME</th>
-              <th style="text-align:left;padding:9px 12px;font-weight:700;white-space:nowrap">DATA APORTE</th>
-              <th style="text-align:right;padding:9px 12px;font-weight:700;white-space:nowrap">TAXA</th>
-              <th style="text-align:right;padding:9px 12px;font-weight:700;white-space:nowrap">VALOR</th>
+              <th onclick="invpOrdenar('nome_investidor')" style="text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">NOME <span id="invp-sort-nome_investidor"></span></th>
+              <th onclick="invpOrdenar('data_aporte')" style="text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">DATA APORTE <span id="invp-sort-data_aporte"></span></th>
+              <th onclick="invpOrdenar('taxa')" style="text-align:right;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">TAXA <span id="invp-sort-taxa"></span></th>
+              <th onclick="invpOrdenar('valor')" style="text-align:right;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">VALOR <span id="invp-sort-valor"></span></th>
             </tr>
           </thead>
           <tbody id="invp-tbody"></tbody>
@@ -245,13 +245,19 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
     <div class="mo-head">
       <div>
         <h2>Evolução do Capital sob Gestão</h2>
-        <p>Saldo por empresa, mês a mês (aba Capital_Sob_Gestao)</p>
+        <p>Saldo mês a mês, a partir dos aportes/devoluções/capital empresa (aba investidor)</p>
       </div>
       <button class="mo-close" onclick="closeCapitalGrafico()">&times;</button>
     </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <label style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.3px">Empresa</label>
+      <select id="csg-f-empresa" onchange="csgRenderGrafico()" style="border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1);min-width:160px">
+        <option value="">Todas (consolidado)</option>
+      </select>
+    </div>
     <div style="height:320px"><canvas id="csg-c-evolucao"></canvas></div>
     <div id="csg-legenda" class="tp-legenda-evol" style="justify-content:center"></div>
-    <div id="csg-vazio" class="empty" style="display:none">Nenhum lançamento encontrado na aba Capital_Sob_Gestao ainda.</div>
+    <div id="csg-vazio" class="empty" style="display:none">Nenhum lançamento encontrado na aba investidor ainda.</div>
   </div>
 </div>
 
@@ -1142,6 +1148,7 @@ function csgEyeBtnHtml(){
    protegem essa informação na tela de Movimentação.
 ═══════════════════════════════════════════════════════════ */
 var INVP_DATA = null; // cache: null = ainda não carregado
+var INVP_SORT = {campo:'data_aporte', dir:'asc'};
 
 function invPeriodoEyeBtnHtml(){
   var s=getSession();
@@ -1178,6 +1185,12 @@ function invpFmtData(iso){
 }
 function invpEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
+function invpOrdenar(campo){
+  if(INVP_SORT.campo===campo){ INVP_SORT.dir = INVP_SORT.dir==='asc'?'desc':'asc'; }
+  else { INVP_SORT.campo=campo; INVP_SORT.dir = (campo==='valor'||campo==='taxa')?'desc':'asc'; }
+  invpRenderTabela();
+}
+
 function invpRenderTabela(){
   var periodo = periodoDoFiltro(mxrFilt);
   var empresasNoFiltro = {};
@@ -1207,7 +1220,19 @@ function invpRenderTabela(){
     return;
   }
 
-  lista.sort(function(a,b){ return String(a.data_aporte).localeCompare(String(b.data_aporte)); });
+  ['nome_investidor','data_aporte','taxa','valor'].forEach(function(c){
+    var el=document.getElementById('invp-sort-'+c);
+    if(el) el.textContent = INVP_SORT.campo===c ? (INVP_SORT.dir==='asc'?'▲':'▼') : '';
+  });
+
+  var campo=INVP_SORT.campo, dir=INVP_SORT.dir;
+  lista.sort(function(a,b){
+    var va = (campo==='valor'||campo==='taxa') ? n(a[campo]) : String(a[campo]||'').toLowerCase();
+    var vb = (campo==='valor'||campo==='taxa') ? n(b[campo]) : String(b[campo]||'').toLowerCase();
+    if(va<vb) return dir==='asc'?-1:1;
+    if(va>vb) return dir==='asc'?1:-1;
+    return 0;
+  });
   var total=lista.reduce(function(s,r){return s+n(r.valor);},0);
   document.getElementById('invp-total').textContent=fM(total);
 
@@ -1379,7 +1404,20 @@ function openCapitalGrafico(){
 }
 function closeCapitalGrafico(){ document.getElementById('csg-overlay').style.display='none'; }
 
+function csgPopularFiltroEmpresa(){
+  var sel=document.getElementById('csg-f-empresa');
+  var atual=sel.value;
+  var empresas={};
+  INV_MOV_DATA.forEach(function(m){ var e=String(m.empresa||'').trim(); if(e) empresas[e]=true; });
+  var keys=Object.keys(empresas).sort();
+  sel.innerHTML='<option value="">Todas (consolidado)</option>'+keys.map(function(e){return '<option value="'+invEscTp(e)+'">'+invEscTp(e)+'</option>';}).join('');
+  if(keys.indexOf(atual)>=0) sel.value=atual;
+}
+
 function csgRenderGrafico(){
+  csgPopularFiltroEmpresa();
+  var empFiltro = document.getElementById('csg-f-empresa').value;
+
   if(!INV_MOV_DATA.length){
     document.getElementById('csg-vazio').style.display='block';
     document.getElementById('csg-legenda').innerHTML='';
@@ -1391,20 +1429,20 @@ function csgRenderGrafico(){
   var tc = dark ? '#7a98b8' : '#4a607a';
   var gc = dark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.06)';
 
-  // Base fixa por empresa: "capital empresa" + aportes SEM DATA (antigos, de
-  // antes do usuário começar a lançar datas) — entram sempre, não têm como
-  // aparecer numa linha do tempo.
-  var baseFixaPorEmpresa={}, empresasSet={};
-  INV_MOV_DATA.forEach(function(m){
-    var e=String(m.empresa||'').trim();
-    if(!e) return;
-    empresasSet[e]=true;
-    if(m.tipo==='capital empresa') baseFixaPorEmpresa[e]=(baseFixaPorEmpresa[e]||0)+n(m.valor);
-    else if(m.tipo==='aporte' && !m.data) baseFixaPorEmpresa[e]=(baseFixaPorEmpresa[e]||0)+n(m.valor);
+  // Se uma empresa específica estiver selecionada, considera só ela — senão,
+  // considera todas juntas (consolidado, uma barra só por mês).
+  var dadosBase = empFiltro ? INV_MOV_DATA.filter(function(m){ return String(m.empresa||'').trim()===empFiltro; }) : INV_MOV_DATA;
+
+  // Base fixa (consolidada): "capital empresa" + aportes SEM DATA (antigos,
+  // de antes do usuário começar a lançar datas) — entram sempre.
+  var baseFixa=0;
+  dadosBase.forEach(function(m){
+    if(m.tipo==='capital empresa') baseFixa+=n(m.valor);
+    else if(m.tipo==='aporte' && !m.data) baseFixa+=n(m.valor);
   });
 
   // Aportes e devoluções COM data, em ordem cronológica.
-  var movs=INV_MOV_DATA.filter(function(m){ return m.data && (m.tipo==='aporte'||m.tipo==='devolução'||m.tipo==='devolucao'); });
+  var movs=dadosBase.filter(function(m){ return m.data && (m.tipo==='aporte'||m.tipo==='devolução'||m.tipo==='devolucao'); });
   movs.sort(function(a,b){ return String(a.data).localeCompare(String(b.data)); });
 
   var chavesSet={};
@@ -1421,25 +1459,22 @@ function csgRenderGrafico(){
   }
   document.getElementById('csg-vazio').style.display='none';
   var labels=chavesOrdenadas.map(function(k){var c=chavesSet[k]; return MABR[c.mes-1]+'/'+String(c.ano).slice(-2);});
-  var empresas=Object.keys(empresasSet).sort();
 
-  // Saldo acumulado mês a mês, por empresa (capital empresa + aportes - devoluções até o fim de cada mês).
-  var datasets=empresas.map(function(e,i){
-    var movsEmpresa=movs.filter(function(m){ return String(m.empresa||'').trim()===e; });
-    var acumulado=baseFixaPorEmpresa[e]||0, mIdx=0;
-    var dataArr=chavesOrdenadas.map(function(chave){
-      while(mIdx<movsEmpresa.length){
-        var m=movsEmpresa[mIdx];
-        var mm=String(m.data).match(/^(\d{4})-(\d{2})/);
-        var chaveMov=mm?mm[1]+'-'+mm[2]:null;
-        if(!chaveMov || chaveMov>chave) break;
-        acumulado += (m.tipo==='aporte') ? n(m.valor) : -Math.abs(n(m.valor));
-        mIdx++;
-      }
-      return acumulado;
-    });
-    return { label:e, data:dataArr, backgroundColor:tpCor(i), borderRadius:3 };
+  // Saldo acumulado mês a mês — consolidado, uma barra só por mês.
+  var acumulado=baseFixa, mIdx=0;
+  var dataArr=chavesOrdenadas.map(function(chave){
+    while(mIdx<movs.length){
+      var m=movs[mIdx];
+      var mm=String(m.data).match(/^(\d{4})-(\d{2})/);
+      var chaveMov=mm?mm[1]+'-'+mm[2]:null;
+      if(!chaveMov || chaveMov>chave) break;
+      acumulado += (m.tipo==='aporte') ? n(m.valor) : -Math.abs(n(m.valor));
+      mIdx++;
+    }
+    return acumulado;
   });
+  var nomeSerie = empFiltro || 'Total (todas as empresas)';
+  var datasets=[{ label:nomeSerie, data:dataArr, backgroundColor:tpCor(0), borderRadius:3 }];
 
   if(CSG_CHART) CSG_CHART.destroy();
   CSG_CHART=new Chart(document.getElementById('csg-c-evolucao'),{
@@ -1458,9 +1493,8 @@ function csgRenderGrafico(){
     }
   });
 
-  document.getElementById('csg-legenda').innerHTML = empresas.map(function(e,i){
-    return '<div class="tp-legenda-item"><span class="tp-legenda-dot" style="background:'+tpCor(i)+'"></span>'+invEscTp(e)+'</div>';
-  }).join('');
+  document.getElementById('csg-legenda').innerHTML =
+    '<div class="tp-legenda-item"><span class="tp-legenda-dot" style="background:'+tpCor(0)+'"></span>'+invEscTp(nomeSerie)+'</div>';
 }
 
 /* ── GRÁFICOS ── */
