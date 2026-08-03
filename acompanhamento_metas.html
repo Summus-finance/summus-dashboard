@@ -899,7 +899,7 @@ function itemOpLinha(lbl, real, meta, vol, fatVal, taxaVal){
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(real)+(meta>0?' de '+fN(meta):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatVal)+
-    linhaTaxaSimples(fatVal, vol)+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
     linhaTaxaPonderada(taxaVal)+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
 }
@@ -919,7 +919,7 @@ function itemOpLimite(lbl, real, limite, vol, fatVal, taxaVal){
     (limite>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(real)+(limite>0?' limite '+fN(limite):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatVal)+
-    linhaTaxaSimples(fatVal, vol)+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
     linhaTaxaPonderada(taxaVal)+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
 }
@@ -939,7 +939,7 @@ function itemOpTotal(rOp,rPr,rRd,mOp,vOp,vPr,vRd,fatTotal,taxaTotal){
     (tM>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(tR)+(tM>0?' de '+fN(tM):'')+'</span><span>Vol. Total '+fM(tV)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatTotal)+
-    linhaTaxaSimples(fatTotal, tV, 'Tx Simples Pon')+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
     linhaTaxaPonderada(taxaTotal)+
     '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
 }
