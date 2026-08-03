@@ -708,20 +708,36 @@ var WF_CHART=null;
 var DADOS_FILTRADOS_ATUAL=[]; // últimos dados filtrados (mesmo mês/ano/empresa da tela)
 
 function calcularEvolucaoFaturamento(){
-  var agrupado = agruparPorMes(DADOS_FILTRADOS_ATUAL); // já vem ordenado cronologicamente, respeitando o filtro atual
+  var mesesMostrar = agruparPorMes(DADOS_FILTRADOS_ATUAL); // só os meses que passaram no filtro (mês/ano/empresa)
+  if(!mesesMostrar.length) return {labels:[], ranges:[], deltas:[], cores:[]};
+
+  // Pra CALCULAR a variação de cada mês, preciso do mês anterior de verdade —
+  // mesmo que ele esteja fora do filtro (ex: filtrar Jan-Jul não pode fazer
+  // Janeiro perder a comparação com Dezembro do ano anterior). Por isso builo
+  // um histórico completo à parte, só respeitando o filtro de empresa.
+  var eK=Object.keys(sE);
+  var baseCompleta = eK.length ? allData.filter(function(r){return eK.indexOf(r.empresa)>=0;}) : allData;
+  var historicoCompleto = agruparPorMes(baseCompleta);
+  function chaveMes(r){ return String(n(r.ano)).padStart(4,'0')+'-'+String(mes(r.mes)).padStart(2,'0'); }
+  var indicePorChave={};
+  historicoCompleto.forEach(function(r,i){ indicePorChave[chaveMes(r)]=i; });
+
   var labels=[], ranges=[], deltas=[], cores=[];
   var cumulativo=0;
-  for(var i=1;i<agrupado.length;i++){
-    var atual=n(agrupado[i].faturamento), anterior=n(agrupado[i-1].faturamento);
-    if(!anterior) continue; // sem mês anterior com faturamento, não dá pra calcular %
+  mesesMostrar.forEach(function(mAtual){
+    var idx=indicePorChave[chaveMes(mAtual)];
+    if(idx===undefined || idx<=0) return; // não existe mês anterior no histórico (é o primeiro mês que a empresa tem registro)
+    var anteriorHist=historicoCompleto[idx-1];
+    var atual=n(mAtual.faturamento), anterior=n(anteriorHist.faturamento);
+    if(!anterior) return; // mês anterior sem faturamento, não dá pra calcular %
     var pct=(atual-anterior)/anterior*100;
     var inicio=cumulativo;
     cumulativo+=pct;
-    labels.push(lbl(agrupado[i]));
+    labels.push(lbl(mAtual));
     ranges.push([inicio,cumulativo]);
     deltas.push(pct);
     cores.push(pct>=0?'#1d9e75':'#c0392b');
-  }
+  });
   if(labels.length){
     labels.push('Total');
     ranges.push([0,cumulativo]);
