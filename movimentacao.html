@@ -464,6 +464,7 @@ function applyFil(){
     if(mK.length&&mK.indexOf(String(mes(r.mes)))<0)return false;
     return true;
   }).sort(function(a,b){return(n(a.ano)*100+mes(a.mes))-(n(b.ano)*100+mes(b.mes));});
+  DADOS_FILTRADOS_ATUAL=d; // usado pelo gráfico de Evolução do Faturamento, pra respeitar os mesmos filtros da tela
   renderKPIs(d);
   renderCharts(d);
 }
@@ -704,11 +705,10 @@ function initLogin(){
    filtro de empresa).
 ═══════════════════════════════════════════════════════════ */
 var WF_CHART=null;
+var DADOS_FILTRADOS_ATUAL=[]; // últimos dados filtrados (mesmo mês/ano/empresa da tela)
 
 function calcularEvolucaoFaturamento(){
-  var eK=Object.keys(sE);
-  var base = eK.length ? allData.filter(function(r){return eK.indexOf(r.empresa)>=0;}) : allData;
-  var agrupado = agruparPorMes(base); // já vem ordenado cronologicamente
+  var agrupado = agruparPorMes(DADOS_FILTRADOS_ATUAL); // já vem ordenado cronologicamente, respeitando o filtro atual
   var labels=[], ranges=[], deltas=[], cores=[];
   var cumulativo=0;
   for(var i=1;i<agrupado.length;i++){
@@ -1285,12 +1285,12 @@ function invOrdenar(campo){
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
       <div>
         <h2 style="font-size:18px;font-weight:700;color:var(--t1);margin:0">Evolução do Faturamento</h2>
-        <p style="font-size:12px;color:var(--t3);margin:3px 0 0">Variação percentual em relação ao mês anterior — respeita o filtro de empresa acima</p>
+        <p style="font-size:12px;color:var(--t3);margin:3px 0 0">Variação percentual em relação ao mês anterior — respeita os filtros de mês, ano e empresa acima</p>
       </div>
       <button onclick="closeEvolucaoFaturamento()" style="background:none;border:none;font-size:26px;cursor:pointer;color:var(--t3);padding:0;line-height:1">&times;</button>
     </div>
     <div style="height:340px"><canvas id="wf-canvas"></canvas></div>
-    <div id="wf-vazio" class="empty" style="display:none">Não há meses suficientes pra calcular a evolução (precisa de pelo menos 2 meses seguidos com faturamento).</div>
+    <div id="wf-vazio" class="empty" style="display:none">Não há meses seguidos suficientes dentro do filtro atual pra calcular a evolução (precisa de pelo menos 2 meses seguidos com faturamento — tente ampliar o filtro de mês/ano).</div>
   </div>
 </div>
 
