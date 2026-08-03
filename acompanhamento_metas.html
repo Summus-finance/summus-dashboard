@@ -702,7 +702,7 @@ function checkboxSomar(id, label, checked, onchangeFn){
 // Linha combinada: "Falta/Disponível" à esquerda + "Fat: R$X" à direita, na MESMA linha.
 function linhaFaltaComFat(faltaTxt, fatVal){
   if(!faltaTxt && fatVal===undefined) return '';
-  return '<div class="mi-v" style="margin-top:2px;height:17px;line-height:17px"><span>'+(faltaTxt||'')+'</span><span>'+(fatVal!==undefined&&fatVal!==null?('Fat: '+fM(fatVal)):'')+'</span></div>';
+  return '<div class="mi-v" style="margin-top:2px;height:13px;line-height:13px"><span>'+(faltaTxt||'')+'</span><span>'+(fatVal!==undefined&&fatVal!==null?('Fat: '+fM(fatVal)):'')+'</span></div>';
 }
 // Linha própria da Tx Simples (fat/volume), alinhada à direita.
 // Tx Simples: calculada por nós (fat/vol) — diferente da Tx Ponderada, que vem
@@ -711,12 +711,12 @@ function linhaTaxaSimples(fatVal, vol, label){
   if(fatVal===undefined||fatVal===null) return '';
   label = label || 'Tx Simples';
   var tx = vol>0 ? (fatVal/vol*100) : 0;
-  return '<div class="mi-v" style="margin-top:2px;height:17px;line-height:17px"><span></span><span>'+label+': '+fPct(tx)+'</span></div>';
+  return '<div class="mi-v" style="margin-top:2px;height:13px;line-height:13px"><span></span><span>'+label+': '+fPct(tx)+'</span></div>';
 }
 function linhaTaxaPonderada(taxaVal){
   if(taxaVal===undefined||taxaVal===null||taxaVal==='') return '';
   var txStr = fPct(taxaVal);
-  return '<div class="mi-v" style="margin-top:2px;height:17px;line-height:17px"><span></span><span>Tx Ponderada: '+txStr+'</span></div>';
+  return '<div class="mi-v" style="margin-top:2px;height:13px;line-height:13px"><span></span><span>Tx Ponderada: '+txStr+'</span></div>';
 }
 
 function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo, compacto){
@@ -726,13 +726,13 @@ function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo, compacto){
   var cls=badgeCls(pctReal);
   var falta=meta-real;
   var faltaTxt = meta>0 ? (falta>0?('Falta: '+fmt(falta)):'✓ Meta atingida!') : '';
-  var espacador = '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>';
+  var espacador = '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div>';
   if(faltaAbaixo){
     return '<div class="mi"><div class="mi-h"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+'</div>'+
       (meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
       (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
       '<div class="mi-v" style="justify-content:flex-start"><span><span class="real">'+fmt(real)+'</span>'+(meta>0?'<span class="sep">de</span>'+fmt(meta):'')+'</span></div>'+
-      (meta>0?'<div style="font-size:13px;color:var(--t2);margin-top:2px;height:17px;line-height:17px">'+faltaTxt+'</div>':'')+
+      (meta>0?'<div style="font-size:13px;color:var(--t2);margin-top:2px;height:13px;line-height:13px">'+faltaTxt+'</div>':'')+
       (compacto?'':(espacador+espacador+espacador))+'</div>';
   }
   return '<div class="mi"><div class="mi-h"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="mi-l">'+lbl+'</span>'+(extraHtml||'')+'</div>'+
@@ -753,7 +753,7 @@ function itemFaturamentoPrincipal(real, meta, fatRf, fatMu, fatJa, fatDe){
   var falta=meta-real;
   var faltaTxt = meta>0 ? (falta>0?('Falta: '+fM(falta)):'✓ Meta atingida!') : '';
   function badgeLinha(label, valor, bg, borda, cor){
-    return '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;height:17px;line-height:17px">'+
+    return '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;height:13px;line-height:13px">'+
       '<span style="font-size:10px;font-weight:700;padding:0 9px;border-radius:20px;background:'+bg+';border:1px solid '+borda+';color:'+cor+';white-space:nowrap;line-height:15px">'+label+'</span>'+
       '<span style="font-size:12px;color:var(--t1);font-weight:600">'+fM(valor)+'</span>'+
     '</div>';
@@ -779,10 +779,10 @@ function itemDespesa(lbl, real, limite, eyeBtn){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+(eyeBtn||'')+'</span><span class="mi-badge '+cls+'">'+badgeTxt+'</span></div>'+
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
     '<div class="mi-v"><span><span class="real">'+fM(real)+'</span><span class="sep">limite</span>'+fM(limite)+'</span><span>'+restTxt+'</span></div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div></div>';
 }
 
 // PDD: o valor em R$ vira % do Capital sob Gestão, e essa % é comparada com a
@@ -868,10 +868,10 @@ function itemResultado(real, meta){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Resultado do mês</span><span class="mi-badge '+cls+'">'+badgeTxt+'</span></div>'+
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span><span class="real" style="color:'+(real<0?'#c0392b':'#1d9e75')+'">'+fM(real)+'</span>'+(meta>0?'<span class="sep">meta</span>'+fM(meta):'')+'</span>'+(meta>0?'<span>'+faltaTxt+'</span>':'')+'</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div></div>';
 }
 
 function itemOperado(lbl, operado, cadastrado){
@@ -883,10 +883,10 @@ function itemOperado(lbl, operado, cadastrado){
   return '<div class="mi"><div class="mi-h"><span class="mi-l">'+lbl+'</span><span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span></div>'+
     '<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>'+
     '<div class="mi-v"><span><span class="real">'+fN(operado)+'</span><span class="sep">de</span>'+fN(cadastrado)+' cadastrados</span></div>'+
-    (cadastrado>0?'<div style="font-size:13px;color:var(--t2);margin-top:2px;height:17px;line-height:17px">'+faltaTxt+'</div>':'')+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
+    (cadastrado>0?'<div style="font-size:13px;color:var(--t2);margin-top:2px;height:13px;line-height:13px">'+faltaTxt+'</div>':'')+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div></div>';
 }
 
 function itemOpLinha(lbl, real, meta, vol, fatVal, taxaVal){
@@ -899,9 +899,9 @@ function itemOpLinha(lbl, real, meta, vol, fatVal, taxaVal){
     (meta>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(real)+(meta>0?' de '+fN(meta):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatVal)+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
     linhaTaxaPonderada(taxaVal)+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div></div>';
 }
 
 // Igual à Despesa do mês: "limite" é um teto, não uma meta a bater — ficar ABAIXO
@@ -919,9 +919,9 @@ function itemOpLimite(lbl, real, limite, vol, fatVal, taxaVal){
     (limite>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(real)+(limite>0?' limite '+fN(limite):'')+'</span><span>Vol. '+fM(vol)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatVal)+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
     linhaTaxaPonderada(taxaVal)+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div></div>';
 }
 
 // Total = Operações realizadas + Prorrogações realizadas + Redescontos realizados (numerador)
@@ -939,9 +939,9 @@ function itemOpTotal(rOp,rPr,rRd,mOp,vOp,vPr,vRd,fatTotal,taxaTotal){
     (tM>0?'<div class="bar-w"><div class="bar" style="width:'+pct+'%;background:'+barColor(cls)+'"></div></div>':'')+
     '<div class="mi-v"><span class="real">'+fN(tR)+(tM>0?' de '+fN(tM):'')+'</span><span>Vol. Total '+fM(tV)+'</span></div>'+
     linhaFaltaComFat(faltaTxt, fatTotal)+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div>'+
     linhaTaxaPonderada(taxaTotal)+
-    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:17px;line-height:17px">.</div></div>';
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div>'+
+    '<div style="font-size:12px;margin-top:2px;visibility:hidden;height:13px;line-height:13px">.</div></div>';
 }
 
 /* ── RENDER KPIs ── */
