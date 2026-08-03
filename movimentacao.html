@@ -302,6 +302,47 @@ function avg(d,k){return d.length?sum(d,k)/d.length:0;}
 function wavg(d,vk,wk){var sv=0,sw=0;d.forEach(function(r){var w=n(r[wk]);sv+=n(r[vk])*w;sw+=w;});return sw?sv/sw:0;}
 function lbl(r){var m=mes(r.mes);return(m>=1&&m<=12?MABR[m-1]:'?')+'/'+String(n(r.ano)).slice(2);}
 
+// Agrupa as linhas por mês/ano — segue o mesmo padrão já usado no resto do
+// sistema: se mais de uma empresa estiver selecionada, os dados delas se
+// somam num único ponto por mês (em vez de aparecerem como pontos/barras
+// separados). Campos de "fluxo" (R$, quantidade) somam; taxa e prazo usam
+// média ponderada (por volume e por quantidade, respectivamente), senão o
+// número ficaria errado se as empresas tiverem volumes bem diferentes.
+function agruparPorMes(d){
+  var porChave={}, ordem=[];
+  d.forEach(function(r){
+    var chave=String(n(r.ano)).padStart(4,'0')+'-'+String(mes(r.mes)).padStart(2,'0');
+    if(!porChave[chave]){
+      porChave[chave]={
+        mes:r.mes, ano:r.ano,
+        faturamento:0, qtd_operacao:0, volume_operado:0,
+        qtd_prorrogacao:0, volume_prorrogado:0,
+        qtd_redesconto:0, volume_redesconto:0,
+        inadimplencia:0, total_despesas_paga:0, total_receitas_recebido:0, resultado_liquido:0,
+        _txOpNum:0,_txOpDen:0,_txPrNum:0,_txPrDen:0,_pzOpNum:0,_pzOpDen:0,_pzPrNum:0,_pzPrDen:0
+      };
+      ordem.push(chave);
+    }
+    var g=porChave[chave];
+    ['faturamento','qtd_operacao','volume_operado','qtd_prorrogacao','volume_prorrogado',
+     'qtd_redesconto','volume_redesconto','inadimplencia','total_despesas_paga',
+     'total_receitas_recebido','resultado_liquido'].forEach(function(k){ g[k]+=n(r[k]); });
+    var vOp=n(r.volume_operado),vPr=n(r.volume_prorrogado),qOp=n(r.qtd_operacao),qPr=n(r.qtd_prorrogacao);
+    g._txOpNum+=n(r.taxa_media_ponderada_op)*vOp; g._txOpDen+=vOp;
+    g._txPrNum+=n(r.taxa_media_ponderada_prorrogacoes)*vPr; g._txPrDen+=vPr;
+    g._pzOpNum+=n(r.prazo_medio_op)*qOp; g._pzOpDen+=qOp;
+    g._pzPrNum+=n(r.prazo_medio_prorrogacao)*qPr; g._pzPrDen+=qPr;
+  });
+  return ordem.sort().map(function(chave){
+    var g=porChave[chave];
+    g.taxa_media_ponderada_op=g._txOpDen?g._txOpNum/g._txOpDen:0;
+    g.taxa_media_ponderada_prorrogacoes=g._txPrDen?g._txPrNum/g._txPrDen:0;
+    g.prazo_medio_op=g._pzOpDen?g._pzOpNum/g._pzOpDen:0;
+    g.prazo_medio_prorrogacao=g._pzPrDen?g._pzPrNum/g._pzPrDen:0;
+    return g;
+  });
+}
+
 /* FILTROS */
 var filOpen=false;
 function toggleFil(){filOpen=!filOpen;var p=document.getElementById('fpanel');p.classList.toggle('fcol',!filOpen);}
@@ -546,6 +587,7 @@ function ccInad(id,t,s,h){
 function renderCharts(d){
   killAll();
   if(!d.length){document.getElementById('cdiv').innerHTML='<div class="empty">Sem dados.</div>';return;}
+  d=agruparPorMes(d); // um ponto por mês, somando/ponderando entre empresas selecionadas
   var L=d.map(lbl);
   document.getElementById('cdiv').innerHTML=
     '<div class="r2">'+cc('cf','Faturamento Mensal','','h220')+cc('cr','Resultado Líquido','','h220')+'</div>'+
