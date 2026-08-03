@@ -59,7 +59,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 .chk input{accent-color:var(--br);width:14px;height:14px}
 .sts{font-size:11px;color:var(--t3);margin-left:auto}
 /* KPIs */
-.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:9px;margin-bottom:10px}
 .kpi{background:var(--cd);border-radius:11px;border:1px solid var(--bd);padding:12px 14px}
 .kt{display:flex;align-items:center;gap:9px;margin-bottom:7px}
 .ki{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -76,8 +76,8 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 .krl{color:var(--t2)}.krv{font-weight:700;color:var(--t1)}
 .pos{color:#1d9e75!important}.neg{color:#a32d2d!important}
 /* CHARTS */
-.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.r2{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:10px;margin-bottom:10px}
+.r3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-bottom:10px}
 .cc{background:var(--cd);border-radius:11px;border:1px solid var(--bd);padding:13px 15px;position:relative}
 .cc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .cc-head h3{font-size:13px;font-weight:700;color:var(--t1)}
@@ -1242,10 +1242,10 @@ function invOrdenar(campo){
     </div>
 
     <!-- KPIs RÁPIDOS -->
-    <div id="inv-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
+    <div id="inv-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px"></div>
 
     <!-- GRÁFICOS 2x2 -->
-    <div id="inv-charts-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+    <div id="inv-charts-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-bottom:14px">
       <div style="background:var(--cd);border:1px solid var(--bd);border-radius:11px;padding:14px">
         <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">Volume por Investidor (líquido)</div>
         <div style="height:240px"><canvas id="inv-c-vol"></canvas></div>
