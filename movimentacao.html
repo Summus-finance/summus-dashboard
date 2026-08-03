@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Movimentação – Summus</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script>
 // Tema global (controlado pelo painel) — aplicado cedo para evitar flash de tela clara
 (function(){
@@ -118,6 +119,18 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
   .fr{flex-direction:column}
 }
 @media(max-width:480px){.kpis{grid-template-columns:1fr}}
+
+/* MODAL EVOLUÇÃO DO FATURAMENTO — responsivo */
+@media(max-width:900px){
+  #wf-box{padding:16px 14px 20px!important;max-width:100%!important}
+}
+@media(max-width:768px){
+  #wf-overlay{padding:0!important}
+  #wf-box{border-radius:0!important;min-height:100vh!important}
+}
+@media(max-width:480px){
+  #wf-box{padding:12px 10px 18px!important}
+}
 
 /* MODAL CARTEIRA DE INVESTIDORES — responsivo */
 @media(max-width:900px){
@@ -584,13 +597,22 @@ function ccInad(id,t,s,h){
   '</div>';
 }
 
+// Versão do cc() com botão de olho no cabeçalho (usado no Faturamento Mensal,
+// pra abrir o gráfico de evolução percentual mês a mês)
+function ccEye(id,t,h,onclickFn){
+  return '<div class="cc">'+
+    '<div class="cc-head"><h3>'+t+' <button onclick="'+onclickFn+'" title="Ver evolução percentual" style="background:none;border:none;cursor:pointer;padding:0;margin-left:4px;vertical-align:middle;color:var(--t3);display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></h3><div id="'+id+'-leg" style="display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end"></div></div>'+
+    '<div class="cw '+h+'"><canvas id="'+id+'"></canvas></div>'+
+  '</div>';
+}
+
 function renderCharts(d){
   killAll();
   if(!d.length){document.getElementById('cdiv').innerHTML='<div class="empty">Sem dados.</div>';return;}
   d=agruparPorMes(d); // um ponto por mês, somando/ponderando entre empresas selecionadas
   var L=d.map(lbl);
   document.getElementById('cdiv').innerHTML=
-    '<div class="r2">'+cc('cf','Faturamento Mensal','','h220')+cc('cr','Resultado Líquido','','h220')+'</div>'+
+    '<div class="r2">'+ccEye('cf','Faturamento Mensal','h220','openEvolucaoFaturamento()')+cc('cr','Resultado Líquido','','h220')+'</div>'+
     '<div class="r2">'+cc('cvo','Volume Operação (R$)','','h190')+cc('cvp','Volume Prorrogação (R$)','','h190')+'</div>'+
     '<div class="r2">'+cc('cvrd','Volume Redesconto (R$)','','h190')+cc('cvt','Volume Total (Op+Prorr+Redesc)','','h190')+'</div>'+
     '<div class="r2">'+cc('cq','Qtd Op · Prorr · Redesconto','','h190')+cc('ct','Taxa Média Ponderada (%)','','h190')+'</div>'+
@@ -673,6 +695,86 @@ function initLogin(){
 /* ═══════════════════════════════════════════════════════════════
    INVESTIDORES — dados, gráficos, modal
 ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   EVOLUÇÃO DO FATURAMENTO — gráfico de cascata (waterfall): mostra
+   a variação % de cada mês em relação ao anterior, e uma barra de
+   Total somando essas variações — igual ao modelo que o usuário já
+   tinha no Power BI. Usa o histórico completo (ignora o filtro de
+   mês/ano, que faria a "evolução" perder o sentido, mas respeita o
+   filtro de empresa).
+═══════════════════════════════════════════════════════════ */
+var WF_CHART=null;
+
+function calcularEvolucaoFaturamento(){
+  var eK=Object.keys(sE);
+  var base = eK.length ? allData.filter(function(r){return eK.indexOf(r.empresa)>=0;}) : allData;
+  var agrupado = agruparPorMes(base); // já vem ordenado cronologicamente
+  var labels=[], ranges=[], deltas=[], cores=[];
+  var cumulativo=0;
+  for(var i=1;i<agrupado.length;i++){
+    var atual=n(agrupado[i].faturamento), anterior=n(agrupado[i-1].faturamento);
+    if(!anterior) continue; // sem mês anterior com faturamento, não dá pra calcular %
+    var pct=(atual-anterior)/anterior*100;
+    var inicio=cumulativo;
+    cumulativo+=pct;
+    labels.push(lbl(agrupado[i]));
+    ranges.push([inicio,cumulativo]);
+    deltas.push(pct);
+    cores.push(pct>=0?'#1d9e75':'#c0392b');
+  }
+  if(labels.length){
+    labels.push('Total');
+    ranges.push([0,cumulativo]);
+    deltas.push(cumulativo);
+    cores.push('#1a5276');
+  }
+  return {labels:labels, ranges:ranges, deltas:deltas, cores:cores};
+}
+
+function openEvolucaoFaturamento(){
+  document.getElementById('wf-overlay').style.display='block';
+  renderEvolucaoFaturamento();
+}
+function closeEvolucaoFaturamento(){ document.getElementById('wf-overlay').style.display='none'; }
+
+function renderEvolucaoFaturamento(){
+  var dados=calcularEvolucaoFaturamento();
+  if(!dados.labels.length){
+    document.getElementById('wf-vazio').style.display='block';
+    if(WF_CHART){ WF_CHART.destroy(); WF_CHART=null; }
+    return;
+  }
+  document.getElementById('wf-vazio').style.display='none';
+  if(typeof Chart==='undefined') return;
+
+  var gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
+  var tc=dark?'#7a98b8':'#4a607a';
+
+  if(WF_CHART) WF_CHART.destroy();
+  WF_CHART=new Chart(document.getElementById('wf-canvas'),{
+    type:'bar',
+    data:{ labels:dados.labels, datasets:[{ data:dados.ranges, backgroundColor:dados.cores, borderRadius:3, borderSkipped:false }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(c){ var v=dados.deltas[c.dataIndex]; return ' '+(v>=0?'+':'')+v.toFixed(2)+'%'; }}},
+        datalabels:{
+          color:'#fff', font:{weight:'bold',size:11},
+          formatter:function(v,ctx){ var d=dados.deltas[ctx.dataIndex]; return (d>=0?'+':'')+d.toFixed(2)+'%'; },
+          anchor:function(ctx){ var v=ctx.dataset.data[ctx.dataIndex]; return v[1]>=v[0]?'end':'start'; },
+          align:function(ctx){ var v=ctx.dataset.data[ctx.dataIndex]; return v[1]>=v[0]?'end':'start'; }
+        }
+      },
+      scales:{
+        x:{ticks:{color:tc,font:{size:11}},grid:{display:false}},
+        y:{ticks:{color:tc,font:{size:10},callback:function(v){return v+'%';}},grid:{color:gc}}
+      }
+    },
+    plugins:[ChartDataLabels]
+  });
+}
+
 var invData   = [];   // todos os registros crus da aba investidor
 var invFilt   = [];   // registros após filtros do modal
 var INV_CHARTS= {};
@@ -1178,6 +1280,20 @@ function invOrdenar(campo){
 </script>
 
 <!-- ══ MODAL INVESTIDORES ══ -->
+<div id="wf-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:9999;padding:16px;overflow-y:auto">
+  <div id="wf-box" style="background:var(--cd);border-radius:14px;max-width:900px;margin:0 auto;padding:22px 26px 26px;box-shadow:0 10px 50px rgba(0,0,0,.35)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+      <div>
+        <h2 style="font-size:18px;font-weight:700;color:var(--t1);margin:0">Evolução do Faturamento</h2>
+        <p style="font-size:12px;color:var(--t3);margin:3px 0 0">Variação percentual em relação ao mês anterior — respeita o filtro de empresa acima</p>
+      </div>
+      <button onclick="closeEvolucaoFaturamento()" style="background:none;border:none;font-size:26px;cursor:pointer;color:var(--t3);padding:0;line-height:1">&times;</button>
+    </div>
+    <div style="height:340px"><canvas id="wf-canvas"></canvas></div>
+    <div id="wf-vazio" class="empty" style="display:none">Não há meses suficientes pra calcular a evolução (precisa de pelo menos 2 meses seguidos com faturamento).</div>
+  </div>
+</div>
+
 <div id="inv-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:9999;padding:16px;overflow-y:auto">
   <div id="inv-box" style="background:var(--cd);border-radius:14px;max-width:1100px;margin:0 auto;padding:22px 26px 30px;box-shadow:0 10px 50px rgba(0,0,0,.35);min-height:calc(100vh - 32px)">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
