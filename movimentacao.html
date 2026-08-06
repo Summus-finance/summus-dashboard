@@ -160,6 +160,30 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
   .h220{height:150px}.h190{height:140px}
   .ll{width:360px}.lr{display:flex}
 }
+/* ══ MODAL LANÇAR VALORES (Movimentação) — mesmo padrão .mo-* já usado no Acompanhamento de Metas ══ */
+.mo-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:9999;padding:16px;overflow-y:auto}
+.mo-box{background:var(--cd);border-radius:14px;max-width:820px;margin:0 auto;padding:22px 26px 26px;box-shadow:0 10px 50px rgba(0,0,0,.35)}
+.mo-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.mo-head h2{font-size:18px;font-weight:700;color:var(--t1)}
+.mo-head p{font-size:12px;color:var(--t3);margin-top:3px}
+.mo-close{background:none;border:none;font-size:26px;cursor:pointer;color:var(--t3);padding:0;line-height:1}
+.mo-alvo{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;padding:12px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--bd)}
+.mo-alvo .fg{min-width:140px}
+.mo-alvo select,.mo-alvo input{width:100%;border:1px solid var(--bd);border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1)}
+.mo-sec{margin-bottom:18px}
+.mo-sec h3{font-size:12px;font-weight:700;color:var(--br);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bd)}
+.mo-grid-flex{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px 14px}
+.mo-f label{font-size:11px;font-weight:700;display:block;margin-bottom:4px;color:var(--t2)}
+.mo-f input{width:100%;border:1px solid var(--bd);border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;background:var(--cd);color:var(--t1)}
+.mo-f input:focus{outline:none;border-color:var(--br)}
+.mo-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;padding-top:14px;border-top:1px solid var(--bd)}
+.mo-msg{font-size:13px;margin-top:10px;display:none;padding:9px 12px;border-radius:8px}
+.mo-msg.ok{display:block;background:#e3f5e9;color:#1d9e75;border:1px solid #78c890}
+.mo-msg.err{display:block;background:#fce8e8;color:#8b1a1a;border:1px solid #e09090}
+@media(max-width:600px){
+  .mo-overlay{padding:8px!important}
+  .mo-box{padding:16px 14px 20px!important;max-width:100%!important}
+}
 </style>
 <script>
 (function(){
@@ -203,6 +227,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
       
       
       
+      <button class="tbtn" id="btn-lancar-mov" style="display:none" onclick="movAbrirModalLancar()"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span>Lançar valores</span></button>
       <a href="painel.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:7px 14px;font-size:13px;color:#fff;text-decoration:none;font-family:inherit;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.28)'" onmouseout="this.style.background='rgba(255,255,255,.18)'"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="15 18 9 12 15 6"/></svg>Painel</a> <button class="tbtn" onclick="logout()"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Sair</span></button>
     </div>
   </div>
@@ -668,6 +693,7 @@ function initLogin(){
       document.getElementById('lpage').style.display='none';
       document.getElementById('app').style.display='block';
       loadData();
+      movInitBotaoLancar(res);
     });
   }
   btn.addEventListener('click',doLogin);
@@ -689,7 +715,7 @@ function initLogin(){
     }
   }catch(e){}
   var s=gSess();
-  if(s){document.getElementById('app').style.display='block';loadData();loadInvestidores();}
+  if(s){document.getElementById('app').style.display='block';loadData();loadInvestidores();movInitBotaoLancar(s);}
   else{window.location.replace('login.html');}
 })();
 
@@ -1293,6 +1319,166 @@ function invOrdenar(campo){
   invRenderTabela();
 }
 
+/* ═══════════════════════════════════════════════════════════
+   LANÇAR VALORES — modal com todos os campos da aba Movimentação
+   (mesmo padrão do modal "Lançar valores" do Acompanhamento de Metas)
+═══════════════════════════════════════════════════════════ */
+// Cada chave aqui é exatamente o nome de campo já usado pelo resto desta
+// tela (o mesmo que vem de actionGetMovimentacao / vai para
+// actionSaveMovimentacao no Apps Script) — não são inventados.
+var MOV_CAMPOS_FORM = [
+  {chave:'faturamento', label:'Faturamento', secao:'Faturamento', formato:'money'},
+  {chave:'total_receitas_recebido', label:'Total de Receitas Recebido', secao:'Faturamento', formato:'money'},
+  {chave:'total_despesas_paga', label:'Total de Despesas Paga', secao:'Faturamento', formato:'money'},
+  {chave:'resultado_liquido', label:'Resultado Líquido', secao:'Faturamento', formato:'money'},
+  {chave:'inadimplencia', label:'Inadimplência', secao:'Faturamento', formato:'money'},
+
+  {chave:'qtd_operacao', label:'Qtd. Operações', secao:'Operações', formato:'num'},
+  {chave:'volume_operado', label:'Volume Operado', secao:'Operações', formato:'money'},
+  {chave:'taxa_media_ponderada_op', label:'Taxa Média Ponderada (%)', secao:'Operações', formato:'pct'},
+  {chave:'prazo_medio_op', label:'Prazo Médio (dias)', secao:'Operações', formato:'num'},
+
+  {chave:'qtd_prorrogacao', label:'Qtd. Prorrogações', secao:'Prorrogações', formato:'num'},
+  {chave:'volume_prorrogado', label:'Volume Prorrogado', secao:'Prorrogações', formato:'money'},
+  {chave:'taxa_media_ponderada_prorrogacoes', label:'Taxa Média Ponderada (%)', secao:'Prorrogações', formato:'pct'},
+  {chave:'prazo_medio_prorrogacao', label:'Prazo Médio (dias)', secao:'Prorrogações', formato:'num'},
+
+  {chave:'qtd_redesconto', label:'Qtd. Redesconto', secao:'Redesconto', formato:'num'},
+  {chave:'volume_redesconto', label:'Volume Redesconto', secao:'Redesconto', formato:'money'}
+];
+var MOV_MESES_PT=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+function movFormatarValorCampo(v, formato){
+  if(v===''||v===null||v===undefined) return '';
+  var num = typeof v==='number' ? v : parseFloat(String(v).toString().trim().replace(/\./g,'').replace(',', '.'));
+  if(isNaN(num)) return '';
+  if(formato==='money') return num.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(formato==='num') return num.toLocaleString('pt-BR',{maximumFractionDigits:0});
+  return String(num).replace('.',','); // pct: sem milhar, só vírgula decimal
+}
+function movDesformatarValorCampo(v, formato){
+  if(v===''||v===null||v===undefined) return '';
+  var s=String(v).trim();
+  if(!s) return '';
+  if(formato==='money'||formato==='num'){
+    s = s.replace(/\./g,'').replace(',', '.');
+  } else {
+    s = s.replace(',', '.');
+  }
+  var num = parseFloat(s);
+  return isNaN(num) ? '' : String(num);
+}
+function movFormatarInputAoSair(el){
+  var formato = el.getAttribute('data-formato');
+  var brutoStr = movDesformatarValorCampo(el.value, formato);
+  if(brutoStr===''){ el.value=''; return; }
+  el.value = movFormatarValorCampo(parseFloat(brutoStr), formato);
+}
+function movCampoInputHtml(chave, labelTxt, formato){
+  var placeholder = formato==='money' ? '0,00' : '0';
+  return '<div class="mo-f"><label>'+labelTxt+'</label>'+
+    '<input type="text" inputmode="decimal" id="mo-f-'+chave+'" data-formato="'+formato+'" onblur="movFormatarInputAoSair(this)" placeholder="'+placeholder+'"></div>';
+}
+function movMontarFormularioLancar(){
+  var secoes={}; var ordemSecoes=[];
+  MOV_CAMPOS_FORM.forEach(function(c){
+    if(!secoes[c.secao]){ secoes[c.secao]=[]; ordemSecoes.push(c.secao); }
+    secoes[c.secao].push(c);
+  });
+  var html='';
+  ordemSecoes.forEach(function(nomeSecao){
+    html+='<div class="mo-sec"><h3>'+nomeSecao+'</h3><div class="mo-grid-flex">';
+    secoes[nomeSecao].forEach(function(c){
+      html+=movCampoInputHtml(c.chave, c.label, c.formato);
+    });
+    html+='</div></div>';
+  });
+  document.getElementById('mo-form').innerHTML=html;
+}
+function movPopularEmpresas(){
+  var sel=document.getElementById('mo-empresa');
+  var atual=sel.value;
+  var emps={};
+  allData.forEach(function(r){ if(r.empresa && String(r.empresa).trim()) emps[String(r.empresa).trim()]=1; });
+  var keys=Object.keys(emps).sort();
+  if(!keys.length) keys=['summus-esc','summus-sec'];
+  sel.innerHTML=keys.map(function(k){return '<option value="'+k+'">'+k+'</option>';}).join('');
+  if(keys.indexOf(atual)>=0) sel.value=atual;
+}
+// Acha, dentro de allData, a linha já lançada pra essa empresa+mês+ano (se existir).
+function movAcharRegistro(empresa, mesNum, ano){
+  var alvo=null;
+  allData.forEach(function(r){
+    if(String(r.empresa||'').trim().toLowerCase()===String(empresa||'').trim().toLowerCase()
+       && mes(r.mes)===mesNum
+       && String(n(r.ano))===String(ano)){
+      alvo=r;
+    }
+  });
+  return alvo;
+}
+function movRecarregarAlvo(){
+  var empresa=document.getElementById('mo-empresa').value;
+  var mesNum=Number(document.getElementById('mo-mes').value);
+  var ano=document.getElementById('mo-ano').value;
+  var registro=movAcharRegistro(empresa, mesNum, ano);
+  MOV_CAMPOS_FORM.forEach(function(c){
+    var el=document.getElementById('mo-f-'+c.chave);
+    if(!el) return;
+    var v = registro ? registro[c.chave] : undefined;
+    el.value = (v!==undefined && v!==null && v!=='') ? movFormatarValorCampo(v,c.formato) : '';
+  });
+}
+function movAbrirModalLancar(){
+  var s=gSess();
+  if(!s||!s.podeAtualizar){ alert('Você não tem permissão para lançar valores.'); return; }
+  var hoje=new Date();
+  document.getElementById('mo-mes').value=String(hoje.getMonth()+1);
+  document.getElementById('mo-ano').value=String(hoje.getFullYear());
+  movPopularEmpresas();
+  movMontarFormularioLancar();
+  movRecarregarAlvo();
+  var msg=document.getElementById('mo-msg');
+  msg.style.display='none'; msg.className='mo-msg';
+  document.getElementById('mo-overlay').style.display='block';
+}
+function movFecharModalLancar(){ document.getElementById('mo-overlay').style.display='none'; }
+function movSalvarLancamento(){
+  var s=gSess();
+  if(!s||!s.podeAtualizar){ alert('Você não tem permissão para lançar valores.'); return; }
+
+  var empresa=document.getElementById('mo-empresa').value;
+  var mesNum=document.getElementById('mo-mes').value;
+  var ano=document.getElementById('mo-ano').value;
+  if(!empresa || !mesNum || !ano){
+    var msg0=document.getElementById('mo-msg');
+    msg0.textContent='Selecione empresa, mês e ano.'; msg0.className='mo-msg err'; msg0.style.display='block';
+    return;
+  }
+
+  var valores={};
+  MOV_CAMPOS_FORM.forEach(function(c){
+    var el=document.getElementById('mo-f-'+c.chave);
+    if(el && el.value!=='') valores[c.chave]=movDesformatarValorCampo(el.value, c.formato);
+  });
+
+  var btn=document.getElementById('mo-salvar');
+  btn.disabled=true; btn.textContent='Salvando...';
+
+  apiCall({action:'saveMovimentacao', mes:mesNum, ano:ano, empresa:empresa, valores:JSON.stringify(valores)}, function(err,res){
+    btn.disabled=false; btn.textContent='Salvar';
+    var msg=document.getElementById('mo-msg');
+    if(err||!res){ msg.textContent='Erro de conexão.'; msg.className='mo-msg err'; msg.style.display='block'; return; }
+    if(!res.ok){ msg.textContent='Erro: '+(res.error||'não foi possível salvar.'); msg.className='mo-msg err'; msg.style.display='block'; return; }
+    msg.textContent='Salvo com sucesso!'; msg.className='mo-msg ok'; msg.style.display='block';
+    loadData();
+  });
+}
+function movInitBotaoLancar(s){
+  var btn=document.getElementById('btn-lancar-mov');
+  if(btn) btn.style.display = (s && s.podeAtualizar) ? 'inline-flex' : 'none';
+}
+
 </script>
 
 <!-- ══ MODAL INVESTIDORES ══ -->
@@ -1417,6 +1603,39 @@ function invOrdenar(campo){
     <div style="text-align:right;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd)">
       <span style="font-size:12px;color:var(--t3)">Total filtrado: </span>
       <span id="inv-total" style="font-size:14px;font-weight:700;color:var(--t1)">R$ 0,00</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL LANÇAR VALORES (Movimentação) ══ -->
+<div id="mo-overlay" class="mo-overlay">
+  <div class="mo-box">
+    <div class="mo-head">
+      <div>
+        <h2>Lançar valores</h2>
+        <p>Escolha a empresa, o mês e o ano — se já existir lançamento, os campos vêm preenchidos para você editar.</p>
+      </div>
+      <button class="mo-close" onclick="movFecharModalLancar()">&times;</button>
+    </div>
+
+    <div class="mo-alvo">
+      <div class="fg"><label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase">Empresa</label><select id="mo-empresa" onchange="movRecarregarAlvo()"></select></div>
+      <div class="fg"><label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase">Mês</label>
+        <select id="mo-mes" onchange="movRecarregarAlvo()">
+          <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option>
+          <option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option>
+          <option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+        </select>
+      </div>
+      <div class="fg"><label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;text-transform:uppercase">Ano</label><input type="number" id="mo-ano"></div>
+    </div>
+
+    <div id="mo-form"></div>
+
+    <div class="mo-msg" id="mo-msg"></div>
+    <div class="mo-foot">
+      <button class="btn sec" onclick="movFecharModalLancar()">Cancelar</button>
+      <button class="btn" id="mo-salvar" onclick="movSalvarLancamento()">Salvar</button>
     </div>
   </div>
 </div>
