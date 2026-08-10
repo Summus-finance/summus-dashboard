@@ -6,8 +6,8 @@
 <title>Summus – Painel</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--br:#2CA1D8;--bg:#eef3f8;--t1:#16263a;--t2:#4a607a;--t3:#8fa5bb;--cd:#fff;--bd:#cdd8e5}
-.dk{--bg:#0c1824;--cd:#162235;--bd:#1e3048;--t1:#e0ecf8;--t2:#7a98b8;--t3:#3a5568;--br:#1a7fad}
+:root{--br:#073222;--bg:#eef3f8;--t1:#16263a;--t2:#4a607a;--t3:#8fa5bb;--cd:#fff;--bd:#cdd8e5}
+.dk{--bg:#0c1824;--cd:#162235;--bd:#1e3048;--t1:#e0ecf8;--t2:#7a98b8;--t3:#3a5568;--br:#073222}
 body.dk{background:var(--bg);color:var(--t1)}
 body.dk .header{background:var(--br)}
 body.dk .card{background:var(--cd);border-color:var(--bd);color:var(--t1)}
@@ -79,6 +79,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100
     var s = JSON.parse(sessionStorage.getItem("summus_auth")||"null");
     if(!s||!s.usuario) window.location.replace("login.html");
   }catch(e){ window.location.replace("login.html"); }
+  try{
+    var corCache = localStorage.getItem('summus_cor_sistema');
+    if(corCache) document.documentElement.style.setProperty('--br', corCache);
+  }catch(e){}
 })();
 </script>
 </head>
@@ -221,6 +225,7 @@ function apiCall(params,cb){_jsonp(params,cb);}
 function aplicarCorSistema(cor){
   if(!cor) return;
   document.documentElement.style.setProperty('--br', cor);
+  try{localStorage.setItem('summus_cor_sistema', cor);}catch(e){}
 }
 function carregarCorSistema(){
   apiCall({action:'getConfig'}, function(err,res){

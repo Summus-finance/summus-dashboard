@@ -13,12 +13,14 @@
     if(localStorage.getItem('summus_dark')==='1'){
       document.documentElement.classList.add('dk');
     }
+    var corCache = localStorage.getItem('summus_cor_sistema');
+    if(corCache) document.documentElement.style.setProperty('--br', corCache);
   }catch(e){}
 })();
 </script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--br:#2CA1D8;--bg:#eef3f8;--cd:#fff;--cd2:#f4f7fb;--bd:#cdd8e5;--t1:#16263a;--t2:#4a607a;--t3:#8fa5bb}
+:root{--br:#073222;--bg:#eef3f8;--cd:#fff;--cd2:#f4f7fb;--bd:#cdd8e5;--t1:#16263a;--t2:#4a607a;--t3:#8fa5bb}
 .dk{--bg:#0c1824;--cd:#162235;--cd2:#0c1824;--bd:#1e3048;--t1:#e0ecf8;--t2:#7a98b8;--t3:#3a5568}
 body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1);min-height:100vh}
 /* HEADER */
@@ -444,6 +446,7 @@ function apiCall(params,cb){_jsonp(params,cb);}
 function aplicarCorSistema(cor){
   if(!cor) return;
   document.documentElement.style.setProperty('--br', cor);
+  try{localStorage.setItem('summus_cor_sistema', cor);}catch(e){}
 }
 function carregarCorSistema(){
   apiCall({action:'getConfig'}, function(err,res){
@@ -1602,7 +1605,7 @@ function movInitBotaoLancar(s){
     <div style="background:var(--cd);border:1px solid var(--bd);border-radius:11px;overflow:hidden">
       <div style="max-height:380px;overflow-y:auto;overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:560px">
-          <thead style="position:sticky;top:0;background:#2CA1D8;color:#fff;z-index:1">
+          <thead style="position:sticky;top:0;background:var(--br);color:#fff;z-index:1">
             <tr>
               <th onclick="invOrdenar('tipo')" style="text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">TIPO <span id="inv-sort-tipo"></span></th>
               <th onclick="invOrdenar('nome_investidor')" style="text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">INVESTIDOR <span id="inv-sort-nome_investidor"></span></th>
