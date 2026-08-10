@@ -531,8 +531,10 @@ function renderKPIs(d){
       '<div class="krows">'+rows([['Op',fP(tOp),''],['Prorr',fP(tPr),'']])+'</div></div>'+
 
     kbase('#fdf3e3','#ba7517','<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>','Prazo Médio')+
-      '<div class="kv">'+fN(Math.round((pOp+pPr)/2))+'d geral</div>'+
-      '<div class="krows">'+rows([['Op',fN(Math.round(pOp))+'d',''],['Prorr',fN(Math.round(pPr))+'d','']])+'</div></div>';
+      '<div class="krows" style="gap:8px;margin-top:2px">'+
+        '<div class="kr" style="font-size:17px;align-items:baseline"><span class="krl" style="font-size:12px">Op</span><span class="krv">'+fN(Math.round(pOp))+'d</span></div>'+
+        '<div class="kr" style="font-size:17px;align-items:baseline"><span class="krl" style="font-size:12px">Prorr</span><span class="krv">'+fN(Math.round(pPr))+'d</span></div>'+
+      '</div></div>';
 }
 
 /* CHARTS */
@@ -659,7 +661,8 @@ function renderCharts(d){
   ],'n');
   CH.t=mkC('ct','line',L,[
     {label:'Taxa Op',data:d.map(function(r){return n(r.taxa_media_ponderada_op);}),borderColor:'#2CA1D8',pointRadius:4,tension:.3,borderWidth:2.5},
-    {label:'Taxa Prorr',data:d.map(function(r){return n(r.taxa_media_ponderada_prorrogacoes);}),borderColor:'#f39c12',pointRadius:4,tension:.3,borderWidth:2.5}
+    {label:'Taxa Prorr',data:d.map(function(r){return n(r.taxa_media_ponderada_prorrogacoes);}),borderColor:'#f39c12',pointRadius:4,tension:.3,borderWidth:2.5},
+    {label:'Consolidado',data:d.map(function(r){return (n(r.taxa_media_ponderada_op)+n(r.taxa_media_ponderada_prorrogacoes))/2;}),borderColor:'#16a085',pointRadius:4,tension:.3,borderWidth:2.5,borderDash:[5,3]}
   ],'%');
   CH.pz=mkC('cpz','bar',L,[
     {label:'Prazo Op',data:d.map(function(r){return n(r.prazo_medio_op);}),backgroundColor:'rgba(44,161,216,.78)',borderRadius:4},
@@ -672,7 +675,7 @@ function renderCharts(d){
   (function(){
     var totalInad=d.reduce(function(s,r){return s+n(r.inadimplencia);},0);
     var el=document.getElementById('inad-total-valor');
-    if(el)el.textContent=fR(totalInad);
+    if(el)el.textContent=fRF(totalInad);
   })();
 
 
