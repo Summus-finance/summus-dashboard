@@ -55,6 +55,22 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100
   .card{width:100%;max-width:340px}
   .header-title p{display:none}
 }
+/* ══ CONFIGURAÇÕES (cor do sistema) ══ */
+.cfg-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:9999;padding:16px;overflow-y:auto;align-items:center;justify-content:center}
+.cfg-box{background:var(--cd);border-radius:14px;max-width:420px;width:100%;padding:22px 26px 26px;box-shadow:0 10px 50px rgba(0,0,0,.35)}
+.cfg-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.cfg-head h2{font-size:18px;font-weight:700;color:var(--t1)}
+.cfg-head p{font-size:12px;color:var(--t3);margin-top:3px}
+.cfg-close{background:none;border:none;font-size:26px;cursor:pointer;color:var(--t3);padding:0;line-height:1}
+.cfg-f label{font-size:11px;font-weight:700;display:block;margin-bottom:5px;color:var(--t2);text-transform:uppercase}
+.cfg-row{display:flex;gap:10px;align-items:center}
+.cfg-row input[type=text]{flex:1;border:1px solid var(--bd);border-radius:7px;padding:9px 11px;font-size:14px;font-family:inherit;background:var(--cd);color:var(--t1)}
+.cfg-row input[type=text]:focus{outline:none;border-color:var(--br)}
+.cfg-swatch{width:38px;height:38px;border-radius:8px;border:1px solid var(--bd);flex-shrink:0}
+.cfg-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--bd)}
+.cfg-msg{font-size:13px;margin-top:10px;display:none;padding:9px 12px;border-radius:8px}
+.cfg-msg.ok{display:block;background:#e3f5e9;color:#1d9e75;border:1px solid #78c890}
+.cfg-msg.err{display:block;background:#fce8e8;color:#8b1a1a;border:1px solid #e09090}
 </style>
 <script>
 // Verificação IMEDIATA — antes de qualquer renderização
@@ -80,6 +96,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100
       <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <span id="u-nome"></span>
     </div>
+    <button class="logout-btn" id="cfg-btn" onclick="abrirConfiguracoes()" style="display:none;margin-right:4px">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Configurações
+    </button>
     <button class="logout-btn" id="theme-btn" onclick="toggleTheme()" style="margin-right:4px">
       <svg id="theme-icon" viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       <span id="theme-lbl">Tema escuro</span>
@@ -126,6 +146,31 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100
 
 <div class="footer">Summus v2.1 &nbsp;·&nbsp; Painel de Gestão</div>
 
+<!-- ══ MODAL CONFIGURAÇÕES ══ -->
+<div id="cfg-overlay" class="cfg-overlay">
+  <div class="cfg-box">
+    <div class="cfg-head">
+      <div>
+        <h2>Configurações</h2>
+        <p>Essa cor é usada em todas as telas do sistema, para todos os usuários.</p>
+      </div>
+      <button class="cfg-close" onclick="fecharConfiguracoes()">&times;</button>
+    </div>
+    <div class="cfg-f">
+      <label>Cor do sistema (código hexadecimal)</label>
+      <div class="cfg-row">
+        <div class="cfg-swatch" id="cfg-swatch"></div>
+        <input type="text" id="cfg-cor" placeholder="#073222" maxlength="7" oninput="cfgAtualizarSwatch()">
+      </div>
+    </div>
+    <div class="cfg-msg" id="cfg-msg"></div>
+    <div class="cfg-foot">
+      <button class="logout-btn" style="background:var(--bd);color:var(--t1)" onclick="fecharConfiguracoes()">Cancelar</button>
+      <button class="logout-btn" style="background:var(--br)" id="cfg-salvar" onclick="salvarConfiguracoes()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 var SESSION_KEY = "summus_auth";
 var THEME_KEY   = "summus_dark";
@@ -150,12 +195,86 @@ function toggleTheme(){
   applyTheme(dark);
 }
 
+/* API — mesmo padrão (JSONP) usado nas outras telas do sistema */
+var SU = "https://script.google.com/macros/s/AKfycbytBLSuf758v_8TCG0ilhmKgDNVunANTgqtkYZaIhDaRaqZgXfZkUeG5J-aNHGg4Ny_5g/exec";
+function _jsonp(params,cb){
+  if (params.action !== 'login') {
+    var _sess = getSession();
+    params = Object.assign({}, params, { token: _sess ? _sess.token : '' });
+  }
+  var id='_cb'+Date.now()+Math.floor(Math.random()*9999);
+  var timer=setTimeout(function(){window[id]=null;var s2=document.getElementById(id);if(s2)s2.remove();cb(new Error('timeout'),null);},20000);
+  window[id]=function(data){
+    clearTimeout(timer);window[id]=null;var s2=document.getElementById(id);if(s2)s2.remove();
+    if (data && data.ok===false && data.error==='NAO_AUTENTICADO'){ try{sessionStorage.removeItem(SESSION_KEY);}catch(e){} window.location.replace('login.html'); return; }
+    cb(null,data);
+  };
+  var qs=Object.keys(params).map(function(k){var v=params[k];if(typeof v==='object')v=JSON.stringify(v);return k+'='+encodeURIComponent(v);}).join('&');
+  var s=document.createElement('script');s.id=id;
+  s.onerror=function(){clearTimeout(timer);window[id]=null;s.remove();cb(new Error('Falha ao conectar.'),null);};
+  document.head.appendChild(s);
+  s.src=SU+'?callback='+id+'&'+qs;
+}
+function apiCall(params,cb){_jsonp(params,cb);}
+
+/* ── CONFIGURAÇÕES: cor do sistema (salva na aba "Configuracao_sistema") ── */
+function aplicarCorSistema(cor){
+  if(!cor) return;
+  document.documentElement.style.setProperty('--br', cor);
+}
+function carregarCorSistema(){
+  apiCall({action:'getConfig'}, function(err,res){
+    if(!err && res && res.ok && res.data && res.data.cor_sistema){
+      aplicarCorSistema(res.data.cor_sistema);
+      document.getElementById('cfg-cor').value = res.data.cor_sistema;
+      cfgAtualizarSwatch();
+    }
+  });
+}
+function cfgAtualizarSwatch(){
+  var v=document.getElementById('cfg-cor').value.trim();
+  var sw=document.getElementById('cfg-swatch');
+  sw.style.background = /^#[0-9A-Fa-f]{6}$/.test(v) ? v : 'var(--bd)';
+}
+function abrirConfiguracoes(){
+  var s=getSession();
+  if(!s||!s.podeAtualizar){ alert('Você não tem permissão para alterar as configurações.'); return; }
+  var msg=document.getElementById('cfg-msg');
+  msg.style.display='none'; msg.className='cfg-msg';
+  cfgAtualizarSwatch();
+  document.getElementById('cfg-overlay').style.display='flex';
+}
+function fecharConfiguracoes(){ document.getElementById('cfg-overlay').style.display='none'; }
+function salvarConfiguracoes(){
+  var s=getSession();
+  if(!s||!s.podeAtualizar){ alert('Você não tem permissão para alterar as configurações.'); return; }
+
+  var cor=document.getElementById('cfg-cor').value.trim();
+  var msg=document.getElementById('cfg-msg');
+  if(!/^#[0-9A-Fa-f]{6}$/.test(cor)){
+    msg.textContent='Código inválido. Use o formato #RRGGBB (ex: #073222).'; msg.className='cfg-msg err'; msg.style.display='block';
+    return;
+  }
+
+  var btn=document.getElementById('cfg-salvar');
+  btn.disabled=true; btn.textContent='Salvando...';
+  apiCall({action:'saveConfig', chave:'cor_sistema', valor:cor}, function(err,res){
+    btn.disabled=false; btn.textContent='Salvar';
+    if(err||!res){ msg.textContent='Erro de conexão.'; msg.className='cfg-msg err'; msg.style.display='block'; return; }
+    if(!res.ok){ msg.textContent='Erro: '+(res.error||'não foi possível salvar.'); msg.className='cfg-msg err'; msg.style.display='block'; return; }
+    aplicarCorSistema(cor);
+    msg.textContent='Cor do sistema atualizada! As outras telas aplicam ao serem abertas.'; msg.className='cfg-msg ok'; msg.style.display='block';
+  });
+}
+
 // Init sessão
 var s = getSession();
 if(!s||!s.usuario){window.location.replace('login.html');}
 else{
   document.getElementById('u-nome').textContent  = s.usuario;
   document.getElementById('u-nome2').textContent = s.usuario;
+  if(s.podeAtualizar) document.getElementById('cfg-btn').style.display='flex';
+  carregarCorSistema();
 }
 
 // Init tema

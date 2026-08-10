@@ -253,8 +253,20 @@ function renderTabela(){
     return '<tr><td>'+r.nome+'</td><td class="num">'+fR(n(r.conc_rs))+'</td><td class="num">'+fPct(n(r.conc_pct))+'</td><td><span class="'+bc+'">'+r.tipo+'</span></td><td style="color:var(--t2)">'+r.empresa+'</td></tr>';
   }).join('');
 }
+/* ── CONFIGURAÇÕES: cor do sistema (compartilhada, salva na planilha) ── */
+function aplicarCorSistema(cor){
+  if(!cor) return;
+  document.documentElement.style.setProperty('--br', cor);
+}
+function carregarCorSistema(){
+  jsonpCall({action:'getConfig'}, function(err,res){
+    if(!err && res && res.ok && res.data && res.data.cor_sistema){
+      aplicarCorSistema(res.data.cor_sistema);
+    }
+  });
+}
 var _s=getSession();
-if(_s){document.getElementById('u-nome').textContent=_s.usuario||'';carregarDados();}
+if(_s){document.getElementById('u-nome').textContent=_s.usuario||'';carregarCorSistema();carregarDados();}
 </script>
 </body>
 </html>

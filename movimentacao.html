@@ -440,6 +440,19 @@ function _jsonp(params,cb){
 }
 function apiCall(params,cb){_jsonp(params,cb);}
 
+/* ── CONFIGURAÇÕES: cor do sistema (compartilhada, salva na planilha) ── */
+function aplicarCorSistema(cor){
+  if(!cor) return;
+  document.documentElement.style.setProperty('--br', cor);
+}
+function carregarCorSistema(){
+  apiCall({action:'getConfig'}, function(err,res){
+    if(!err && res && res.ok && res.data && res.data.cor_sistema){
+      aplicarCorSistema(res.data.cor_sistema);
+    }
+  });
+}
+
 /* LOAD */
 function loadData(){
   var btn=document.getElementById('sbtn');
@@ -697,6 +710,7 @@ function initLogin(){
       document.getElementById('app').style.display='block';
       loadData();
       movInitBotaoLancar(res);
+      carregarCorSistema();
     });
   }
   btn.addEventListener('click',doLogin);
@@ -718,7 +732,7 @@ function initLogin(){
     }
   }catch(e){}
   var s=gSess();
-  if(s){document.getElementById('app').style.display='block';loadData();loadInvestidores();movInitBotaoLancar(s);}
+  if(s){document.getElementById('app').style.display='block';loadData();loadInvestidores();movInitBotaoLancar(s);carregarCorSistema();}
   else{window.location.replace('login.html');}
 })();
 

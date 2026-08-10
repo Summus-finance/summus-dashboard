@@ -426,6 +426,31 @@ function _jsonp(params, cb){
 }
 function apiCall(params, cb){ _jsonp(params, cb); }
 
+/* ── CONFIGURAÇÕES: cor do sistema (compartilhada, salva na planilha) ── */
+function amLightenHex_(hex, f){
+  hex=String(hex||'').replace('#','');
+  if(hex.length!==6) return hex;
+  var r=parseInt(hex.substring(0,2),16), g=parseInt(hex.substring(2,4),16), b=parseInt(hex.substring(4,6),16);
+  r=Math.round(r+(255-r)*f); g=Math.round(g+(255-g)*f); b=Math.round(b+(255-b)*f);
+  function h2(v){return v.toString(16).padStart(2,'0');}
+  return '#'+h2(r)+h2(g)+h2(b);
+}
+function aplicarCorSistema(cor){
+  if(!cor) return;
+  document.documentElement.style.setProperty('--br', cor);
+  // Esta tela usa um degradê (mais claro à esquerda, mais escuro à direita)
+  // derivado da cor do sistema, então recalculamos o tom claro automaticamente.
+  var clara = amLightenHex_(cor, 0.55);
+  document.documentElement.style.setProperty('--br-grad', 'linear-gradient(90deg,'+clara+' 0%,'+cor+' 100%)');
+}
+function carregarCorSistema(){
+  apiCall({action:'getConfig'}, function(err,res){
+    if(!err && res && res.ok && res.data && res.data.cor_sistema){
+      aplicarCorSistema(res.data.cor_sistema);
+    }
+  });
+}
+
 /* ── UTIL NUMÉRICO ── */
 function n(v){if(v===''||v===null||v===undefined)return 0;var x=Number(String(v).toString().replace(',','.'));return isNaN(x)?0:x;}
 function fN(v){return n(v).toLocaleString('pt-BR',{maximumFractionDigits:0});}
@@ -1990,6 +2015,7 @@ function iniciarApp(){
   document.getElementById('u-nome').textContent=s?s.usuario:'';
   var btnLancar=document.getElementById('btn-lancar');
   if(btnLancar && s && !s.podeAtualizar) btnLancar.style.display='none';
+  carregarCorSistema();
   carregarDados();
 }
 
