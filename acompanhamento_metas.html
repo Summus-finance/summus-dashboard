@@ -17,11 +17,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--br:#2CA1D8;--bg:#eef3f8;--cd:#fff;--cd2:#f4f7fb;--bd:#cdd8e5;--t1:#16263a;--t2:#4a607a;--t3:#8fa5bb}
+:root{--br:#073222;--br-grad:linear-gradient(90deg,#117D55 0%,#073222 100%);--bg:#eef3f8;--cd:#fff;--cd2:#f4f7fb;--bd:#cdd8e5;--t1:#16263a;--t2:#4a607a;--t3:#8fa5bb}
 .dk{--bg:#0c1824;--cd:#162235;--cd2:#0c1824;--bd:#1e3048;--t1:#e0ecf8;--t2:#7a98b8;--t3:#3a5568}
 body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1);min-height:100vh}
 /* HEADER */
-.top{display:flex;justify-content:space-between;align-items:center;background:var(--br);border-radius:14px;padding:12px 20px;margin-bottom:10px;box-shadow:0 4px 20px rgba(44,161,216,.3)}
+.top{display:flex;justify-content:space-between;align-items:center;background:var(--br-grad);border-radius:14px;padding:12px 20px;margin-bottom:10px;box-shadow:0 4px 20px rgba(7,50,34,.3)}
 .top h1{font-size:22px;font-weight:700;color:#fff}
 .top p{font-size:12px;color:rgba(255,255,255,.85);margin-top:2px}
 .top-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -30,7 +30,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 .tbtn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:8px;padding:6px 11px;font-size:12px;cursor:pointer;font-family:inherit;color:#fff;display:flex;align-items:center;gap:5px;text-decoration:none;white-space:nowrap}
 .tbtn:hover{background:rgba(255,255,255,.32)}
 .tbtn svg{width:13px;height:13px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.btn{background:var(--br);color:#fff;border:none;border-radius:8px;padding:8px 15px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
+.btn{background:var(--br-grad);color:#fff;border:none;border-radius:8px;padding:8px 15px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
 .btn:hover{opacity:.88}
 .btn svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .btn.sec{background:var(--cd2);border:1px solid var(--bd);color:var(--t2)}
@@ -53,14 +53,14 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
 .chips{display:flex;flex-wrap:wrap;gap:5px}
 .chip{padding:3px 11px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--bd);background:var(--cd2);color:var(--t2);transition:all .15s;user-select:none}
 .chip:hover{border-color:var(--br);color:var(--br)}
-.chip.on{background:var(--br);border-color:var(--br);color:#fff;font-weight:600}
+.chip.on{background:var(--br-grad);border-color:var(--br);color:#fff;font-weight:600}
 .fa{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--bd);flex-wrap:wrap}
 /* KPI CARDS */
 .kgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
 @media(max-width:1100px){.kgrid{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.kgrid{grid-template-columns:1fr}}
 .kcard{background:var(--cd);border-radius:11px;border:1px solid var(--bd);overflow:hidden}
-.kcard-h{background:var(--br);color:#fff;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.kcard-h{background:var(--br-grad);color:#fff;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
 .kcard-b{padding:14px 16px}
 .mi{padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--bd)}
 .mi:last-child{padding-bottom:0;margin-bottom:0;border-bottom:none}
@@ -220,7 +220,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
     <div style="background:var(--cd);border:1px solid var(--bd);border-radius:11px;overflow:hidden">
       <div style="max-height:420px;overflow-y:auto;overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:480px">
-          <thead style="position:sticky;top:0;background:#2CA1D8;color:#fff;z-index:1">
+          <thead style="position:sticky;top:0;background:var(--br-grad);color:#fff;z-index:1">
             <tr>
               <th onclick="invpOrdenar('nome_investidor')" style="text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">NOME <span id="invp-sort-nome_investidor"></span></th>
               <th onclick="invpOrdenar('data_aporte')" style="text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">DATA APORTE <span id="invp-sort-data_aporte"></span></th>
@@ -326,7 +326,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--t1
     <div class="tp-tabela-wrap">
       <div style="max-height:360px;overflow-y:auto;overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px">
-          <thead style="position:sticky;top:0;background:#2CA1D8;color:#fff;z-index:1">
+          <thead style="position:sticky;top:0;background:var(--br-grad);color:#fff;z-index:1">
             <tr>
               <th onclick="tpOrdenar('data')" style="text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">DATA <span id="tp-sort-data"></span></th>
               <th onclick="tpOrdenar('fornecedor')" style="text-align:left;padding:9px 12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap">FORNECEDOR <span id="tp-sort-fornecedor"></span></th>
@@ -849,7 +849,7 @@ function itemComposicaoFaturamento(fatOp, fatPr, fatRd, fatRf, fatMu, fatJa, fat
   // Barra visual: só as 3 categorias principais (multas/juros/refinanciamento costumam ser
   // pequenos e descontos pode ser negativo — melhor não colocar na barra).
   var barSegs = '<div style="display:flex;height:9px;border-radius:99px;overflow:hidden;background:var(--bg);margin-top:6px">'+
-    (pOp>0?'<div style="width:'+pOp+'%;background:#2CA1D8"></div>':'')+
+    (pOp>0?'<div style="width:'+pOp+'%;background:#073222"></div>':'')+
     (pPr>0?'<div style="width:'+pPr+'%;background:#1d9e75"></div>':'')+
     (pRd>0?'<div style="width:'+pRd+'%;background:#e0a020"></div>':'')+
   '</div>';
@@ -861,7 +861,7 @@ function itemComposicaoFaturamento(fatOp, fatPr, fatRd, fatRf, fatMu, fatJa, fat
   }
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Composição do Faturamento</span></div>'+
     barSegs+
-    linha('#2CA1D8','Operações',pOp,fatOp)+
+    linha('#073222','Operações',pOp,fatOp)+
     linha('#1d9e75','Prorrogações',pPr,fatPr)+
     linha('#e0a020','Redesconto',pRd,fatRd)+
     (fatRf?linha('#1a6f8f','Refinanciamento',pRf,fatRf):'')+
@@ -1079,8 +1079,12 @@ function renderKPIs(d){
   var txPrPond = taxaPonderadaCampo(d,'prorrogacoes','volume_prorrogacoes');
   var txRdPond = taxaPonderadaCampo(d,'redesconto','volume_redesconto');
   var txMetaMed = taxaMetaMedia(d);
-  var txTotalDen = volOp+volPr+volRd;
-  var txTotalPond = txTotalDen>0 ? ((volOp*txOpPond)+(volPr*txPrPond)+(volRd*txRdPond))/txTotalDen : 0;
+  // Taxa Ponderada Total: mesma lógica de ponderação por volume de sempre,
+  // porém agora considerando apenas Operações e Prorrogações (Redesconto
+  // fica de fora do total, mas continua aparecendo normalmente no card
+  // "OPERAÇÃO" com a taxa dele próprio).
+  var txTotalDen = volOp+volPr;
+  var txTotalPond = txTotalDen>0 ? ((volOp*txOpPond)+(volPr*txPrPond))/txTotalDen : 0;
 
   // Regra nova: a meta de Receitas é sempre a meta de Despesa + a meta de Resultado do mês
   // (não existe mais coluna própria de meta de receita na planilha).
