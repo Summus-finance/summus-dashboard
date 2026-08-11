@@ -787,9 +787,9 @@ function itemFaturamentoPrincipal(real, meta, fatRf, fatMu, fatJa, fatDe){
   var falta=meta-real;
   var faltaTxt = meta>0 ? (falta>0?('Falta: '+fM(falta)):'✓ Meta atingida!') : '';
   function badgeLinha(label, valor, bg, borda, cor){
-    return '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;height:13px;line-height:13px">'+
-      '<span style="font-size:10px;font-weight:700;padding:0 9px;border-radius:20px;background:'+bg+';border:1px solid '+borda+';color:'+cor+';white-space:nowrap;line-height:15px">'+label+'</span>'+
-      '<span style="font-size:12px;color:var(--t1);font-weight:600">'+fM(valor)+'</span>'+
+    return '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;height:13px">'+
+      '<span style="font-size:9px;font-weight:700;padding:0 8px;border-radius:20px;background:'+bg+';border:1px solid '+borda+';color:'+cor+';white-space:nowrap;line-height:12px;display:inline-block">'+label+'</span>'+
+      '<span style="font-size:12px;color:var(--t1);font-weight:600;line-height:13px">'+fM(valor)+'</span>'+
     '</div>';
   }
   return '<div class="mi"><div class="mi-h"><span class="mi-l">Faturamento</span>'+(meta>0?'<span class="mi-badge '+cls+'">'+pctReal+'%'+(pctReal>=100?' ✓':'')+'</span>':'')+'</div>'+
