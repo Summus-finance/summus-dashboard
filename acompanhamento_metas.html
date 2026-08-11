@@ -750,7 +750,7 @@ function linhaTaxaSimples(fatVal, vol, label){
 function linhaTaxaPonderada(taxaVal){
   if(taxaVal===undefined||taxaVal===null||taxaVal==='') return '';
   var txStr = fPct(taxaVal);
-  return '<div class="mi-v" style="margin-top:2px;height:13px;line-height:13px"><span></span><span>Tx Ponderada: '+txStr+'</span></div>';
+  return '<div class="mi-v" style="margin-top:2px;height:13px;line-height:13px"><span></span><span>Tx Média Ponderada: '+txStr+'</span></div>';
 }
 
 function itemMeta(lbl, real, meta, fmt, extraHtml, faltaAbaixo, compacto){
@@ -1093,12 +1093,10 @@ function renderKPIs(d){
   var txPrPond = taxaPonderadaCampo(d,'prorrogacoes','volume_prorrogacoes');
   var txRdPond = taxaPonderadaCampo(d,'redesconto','volume_redesconto');
   var txMetaMed = taxaMetaMedia(d);
-  // Taxa Ponderada Total: mesma lógica de ponderação por volume de sempre,
-  // porém agora considerando apenas Operações e Prorrogações (Redesconto
-  // fica de fora do total, mas continua aparecendo normalmente no card
-  // "OPERAÇÃO" com a taxa dele próprio).
-  var txTotalDen = volOp+volPr;
-  var txTotalPond = txTotalDen>0 ? ((volOp*txOpPond)+(volPr*txPrPond))/txTotalDen : 0;
+  // Taxa Média Ponderada Total: média SIMPLES entre a taxa das Operações e a
+  // taxa das Prorrogações (cada uma já vem ponderada por volume dentro da sua
+  // própria categoria) — não pondera mais pelo volume entre as duas categorias.
+  var txTotalPond = (txOpPond+txPrPond)/2;
 
   // Regra nova: a meta de Receitas é sempre a meta de Despesa + a meta de Resultado do mês
   // (não existe mais coluna própria de meta de receita na planilha).
@@ -1145,8 +1143,8 @@ function renderKPIs(d){
       '<div style="font-size:11px;color:var(--t3);margin-top:4px">'+(capitalBaseInfo.length?capitalBaseInfo.join(' · '):'Sem lançamento na aba investidor')+' + captação e resultado do período − devoluções do período</div>' +
     '</div></div>' +
 
-    '<div class="kcard"><div class="kcard-h">📈 TAXA PONDERADA</div><div class="kcard-b">' +
-      itemMeta('Taxa Ponderada Total', txTotalPond, txMetaMed, fPct, null, false, true) +
+    '<div class="kcard"><div class="kcard-h">📈 TAXA MÉDIA PONDERADA</div><div class="kcard-b">' +
+      itemMeta('Taxa Média Ponderada Total', txTotalPond, txMetaMed, fPct, null, false, true) +
     '</div></div>' +
 
     '<div class="kcard"><div class="kcard-h">⚠️ PDD</div><div class="kcard-b">' +
